@@ -24,15 +24,16 @@ repositories {
 dependencies {
     implementation project(':freeplane')
 
+    lib "io.grpc:grpc-protobuf:${grpcVersion}"
+    lib "io.grpc:grpc-stub:${grpcVersion}"
+    lib "io.grpc:grpc-netty-shaded:${grpcVersion}"
+    lib "com.google.protobuf:protobuf-java-util:${protobufVersion}"
+ 
 
-    implementation "io.grpc:grpc-protobuf:${grpcVersion}"
-    implementation "io.grpc:grpc-stub:${grpcVersion}"
     compileOnly "org.apache.tomcat:annotations-api:6.0.53"
 
     // examples/advanced need this for JsonFormat
-    implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
 
-    runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
 
     testImplementation "io.grpc:grpc-testing:${grpcVersion}"
     testImplementation "junit:junit:4.12"
