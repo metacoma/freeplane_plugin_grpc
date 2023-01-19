@@ -24,7 +24,12 @@ package helloworld;
 service Greeter {
   // Sends a greeting
   rpc SayHello (HelloRequest) returns (HelloReply) {}
+  rpc createChild(FreeplaneNode) returns (HelloReply) {} 
 }
+
+message FreeplaneNode {
+  string name = 1;
+} 
 
 // The request message containing the user's name.
 message HelloRequest {
