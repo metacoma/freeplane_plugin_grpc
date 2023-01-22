@@ -35,7 +35,7 @@ public class GrpcRegistration {
 	public GrpcRegistration(ModeController modeController) { 
                   try {
                   server = ServerBuilder.forPort(50051)
-                                  .addService(new GreeterImpl())
+                                  .addService(new FreeplaneImpl())
                                           .build()
                                                   .start();
                   } catch(IOException e) {
@@ -43,27 +43,16 @@ public class GrpcRegistration {
                   } 
                 System.out.println("Hello, World!"); 
 	}
- 	static class GreeterImpl extends GreeterGrpc.GreeterImplBase {
+ 	static class FreeplaneImpl extends FreeplaneGrpc.FreeplaneImplBase {
 
     		@Override
-    		public void sayHello(HelloRequest req, StreamObserver<HelloReply> responseObserver) {
+    		public void createChild(CreateChildRequest req, StreamObserver<CreateChildResponse> responseObserver) {
                         final MapController mapController = Controller.getCurrentModeController().getMapController();
                         final NodeModel rootNode = mapController.getRootNode();
-                        //final NodeModel selectedNode = mapController.getSelectedNode();
                         NodeModel newNode = new NodeModel(rootNode.getMap());
                         newNode.setText(req.getName());
-                        //mapController.insertNode(newNode, rootNode, rootNode.getChildCount());
                         mapController.insertNodeIntoWithoutUndo(newNode, rootNode);
-                        /*
-                        rootNode.insert(newNode);
-                        */
-      			HelloReply reply = HelloReply.newBuilder().setMessage("Hello " + req.getName()).build();
-      			responseObserver.onNext(reply);
-      			responseObserver.onCompleted();
-    		}
-    		@Override
-    		public void createChild(FreeplaneNode req, StreamObserver<HelloReply> responseObserver) {
-      			HelloReply reply = HelloReply.newBuilder().setMessage("Hello " + req.getName()).build();
+      			CreateChildResponse reply = CreateChildResponse.newBuilder().setMessage("Hello " + req.getName()).build();
       			responseObserver.onNext(reply);
       			responseObserver.onCompleted();
     		}
