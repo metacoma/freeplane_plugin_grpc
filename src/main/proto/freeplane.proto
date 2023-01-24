@@ -8,7 +8,8 @@ option objc_class_prefix = "FP";
 package freeplane;
 
 service Freeplane {
-  rpc CreateChild (CreateChildRequest) returns (CreateChildResponse) {}
+  rpc CreateChild (CreateChildRequest) returns (CreateChildResponse) {};
+  rpc DeleteChild (DeleteChildRequest) returns (DeleteChildResponse) {};
 }
 
 message CreateChildRequest {
@@ -16,5 +17,13 @@ message CreateChildRequest {
 }
 
 message CreateChildResponse {
-  string message = 1;
+  string node_id = 1;
+  string node_text = 2;
+}
+
+message DeleteChildRequest {
+  string node_id = 1;
+}
+message DeleteChildResponse {
+  bool success = 1;
 }
