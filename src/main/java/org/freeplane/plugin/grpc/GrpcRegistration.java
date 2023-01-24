@@ -61,29 +61,12 @@ public class GrpcRegistration {
                         final NodeModel rootNode = mapController.getRootNode();
                         final MapModel map = Controller.getCurrentController().getMap();
                         
-
-                        //NodeModel newNode = new NodeModel(rootNode.getMap());
-                        //SharedNodeData nodeData = new SharedNodeData();
-                        /*
-                        NodeModel newNode = new NodeModel("test", map);
-                        newNode.setText(req.getName());
                         System.out.println("GRPC Freeplane::createChild(" + req.getName() + ")"); 
-
-                        */
-
                         NodeModel newNodeModel = mapController.newNode("test", rootNode.getMap());
                         newNodeModel.setSide(mapController.suggestNewChildSide(rootNode, NodeModel.Side.DEFAULT));
                         newNodeModel.createID();
                         mmapController.insertNode(newNodeModel, rootNode, false);
 
-
-
-                        /*
-                        map.registryNode(newNode);
-                        rootNode.insert(newNode, -1);
-                        newNode.setSide(mapController.suggestNewChildSide(rootNode, NodeModel.Side.DEFAULT));
-                        //mapController.insertNodeIntoWithoutUndo(newNode, rootNode);
-                        */
       			CreateChildResponse reply = CreateChildResponse.newBuilder().setNodeId(newNodeModel.getID()).setNodeText(newNodeModel.getText()).build();
       			responseObserver.onNext(reply);
       			responseObserver.onCompleted();
@@ -99,14 +82,7 @@ public class GrpcRegistration {
                         NodeModel nodeToDelete = map.getNodeForID(req.getNodeId());
                         if (nodeToDelete != null) {
                                 success = true;
-                                //NodeModel parent = nodeToDelete.getParentNode();
                                 mmapController.deleteNode(nodeToDelete);
-                                /*
-                                int nodeIndex = nodeToDelete.getIndex();
-                                System.out.println("GRPC Freeplane::deleteChild(" + req.getNodeId() + ") nodeIndex = " + nodeIndex); 
-                                nodeToDelete.setParent(null);
-                                parent.remove(nodeIndex);
-                                */
                         }
 
                         DeleteChildResponse reply = DeleteChildResponse.newBuilder().setSuccess(success).build();
