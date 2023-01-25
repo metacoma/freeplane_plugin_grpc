@@ -14,10 +14,13 @@ service Freeplane {
   rpc NodeLinkSet (NodeLinkSetRequest) returns (NodeLinkSetResponse) {};
   rpc NodeDetailsSet (NodeDetailsSetRequest) returns (NodeDetailsSetResponse) {};
   rpc Groovy (GroovyRequest) returns (GroovyResponse) {};
+  rpc NodeColorSet (NodeColorSetRequest) returns (NodeColorSetResponse) {};
+  rpc NodeBackgroundColorSet (NodeBackgroundColorSetRequest) returns (NodeBackgroundColorSetResponse) {};
 }
 
 message CreateChildRequest {
   string name = 1;
+  string parent_node_id = 2;
 }
 
 message CreateChildResponse {
@@ -66,5 +69,23 @@ message GroovyRequest {
 }
 
 message GroovyResponse {
+  bool success = 1;
+}
+
+message NodeColorSetRequest {
+  string node_id = 1;
+  string color = 2;
+}
+
+message NodeColorSetResponse {
+  bool success = 1;
+}
+
+message NodeBackgroundColorSetRequest {
+  string node_id = 1;
+  string color = 2;
+}
+
+message NodeBackgroundColorSetResponse {
   bool success = 1;
 }
