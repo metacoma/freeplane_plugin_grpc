@@ -11,8 +11,9 @@ import org.freeplane.features.mode.ModeController;
 import org.freeplane.features.attribute.AttributeController;
 import org.freeplane.features.map.mindmapmode.MMapController;
 
-//import org.freeplane.features.map.mindmapmode.MAttributeController;
 import org.freeplane.features.attribute.mindmapmode.MAttributeController;
+import org.freeplane.features.link.mindmapmode.MLinkController;
+import org.freeplane.features.link.LinkController;
 
 import org.freeplane.features.attribute.Attribute;
 import org.freeplane.features.attribute.NodeAttributeTableModel;
@@ -25,6 +26,7 @@ import org.freeplane.features.map.NodeBuilder;
 import org.freeplane.core.util.TextUtils;
 
 import org.freeplane.api.Attributes;
+import org.freeplane.core.util.Hyperlink;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
@@ -32,6 +34,7 @@ import io.grpc.stub.StreamObserver;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import java.net.URI;
 
 
 /*
@@ -109,6 +112,28 @@ public class GrpcRegistration {
                         } 
 
                         NodeAttributeAddResponse reply = NodeAttributeAddResponse.newBuilder().setSuccess(success).build();
+      			responseObserver.onNext(reply);
+      			responseObserver.onCompleted();
+                } 
+                @Override
+    		public void nodeLinkSet(NodeLinkSetRequest req, StreamObserver<NodeLinkSetResponse> responseObserver) {
+                        boolean success = false;
+                        final MLinkController mLinkController = (MLinkController) LinkController.getController();
+                        final MapModel map = Controller.getCurrentController().getMap();
+                        System.out.println("GRPC Freeplane::nodeLinkSet(node_id: " + req.getNodeId() + ", link:" + req.getLink() + ")"); 
+
+                        NodeModel targetNode = map.getNodeForID(req.getNodeId());
+                        if (targetNode != null) {
+                          try {
+                            URI uri = new URI(req.getLink());
+                            mLinkController.setLink(targetNode, new Hyperlink(uri));
+                            success = true;
+                          } catch(Exception e) {
+                            success = false;
+                          } 
+                        }
+
+                        NodeLinkSetResponse reply = NodeLinkSetResponse.newBuilder().setSuccess(success).build();
       			responseObserver.onNext(reply);
       			responseObserver.onCompleted();
                 } 
