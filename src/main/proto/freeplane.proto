@@ -10,6 +10,7 @@ package freeplane;
 service Freeplane {
   rpc CreateChild (CreateChildRequest) returns (CreateChildResponse) {};
   rpc DeleteChild (DeleteChildRequest) returns (DeleteChildResponse) {};
+  rpc NodeAttributeAdd (NodeAttributeAddRequest) returns (NodeAttributeAddResponse) {};
 }
 
 message CreateChildRequest {
@@ -25,5 +26,16 @@ message DeleteChildRequest {
   string node_id = 1;
 }
 message DeleteChildResponse {
+  bool success = 1;
+}
+
+
+message NodeAttributeAddRequest {
+  string node_id = 1;
+  string attribute_name = 2;
+  string attribute_value = 3;
+}
+
+message NodeAttributeAddResponse {
   bool success = 1;
 }

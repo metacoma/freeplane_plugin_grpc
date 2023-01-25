@@ -8,8 +8,14 @@ import org.freeplane.features.icon.IconController;
 import org.freeplane.features.icon.IconMouseListener;
 import org.freeplane.features.mode.ModeController;
 
+import org.freeplane.features.attribute.AttributeController;
 import org.freeplane.features.map.mindmapmode.MMapController;
 
+//import org.freeplane.features.map.mindmapmode.MAttributeController;
+import org.freeplane.features.attribute.mindmapmode.MAttributeController;
+
+import org.freeplane.features.attribute.Attribute;
+import org.freeplane.features.attribute.NodeAttributeTableModel;
 import org.freeplane.features.mode.Controller;
 import org.freeplane.features.map.MapController;
 import org.freeplane.features.map.NodeModel;
@@ -18,7 +24,7 @@ import org.freeplane.features.map.SharedNodeData;
 import org.freeplane.features.map.NodeBuilder;
 import org.freeplane.core.util.TextUtils;
 
-//import org.freeplane.api.Node;
+import org.freeplane.api.Attributes;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
@@ -89,6 +95,23 @@ public class GrpcRegistration {
       			responseObserver.onNext(reply);
       			responseObserver.onCompleted();
     		}
+                @Override
+    		public void nodeAttributeAdd(NodeAttributeAddRequest req, StreamObserver<NodeAttributeAddResponse> responseObserver) {
+                        System.out.println("GRPC Freeplane::nodeAttributeAdd(node_id: " + req.getNodeId() + ", name:" + req.getAttributeName() + ", value: " + req.getAttributeValue() + ")"); 
+                        final MapModel map = Controller.getCurrentController().getMap();
+                        boolean success = false;
+
+                        NodeModel targetNode = map.getNodeForID(req.getNodeId());
+                        if (targetNode != null) {
+                          success = true;
+                          Attribute newAttribute = new Attribute(req.getAttributeName(), req.getAttributeValue());
+                          MAttributeController.getController().addAttribute(targetNode, newAttribute);
+                        } 
+
+                        NodeAttributeAddResponse reply = NodeAttributeAddResponse.newBuilder().setSuccess(success).build();
+      			responseObserver.onNext(reply);
+      			responseObserver.onCompleted();
+                } 
   	}
 
 }
