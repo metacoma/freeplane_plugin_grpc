@@ -35,7 +35,6 @@ message DeleteChildResponse {
   bool success = 1;
 }
 
-
 message NodeAttributeAddRequest {
   string node_id = 1;
   string attribute_name = 2;
@@ -74,7 +73,11 @@ message GroovyResponse {
 
 message NodeColorSetRequest {
   string node_id = 1;
-  string color = 2;
+  // repeated color = 4 [pack=true] ?
+  int32 red = 2;
+  int32 green = 3;
+  int32 blue = 4;
+  int32 alpha = 5;
 }
 
 message NodeColorSetResponse {
@@ -83,7 +86,10 @@ message NodeColorSetResponse {
 
 message NodeBackgroundColorSetRequest {
   string node_id = 1;
-  string color = 2;
+  int32 red = 2;
+  int32 green = 3;
+  int32 blue = 4;
+  int32 alpha = 5;
 }
 
 message NodeBackgroundColorSetResponse {

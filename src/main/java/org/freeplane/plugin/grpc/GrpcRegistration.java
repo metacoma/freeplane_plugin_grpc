@@ -200,6 +200,11 @@ public class GrpcRegistration {
                         //final MLinkController mLinkController = (MLinkController) LinkController.getController();
                         final MNodeStyleController mNodeStyleController = (MNodeStyleController) NodeStyleController.getController();
                         final MapModel map = Controller.getCurrentController().getMap();
+                        final Integer red = req.getRed(); 
+                        final Integer green = req.getGreen(); 
+                        final Integer blue = req.getBlue();
+                        final Integer alpha = req.getAlpha();
+
                         System.out.println("GRPC Freeplane::nodeColorSet(node_id: " + req.getNodeId() + ", color:" + req.getColor() + ")"); 
 
                         NodeModel targetNode = map.getNodeForID(req.getNodeId());
@@ -207,7 +212,7 @@ public class GrpcRegistration {
                           try {
                             //mLinkController.setLink(targetNode, new Hyperlink(uri));
                             success = true;
-                            mNodeStyleController.setColor(targetNode, new Color(18, 18, 18, 18));
+                            mNodeStyleController.setColor(targetNode, new Color(red, green, blue, alpha));
                           } catch(Exception e) {
                             success = false;
                           } 
@@ -224,13 +229,18 @@ public class GrpcRegistration {
                         //final MLinkController mLinkController = (MLinkController) LinkController.getController();
                         final MNodeStyleController mNodeStyleController = (MNodeStyleController) NodeStyleController.getController();
                         final MapModel map = Controller.getCurrentController().getMap();
+                        final Integer red = req.getRed(); 
+                        final Integer green = req.getGreen(); 
+                        final Integer blue = req.getBlue();
+                        final Integer alpha = req.getAlpha();
+
                         System.out.println("GRPC Freeplane::nodeBackgroundColorSet(node_id: " + req.getNodeId() + ", color:" + req.getColor() + ")"); 
 
                         NodeModel targetNode = map.getNodeForID(req.getNodeId());
                         if (targetNode != null) {
                           try {
                             success = true;
-                            mNodeStyleController.setBackgroundColor(targetNode, new Color(18, 18, 18, 18));
+                            mNodeStyleController.setBackgroundColor(targetNode, new Color(red, green, blue alpha));
                           } catch(Exception e) {
                             success = false;
                           } 
