@@ -12,6 +12,7 @@ service Freeplane {
   rpc DeleteChild (DeleteChildRequest) returns (DeleteChildResponse) {};
   rpc NodeAttributeAdd (NodeAttributeAddRequest) returns (NodeAttributeAddResponse) {};
   rpc NodeLinkSet (NodeLinkSetRequest) returns (NodeLinkSetResponse) {};
+  rpc NodeDetailsSet (NodeDetailsSetRequest) returns (NodeDetailsSetResponse) {};
 }
 
 message CreateChildRequest {
@@ -47,5 +48,14 @@ message NodeLinkSetRequest {
 }
 
 message NodeLinkSetResponse {
+  bool success = 1;
+}
+
+message NodeDetailsSetRequest {
+  string node_id = 1;
+  string details = 2;
+}
+
+message NodeDetailsSetResponse {
   bool success = 1;
 }

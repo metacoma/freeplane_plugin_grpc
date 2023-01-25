@@ -13,6 +13,8 @@ import org.freeplane.features.map.mindmapmode.MMapController;
 
 import org.freeplane.features.attribute.mindmapmode.MAttributeController;
 import org.freeplane.features.link.mindmapmode.MLinkController;
+import org.freeplane.features.text.mindmapmode.MTextController;
+import org.freeplane.features.text.TextController;
 import org.freeplane.features.link.LinkController;
 
 import org.freeplane.features.attribute.Attribute;
@@ -137,6 +139,25 @@ public class GrpcRegistration {
       			responseObserver.onNext(reply);
       			responseObserver.onCompleted();
                 } 
+
+                @Override
+    		public void nodeDetailsSet(NodeDetailsSetRequest req, StreamObserver<NodeDetailsSetResponse> responseObserver) {
+                        boolean success = false;
+                        final MapModel map = Controller.getCurrentController().getMap();
+                        final MTextController mTextController = (MTextController) TextController.getController();
+                        System.out.println("GRPC Freeplane::nodeDetailsSet(node_id: " + req.getNodeId() + ", details:" + req.getDetails() + ")"); 
+
+                        NodeModel targetNode = map.getNodeForID(req.getNodeId());
+                        if (targetNode != null) {
+                            success = true;
+                            mTextController.setDetails(targetNode, req.getDetails());
+                        }
+
+                        NodeDetailsSetResponse reply = NodeDetailsSetResponse.newBuilder().setSuccess(success).build();
+      			responseObserver.onNext(reply);
+      			responseObserver.onCompleted();
+                } 
+
   	}
 
 }
