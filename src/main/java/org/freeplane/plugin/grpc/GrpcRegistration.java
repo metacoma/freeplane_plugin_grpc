@@ -29,6 +29,8 @@ import org.freeplane.core.util.TextUtils;
 
 import org.freeplane.api.Attributes;
 import org.freeplane.core.util.Hyperlink;
+//import org.freeplane.plugin.script.FormulaUtils;
+import org.freeplane.plugin.script.FormulaUtils;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
@@ -154,6 +156,22 @@ public class GrpcRegistration {
                         }
 
                         NodeDetailsSetResponse reply = NodeDetailsSetResponse.newBuilder().setSuccess(success).build();
+      			responseObserver.onNext(reply);
+      			responseObserver.onCompleted();
+                } 
+
+                @Override
+    		public void groovy(GroovyRequest req, StreamObserver<GroovyResponse> responseObserver) {
+                        boolean success = true;
+                        String groovyCode = new StringBuilder()
+                             .append("import org.freeplane.plugin.script.proxy.ScriptUtils;")
+                             .append("def c = ScriptUtils.c();")
+                             .append("def node = ScriptUtils.node();")
+                             .append(req.getGroovyCode())
+                             .toString();
+                        // TODO(@metacoma) eval groovy script
+                        System.out.println("GRPC Freeplane::groovy(" + groovyCode + ")"); 
+                        GroovyResponse reply = GroovyResponse.newBuilder().setSuccess(success).build();
       			responseObserver.onNext(reply);
       			responseObserver.onCompleted();
                 } 

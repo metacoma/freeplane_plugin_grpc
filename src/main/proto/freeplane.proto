@@ -13,6 +13,7 @@ service Freeplane {
   rpc NodeAttributeAdd (NodeAttributeAddRequest) returns (NodeAttributeAddResponse) {};
   rpc NodeLinkSet (NodeLinkSetRequest) returns (NodeLinkSetResponse) {};
   rpc NodeDetailsSet (NodeDetailsSetRequest) returns (NodeDetailsSetResponse) {};
+  rpc Groovy (GroovyRequest) returns (GroovyResponse) {};
 }
 
 message CreateChildRequest {
@@ -57,5 +58,13 @@ message NodeDetailsSetRequest {
 }
 
 message NodeDetailsSetResponse {
+  bool success = 1;
+}
+
+message GroovyRequest {
+  string groovy_code = 1;
+}
+
+message GroovyResponse {
   bool success = 1;
 }
