@@ -1,0 +1,259 @@
+{
+  "segments": [
+    {
+      "index": 1,
+      "pomodori-index": 1,
+      "type": "pomodoro",
+      "start": "2023-01-27T08:00:00.959979",
+      "end": "2023-01-27T08:25:00.959979",
+      "length": 1500
+    },
+    {
+      "index": 2,
+      "pomodori-index": 2,
+      "type": "short-break",
+      "start": "2023-01-27T08:25:00.959979",
+      "end": "2023-01-27T08:30:00.959979",
+      "length": 300
+    },
+    {
+      "index": 3,
+      "pomodori-index": 2,
+      "type": "pomodoro",
+      "start": "2023-01-27T08:30:00.959979",
+      "end": "2023-01-27T08:55:00.959979",
+      "length": 1500
+    },
+    {
+      "index": 4,
+      "pomodori-index": 3,
+      "type": "short-break",
+      "start": "2023-01-27T08:55:00.959979",
+      "end": "2023-01-27T09:00:00.959979",
+      "length": 300
+    },
+    {
+      "index": 5,
+      "pomodori-index": 3,
+      "type": "pomodoro",
+      "start": "2023-01-27T09:00:00.959979",
+      "end": "2023-01-27T09:25:00.959979",
+      "length": 1500
+    },
+    {
+      "index": 6,
+      "pomodori-index": 4,
+      "type": "short-break",
+      "start": "2023-01-27T09:25:00.959979",
+      "end": "2023-01-27T09:30:00.959979",
+      "length": 300
+    },
+    {
+      "index": 7,
+      "pomodori-index": 4,
+      "type": "pomodoro",
+      "start": "2023-01-27T09:30:00.959979",
+      "end": "2023-01-27T09:55:00.959979",
+      "length": 1500
+    },
+    {
+      "index": 8,
+      "pomodori-index": 5,
+      "type": "long-break",
+      "start": "2023-01-27T09:55:00.959979",
+      "end": "2023-01-27T10:21:00.959979",
+      "length": 1560
+    },
+    {
+      "index": 9,
+      "pomodori-index": 5,
+      "type": "pomodoro",
+      "start": "2023-01-27T10:21:00.959979",
+      "end": "2023-01-27T10:46:00.959979",
+      "length": 1500
+    },
+    {
+      "index": 10,
+      "pomodori-index": 6,
+      "type": "short-break",
+      "start": "2023-01-27T10:46:00.959979",
+      "end": "2023-01-27T10:51:00.959979",
+      "length": 300
+    },
+    {
+      "index": 11,
+      "pomodori-index": 6,
+      "type": "pomodoro",
+      "start": "2023-01-27T10:51:00.959979",
+      "end": "2023-01-27T11:16:00.959979",
+      "length": 1500
+    },
+    {
+      "index": 12,
+      "pomodori-index": 7,
+      "type": "short-break",
+      "start": "2023-01-27T11:16:00.959979",
+      "end": "2023-01-27T11:21:00.959979",
+      "length": 300
+    },
+    {
+      "index": 13,
+      "pomodori-index": 7,
+      "type": "pomodoro",
+      "start": "2023-01-27T11:21:00.959979",
+      "end": "2023-01-27T11:46:00.959979",
+      "length": 1500
+    },
+    {
+      "index": 14,
+      "pomodori-index": 8,
+      "type": "short-break",
+      "start": "2023-01-27T11:46:00.959979",
+      "end": "2023-01-27T11:51:00.959979",
+      "length": 300
+    },
+    {
+      "index": 15,
+      "pomodori-index": 8,
+      "type": "pomodoro",
+      "start": "2023-01-27T11:51:00.959979",
+      "end": "2023-01-27T12:16:00.959979",
+      "length": 1500
+    },
+    {
+      "index": 16,
+      "pomodori-index": 9,
+      "type": "long-break",
+      "start": "2023-01-27T12:16:00.959979",
+      "end": "2023-01-27T12:42:00.959979",
+      "length": 1560
+    },
+    {
+      "index": 17,
+      "pomodori-index": 9,
+      "type": "pomodoro",
+      "start": "2023-01-27T12:42:00.959979",
+      "end": "2023-01-27T13:07:00.959979",
+      "length": 1500
+    },
+    {
+      "index": 18,
+      "pomodori-index": 10,
+      "type": "short-break",
+      "start": "2023-01-27T13:07:00.959979",
+      "end": "2023-01-27T13:12:00.959979",
+      "length": 300
+    },
+    {
+      "index": 19,
+      "pomodori-index": 10,
+      "type": "pomodoro",
+      "start": "2023-01-27T13:12:00.959979",
+      "end": "2023-01-27T13:37:00.959979",
+      "length": 1500
+    },
+    {
+      "index": 20,
+      "pomodori-index": 11,
+      "type": "short-break",
+      "start": "2023-01-27T13:37:00.959979",
+      "end": "2023-01-27T13:42:00.959979",
+      "length": 300
+    },
+    {
+      "index": 21,
+      "pomodori-index": 11,
+      "type": "pomodoro",
+      "start": "2023-01-27T13:42:00.959979",
+      "end": "2023-01-27T14:07:00.959979",
+      "length": 1500
+    },
+    {
+      "index": 22,
+      "pomodori-index": 12,
+      "type": "short-break",
+      "start": "2023-01-27T14:07:00.959979",
+      "end": "2023-01-27T14:12:00.959979",
+      "length": 300
+    },
+    {
+      "index": 23,
+      "pomodori-index": 12,
+      "type": "pomodoro",
+      "start": "2023-01-27T14:12:00.959979",
+      "end": "2023-01-27T14:37:00.959979",
+      "length": 1500
+    },
+    {
+      "index": 24,
+      "pomodori-index": 13,
+      "type": "long-break",
+      "start": "2023-01-27T14:37:00.959979",
+      "end": "2023-01-27T15:03:00.959979",
+      "length": 1560
+    },
+    {
+      "index": 25,
+      "pomodori-index": 13,
+      "type": "pomodoro",
+      "start": "2023-01-27T15:03:00.959979",
+      "end": "2023-01-27T15:28:00.959979",
+      "length": 1500
+    },
+    {
+      "index": 26,
+      "pomodori-index": 14,
+      "type": "short-break",
+      "start": "2023-01-27T15:28:00.959979",
+      "end": "2023-01-27T15:33:00.959979",
+      "length": 300
+    },
+    {
+      "index": 27,
+      "pomodori-index": 14,
+      "type": "pomodoro",
+      "start": "2023-01-27T15:33:00.959979",
+      "end": "2023-01-27T15:58:00.959979",
+      "length": 1500
+    },
+    {
+      "index": 28,
+      "pomodori-index": 15,
+      "type": "short-break",
+      "start": "2023-01-27T15:58:00.959979",
+      "end": "2023-01-27T16:03:00.959979",
+      "length": 300
+    },
+    {
+      "index": 29,
+      "pomodori-index": 15,
+      "type": "pomodoro",
+      "start": "2023-01-27T16:03:00.959979",
+      "end": "2023-01-27T16:28:00.959979",
+      "length": 1500
+    },
+    {
+      "index": 30,
+      "pomodori-index": 16,
+      "type": "short-break",
+      "start": "2023-01-27T16:28:00.959979",
+      "end": "2023-01-27T16:33:00.959979",
+      "length": 300
+    },
+    {
+      "index": 31,
+      "pomodori-index": 16,
+      "type": "pomodoro",
+      "start": "2023-01-27T16:33:00.959979",
+      "end": "2023-01-27T16:58:00.959979",
+      "length": 1500
+    }
+  ],
+  "start": "2023-01-27T08:00:00.959979",
+  "end": "2023-01-27T16:58:00.959979",
+  "seconds-per-pomodoro": 1500,
+  "total-pomodori": 16,
+  "total-breaks": 15,
+  "total-rest-time": 8280,
+  "total-work-time": 24000
+}
