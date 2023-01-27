@@ -73,7 +73,7 @@ message GroovyResponse {
 
 message NodeColorSetRequest {
   string node_id = 1;
-  // repeated color = 4 [pack=true] ?
+  // TODO(@metacoma) repeated color = 4 [pack=true] ?
   int32 red = 2;
   int32 green = 3;
   int32 blue = 4;
@@ -86,6 +86,7 @@ message NodeColorSetResponse {
 
 message NodeBackgroundColorSetRequest {
   string node_id = 1;
+  // TODO(@metacoma) repeated color = 4 [pack=true] ?
   int32 red = 2;
   int32 green = 3;
   int32 blue = 4;
