@@ -1,0 +1,32 @@
+cloud {
+  compute node {
+     freeplane instance server 
+  } 
+
+  compute node 2 {
+     gRPC server
+  } 
+} 
+
+cloud.compute node 2.gRPC server <-> cloud.compute node.freeplane instance server : protobuf
+
+compute1 {
+  grpc Client 
+} 
+compute2 {
+  grpc Client 
+} 
+compute1 <-> cloud.compute node 2.gRPC server : protobuf
+compute2 <-> cloud.compute node 2.gRPC server : protobuf
+
+alice laptop {
+   freeplane
+} 
+
+bob laptop {
+   freeplane
+} 
+
+alice laptop.freeplane <-> cloud.compute node 2.gRPC server : protobuf
+bob laptop.freeplane <-> cloud.compute node 2.gRPC server : protobuf
+

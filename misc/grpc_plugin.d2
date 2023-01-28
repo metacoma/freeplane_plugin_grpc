@@ -1,0 +1,17 @@
+freeplane {
+  freeplane_plugin_grpc {
+    gRPC server
+  } 
+  mindmap1
+  mindmap2
+  mindmap3
+} 
+
+python gRPC client <-> freeplane.freeplane_plugin_grpc.gRPC server : protobuf
+ruby gRPC client <-> freeplane.freeplane_plugin_grpc.gRPC server : protobuf
+php gRPC client <-> freeplane.freeplane_plugin_grpc.gRPC server : protobuf
+javascript gRPC client <-> freeplane.freeplane_plugin_grpc.gRPC server : protobuf
+grpcurl <-> freeplane.freeplane_plugin_grpc.gRPC server : protobuf
+freeplane.freeplane_plugin_grpc <-> freeplane.mindmap1 : java freeplane API
+freeplane.freeplane_plugin_grpc <-> freeplane.mindmap2 : java freeplane API
+freeplane.freeplane_plugin_grpc <-> freeplane.mindmap3 : java freeplane API

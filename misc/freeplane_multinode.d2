@@ -1,0 +1,19 @@
+Alice's freeplane instance {
+  freeplane_plugin_grpc {
+    gRPC server
+  } 
+  Shared Mind Map
+} 
+
+Bob's freeplane instance {
+  freeplane_plugin_grpc {
+    gRPC server
+  } 
+  Shared Mind Map
+} 
+
+gRPC client <-> Alice's freeplane instance.freeplane_plugin_grpc.gRPC server : protobuf
+Alice's freeplane instance.freeplane_plugin_grpc.gRPC server -> Alice's freeplane instance.Shared Mind Map : freeplane java API
+gRPC client <-> Bob's freeplane instance.freeplane_plugin_grpc.gRPC server : protobuf
+Bob's freeplane instance.freeplane_plugin_grpc.gRPC server -> Bob's freeplane instance.Shared Mind Map : freeplane java API
+
