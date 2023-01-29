@@ -320,11 +320,11 @@ stub.status_info_set(Freeplane::StatusInfoSetRequest.new(statusInfo: "hello from
 
 **<a id="limitations">6.0. Limitations of the current implementation</a>**
 
-  * This plugin in active development and the gRPC API may be changed
+  * This plugin is under active development, and the gRPC API may change.
 
   * gRPC TCP server port 50051 is hardcoded https://github.com/metacoma/freeplane_plugin_grpc/blob/ca8f667a0f373506c579762c92ffd954ca1827c7/src/main/java/org/freeplane/plugin/grpc/GrpcRegistration.java#L59-L65
 
-  * Sometimes Freeplane throws a Java exception, [Java exception](https://github.com/metacoma/freeplane_plugin_grpc/issues/1), possibly due to race conditions or other factors.
+  * Sometimes Freeplane throws a [Java exception](https://github.com/metacoma/freeplane_plugin_grpc/issues/1), possibly due to race conditions or other factors.
 
   * gRPC groovy function have a stub and not implemented yet https://github.com/metacoma/freeplane_plugin_grpc/blob/ca8f667a0f373506c579762c92ffd954ca1827c7/src/main/java/org/freeplane/plugin/grpc/GrpcRegistration.java#L183-L196
 
