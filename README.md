@@ -101,6 +101,7 @@ $ get-pomodori --from=08:00:00 --break=5 --long-break=26 --amount 16 --json | ru
 # if you don't have get-pomodori, you can use example json data
 $ cat pomodori_example_data.json | ruby ./pomodoro.rb
 ```
+![ruby_example](https://user-images.githubusercontent.com/5146707/215350355-4e98b3db-fff1-4506-bb89-b3337e056ff8.gif)
 
 **<a id="example_python">3.2 Python example</a>**
   
@@ -116,10 +117,14 @@ $ ~/freeplane/BIN/freeplane.sh &
 $ git clone https://github.com/metacoma/freeplane_plugin_grpc 
 $ cd freeplane_plugin_grpc/grpc/python
 # if you have installed and configured awscli https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
-$ aws emr list-instances | python3 ./freeplane_ec2.py
+$ aws ec2 list-instances | python3 ./freeplane_ec2.py
 # if you don't have amazon cli tool, you can use just the example data from this repo
 $ cat ec2_list_instances.json | python3 ./freeplane_ec2.py 
 ```
+
+![python_example](https://user-images.githubusercontent.com/5146707/215350404-bef09103-90c8-4b91-9fb4-da76fb4fe24f.gif)
+
+
 
 **<a id="example_shell">3.3 Shell example</a>**
    
@@ -137,6 +142,9 @@ $ cd freeplane_plugin_grpc/grpc/shell
 # install lm_sensors package to grab gather the temperature sensor
 $ bash ./grpcurl_test.sh
 ```
+
+![shell_example](https://user-images.githubusercontent.com/5146707/215350434-89133f50-0688-4ab3-850f-8ca95edcee3d.gif)
+
 
 **<a id="how_it_works">4 How it works?</a>**
 
