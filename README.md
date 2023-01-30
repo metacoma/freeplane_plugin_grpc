@@ -157,7 +157,7 @@ $ bash ./grpcurl_test.sh
 
   ![image](https://github.com/metacoma/freeplane_plugin_grpc/blob/main/misc/grpc_plugin.png?raw=true)
 
-  At this moment, Freeplane plugin gRPC provides following API (this is part of protobuf definition, the full protobuf file you can find (here) (here)[https://github.com/metacoma/freeplane_plugin_grpc/blob/ca8f667a0f373506c579762c92ffd954ca1827c7/src/main/proto/freeplane.proto]
+  At this moment, Freeplane plugin gRPC provides following API (this is part of protobuf definition, the full protobuf file you can find  [here](https://github.com/metacoma/freeplane_plugin_grpc/blob/ca8f667a0f373506c579762c92ffd954ca1827c7/src/main/proto/freeplane.proto)
 ```
 service Freeplane {
   rpc CreateChild (CreateChildRequest) returns (CreateChildResponse) {};
@@ -175,7 +175,7 @@ service Freeplane {
 
   ![image](https://github.com/metacoma/freeplane_plugin_grpc/blob/main/misc/freeplane_multinode.png?raw=true)
   
-  And here is rough plan how i will use Freeplane and freeplane_plugin_grpc in (MindWM)[https://github.com/metacoma/mindwm]
+  And here is rough plan how i will use Freeplane and freeplane_plugin_grpc in [MindWM](https://github.com/metacoma/mindwm)
 
 
   ![image](https://github.com/metacoma/freeplane_plugin_grpc/blob/main/misc/freeplane_network.png?raw=true)
