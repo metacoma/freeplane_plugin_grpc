@@ -101,6 +101,7 @@ $ get-pomodori --from=08:00:00 --break=5 --long-break=26 --amount 16 --json | ru
 # if you don't have get-pomodori, you can use example json data
 $ cat pomodori_example_data.json | ruby ./pomodoro.rb
 ```
+![ruby_example](https://user-images.githubusercontent.com/5146707/215350355-4e98b3db-fff1-4506-bb89-b3337e056ff8.gif)
 
 **<a id="example_python">3.2 Python example</a>**
   
@@ -116,10 +117,14 @@ $ ~/freeplane/BIN/freeplane.sh &
 $ git clone https://github.com/metacoma/freeplane_plugin_grpc 
 $ cd freeplane_plugin_grpc/grpc/python
 # if you have installed and configured awscli https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
-$ aws emr list-instances | python3 ./freeplane_ec2.py
+$ aws ec2 list-instances | python3 ./freeplane_ec2.py
 # if you don't have amazon cli tool, you can use just the example data from this repo
 $ cat ec2_list_instances.json | python3 ./freeplane_ec2.py 
 ```
+
+![python_example](https://user-images.githubusercontent.com/5146707/215350404-bef09103-90c8-4b91-9fb4-da76fb4fe24f.gif)
+
+
 
 **<a id="example_shell">3.3 Shell example</a>**
    
@@ -138,6 +143,9 @@ $ cd freeplane_plugin_grpc/grpc/shell
 $ bash ./grpcurl_test.sh
 ```
 
+![shell_example](https://user-images.githubusercontent.com/5146707/215350434-89133f50-0688-4ab3-850f-8ca95edcee3d.gif)
+
+
 **<a id="how_it_works">4 How it works?</a>**
 
   The Freeplane plugin gRPC starts by launching the Freeplane instance and listens on TCP4 port 50051 to accept gRPC clients.
@@ -149,7 +157,7 @@ $ bash ./grpcurl_test.sh
 
   ![image](https://github.com/metacoma/freeplane_plugin_grpc/blob/main/misc/grpc_plugin.png?raw=true)
 
-  At this moment, Freeplane plugin gRPC provides following API (this is part of protobuf definition, the full protobuf file you can find (here) (here)[https://github.com/metacoma/freeplane_plugin_grpc/blob/ca8f667a0f373506c579762c92ffd954ca1827c7/src/main/proto/freeplane.proto]
+  At this moment, Freeplane plugin gRPC provides following API (this is part of protobuf definition, the full protobuf file you can find  [here](https://github.com/metacoma/freeplane_plugin_grpc/blob/ca8f667a0f373506c579762c92ffd954ca1827c7/src/main/proto/freeplane.proto)
 ```
 service Freeplane {
   rpc CreateChild (CreateChildRequest) returns (CreateChildResponse) {};
@@ -167,7 +175,7 @@ service Freeplane {
 
   ![image](https://github.com/metacoma/freeplane_plugin_grpc/blob/main/misc/freeplane_multinode.png?raw=true)
   
-  And here is rough plan how i will use Freeplane and freeplane_plugin_grpc in (MindWM)[https://github.com/metacoma/mindwm]
+  And here is rough plan how i will use Freeplane and freeplane_plugin_grpc in [MindWM](https://github.com/metacoma/mindwm)
 
 
   ![image](https://github.com/metacoma/freeplane_plugin_grpc/blob/main/misc/freeplane_network.png?raw=true)
@@ -312,11 +320,11 @@ stub.status_info_set(Freeplane::StatusInfoSetRequest.new(statusInfo: "hello from
 
 **<a id="limitations">6.0. Limitations of the current implementation</a>**
 
-  * This plugin in active development and the gRPC API may be changed
+  * This plugin is under active development, and the gRPC API may change.
 
   * gRPC TCP server port 50051 is hardcoded https://github.com/metacoma/freeplane_plugin_grpc/blob/ca8f667a0f373506c579762c92ffd954ca1827c7/src/main/java/org/freeplane/plugin/grpc/GrpcRegistration.java#L59-L65
 
-  * Sometimes Freeplane throws a Java exception, [Java exception](https://github.com/metacoma/freeplane_plugin_grpc/issues/1), possibly due to race conditions or other factors.
+  * Sometimes Freeplane throws a [Java exception](https://github.com/metacoma/freeplane_plugin_grpc/issues/1), possibly due to race conditions or other factors.
 
   * gRPC groovy function have a stub and not implemented yet https://github.com/metacoma/freeplane_plugin_grpc/blob/ca8f667a0f373506c579762c92ffd954ca1827c7/src/main/java/org/freeplane/plugin/grpc/GrpcRegistration.java#L183-L196
 
