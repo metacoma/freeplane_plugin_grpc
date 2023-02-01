@@ -4,6 +4,8 @@ GRPC_SERVER=127.0.0.1:50051
 GRPC_ARGS="-plaintext -proto ./freeplane.proto -format json"
 GRPC_CALL="grpcurl -plaintext -proto ./freeplane.proto -d @ ${GRPC_SERVER}"
 
+. ~/mindwm/compiled/freeplane_plugin_grpc/functions.bash
+
 createChild() {
   local name=$1
   local parent_node_id=$2

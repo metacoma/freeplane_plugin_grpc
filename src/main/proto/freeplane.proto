@@ -16,6 +16,7 @@ service Freeplane {
   rpc Groovy (GroovyRequest) returns (GroovyResponse) {};
   rpc NodeColorSet (NodeColorSetRequest) returns (NodeColorSetResponse) {};
   rpc NodeBackgroundColorSet (NodeBackgroundColorSetRequest) returns (NodeBackgroundColorSetResponse) {};
+  rpc StatusInfoSet (StatusInfoSetRequest) returns (StatusInfoSetResponse) {};
 }
 
 message CreateChildRequest {
@@ -95,4 +96,12 @@ message NodeBackgroundColorSetRequest {
 
 message NodeBackgroundColorSetResponse {
   bool success = 1;
+}
+
+message StatusInfoSetRequest {
+    string statusInfo = 1;
+}
+
+message StatusInfoSetResponse {
+    bool success = 1;
 }

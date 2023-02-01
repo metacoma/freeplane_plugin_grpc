@@ -29,6 +29,7 @@ import org.freeplane.features.map.NodeModel;
 import org.freeplane.features.map.MapModel;
 import org.freeplane.features.map.SharedNodeData;
 import org.freeplane.features.map.NodeBuilder;
+import org.freeplane.features.ui.ViewController;
 import org.freeplane.core.util.TextUtils;
 
 import org.freeplane.api.Attributes;
@@ -250,6 +251,22 @@ public class GrpcRegistration {
                         }
 
                         NodeBackgroundColorSetResponse reply = NodeBackgroundColorSetResponse.newBuilder().setSuccess(success).build();
+      			responseObserver.onNext(reply);
+      			responseObserver.onCompleted();
+                } 
+                @Override 
+    		public void statusInfoSet(StatusInfoSetRequest req, StreamObserver<StatusInfoSetResponse> responseObserver) {
+                        boolean success = false;
+                        final MapController mapController = Controller.getCurrentModeController().getMapController();
+                        final String statusInfo = req.getStatusInfo();
+                                       
+                        if (statusInfo != null && statusInfo.length() > 0) {
+                            success = true;
+                            final ViewController viewController = Controller.getCurrentController().getViewController();
+                            viewController.out(statusInfo);
+                        } 
+
+                        StatusInfoSetResponse reply = StatusInfoSetResponse.newBuilder().setSuccess(success).build();
       			responseObserver.onNext(reply);
       			responseObserver.onCompleted();
                 } 
