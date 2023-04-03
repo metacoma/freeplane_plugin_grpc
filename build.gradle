@@ -1,6 +1,6 @@
 plugins {
     id 'com.google.protobuf' version '0.8.18'
-} 
+}
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -24,11 +24,12 @@ repositories {
 dependencies {
     implementation project(':freeplane')
 
+
     lib "io.grpc:grpc-protobuf:${grpcVersion}"
     lib "io.grpc:grpc-stub:${grpcVersion}"
     lib "io.grpc:grpc-netty-shaded:${grpcVersion}"
     lib "com.google.protobuf:protobuf-java-util:${protobufVersion}"
- 
+    lib 'org.json:json:20210307'
 
     compileOnly "org.apache.tomcat:annotations-api:6.0.53"
 

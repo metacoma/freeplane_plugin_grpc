@@ -45,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.net.URI;
 
+import org.json.*;
 
 /*
 import org.freeplane.plugin.openmaps.actions.InsertGrpcAction;
@@ -53,21 +54,21 @@ import org.freeplane.plugin.openmaps.actions.ViewGrpcAction;
 */
 
 /**
- * @author Blair Archibald 
+ * @author Blair Archibald
  */
 public class GrpcRegistration {
         private Server server;
         private Integer port = 50051;
-	public GrpcRegistration(ModeController modeController) { 
+	public GrpcRegistration(ModeController modeController) {
                   try {
                   server = ServerBuilder.forPort(port)
                                   .addService(new FreeplaneImpl())
                                           .build()
                                                   .start();
                   } catch(IOException e) {
-                     System.out.println("exception"); 
-                  } 
-                System.out.println("Freeplane grpc plugin loaded and listen " + port + " port"); 
+                     System.out.println("exception");
+                  }
+                System.out.println("Freeplane grpc plugin loaded and listen " + port + " port");
 	}
  	static class FreeplaneImpl extends FreeplaneGrpc.FreeplaneImplBase {
 
@@ -80,14 +81,14 @@ public class GrpcRegistration {
                         final String parentNodeId = req.getParentNodeId();
                         final String newNodeName = req.getName();
                         CreateChildResponse reply;
-                        
-                        System.out.println("GRPC Freeplane::createChild(name: " + req.getName() + ", parent_node_id: " + req.getParentNodeId() + ")"); 
+
+                        System.out.println("GRPC Freeplane::createChild(name: " + req.getName() + ", parent_node_id: " + req.getParentNodeId() + ")");
                         NodeModel rootNode = (parentNodeId != null && parentNodeId.length() > 0) ? map.getNodeForID(parentNodeId) : mapController.getRootNode();
                         if (parentNodeId != null && parentNodeId.length() > 0) {
                           System.out.println("parentNodeId is not null");
                         } else {
                           System.out.println("parentNodeId == null");
-                        } 
+                        }
                         if (rootNode != null) {
                           NodeModel newNodeModel = mapController.newNode(newNodeName, rootNode.getMap());
                           newNodeModel.setSide(mapController.suggestNewChildSide(rootNode, NodeModel.Side.DEFAULT));
@@ -95,9 +96,9 @@ public class GrpcRegistration {
                           mmapController.insertNode(newNodeModel, rootNode, false);
       			  reply = CreateChildResponse.newBuilder().setNodeId(newNodeModel.getID()).setNodeText(newNodeModel.getText()).build();
                         } else {
-                          System.out.println("GRPC Freeplane::createChild(name: " + req.getName() + ", parent_node_id: " + req.getParentNodeId() + ") root node not found"); 
+                          System.out.println("GRPC Freeplane::createChild(name: " + req.getName() + ", parent_node_id: " + req.getParentNodeId() + ") root node not found");
       			  reply = CreateChildResponse.newBuilder().setNodeId("-1").setNodeText("").build();
-                        } 
+                        }
 
 
       			responseObserver.onNext(reply);
@@ -105,7 +106,7 @@ public class GrpcRegistration {
     		}
     		@Override
     		public void deleteChild(DeleteChildRequest req, StreamObserver<DeleteChildResponse> responseObserver) {
-                        System.out.println("GRPC Freeplane::deleteChild(" + req.getNodeId() + ")"); 
+                        System.out.println("GRPC Freeplane::deleteChild(" + req.getNodeId() + ")");
                         final MapController mapController = Controller.getCurrentModeController().getMapController();
                         final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
                         final MapModel map = Controller.getCurrentController().getMap();
@@ -124,7 +125,7 @@ public class GrpcRegistration {
                 @Override
     		public void nodeAttributeAdd(NodeAttributeAddRequest req, StreamObserver<NodeAttributeAddResponse> responseObserver) {
 
-                        System.out.println("GRPC Freeplane::nodeAttributeAdd(node_id: " + req.getNodeId() + ", name:" + req.getAttributeName() + ", value: " + req.getAttributeValue() + ")"); 
+                        System.out.println("GRPC Freeplane::nodeAttributeAdd(node_id: " + req.getNodeId() + ", name:" + req.getAttributeName() + ", value: " + req.getAttributeValue() + ")");
                         final MapModel map = Controller.getCurrentController().getMap();
                         boolean success = false;
 
@@ -133,18 +134,18 @@ public class GrpcRegistration {
                           success = true;
                           final Attribute newAttribute = new Attribute(req.getAttributeName(), req.getAttributeValue());
                           MAttributeController.getController().addAttribute(targetNode, newAttribute);
-                        } 
+                        }
 
                         NodeAttributeAddResponse reply = NodeAttributeAddResponse.newBuilder().setSuccess(success).build();
       			responseObserver.onNext(reply);
       			responseObserver.onCompleted();
-                } 
+                }
                 @Override
     		public void nodeLinkSet(NodeLinkSetRequest req, StreamObserver<NodeLinkSetResponse> responseObserver) {
                         boolean success = false;
                         final MLinkController mLinkController = (MLinkController) LinkController.getController();
                         final MapModel map = Controller.getCurrentController().getMap();
-                        System.out.println("GRPC Freeplane::nodeLinkSet(node_id: " + req.getNodeId() + ", link:" + req.getLink() + ")"); 
+                        System.out.println("GRPC Freeplane::nodeLinkSet(node_id: " + req.getNodeId() + ", link:" + req.getLink() + ")");
 
                         NodeModel targetNode = map.getNodeForID(req.getNodeId());
                         if (targetNode != null) {
@@ -154,20 +155,20 @@ public class GrpcRegistration {
                             success = true;
                           } catch(Exception e) {
                             success = false;
-                          } 
+                          }
                         }
 
                         NodeLinkSetResponse reply = NodeLinkSetResponse.newBuilder().setSuccess(success).build();
       			responseObserver.onNext(reply);
       			responseObserver.onCompleted();
-                } 
+                }
 
                 @Override
     		public void nodeDetailsSet(NodeDetailsSetRequest req, StreamObserver<NodeDetailsSetResponse> responseObserver) {
                         boolean success = false;
                         final MapModel map = Controller.getCurrentController().getMap();
                         final MTextController mTextController = (MTextController) TextController.getController();
-                        System.out.println("GRPC Freeplane::nodeDetailsSet(node_id: " + req.getNodeId() + ", details:" + req.getDetails() + ")"); 
+                        System.out.println("GRPC Freeplane::nodeDetailsSet(node_id: " + req.getNodeId() + ", details:" + req.getDetails() + ")");
 
                         NodeModel targetNode = map.getNodeForID(req.getNodeId());
                         if (targetNode != null) {
@@ -178,7 +179,7 @@ public class GrpcRegistration {
                         NodeDetailsSetResponse reply = NodeDetailsSetResponse.newBuilder().setSuccess(success).build();
       			responseObserver.onNext(reply);
       			responseObserver.onCompleted();
-                } 
+                }
 
                 @Override
     		public void groovy(GroovyRequest req, StreamObserver<GroovyResponse> responseObserver) {
@@ -190,11 +191,11 @@ public class GrpcRegistration {
                              .append(req.getGroovyCode())
                              .toString();
                         // TODO(@metacoma) eval groovy script
-                        System.out.println("GRPC Freeplane::groovy(" + groovyCode + ")"); 
+                        System.out.println("GRPC Freeplane::groovy(" + groovyCode + ")");
                         GroovyResponse reply = GroovyResponse.newBuilder().setSuccess(success).build();
       			responseObserver.onNext(reply);
       			responseObserver.onCompleted();
-                } 
+                }
 
                 @Override
     		public void nodeColorSet(NodeColorSetRequest req, StreamObserver<NodeColorSetResponse> responseObserver) {
@@ -202,12 +203,12 @@ public class GrpcRegistration {
                         //final MLinkController mLinkController = (MLinkController) LinkController.getController();
                         final MNodeStyleController mNodeStyleController = (MNodeStyleController) NodeStyleController.getController();
                         final MapModel map = Controller.getCurrentController().getMap();
-                        final Integer red = req.getRed(); 
-                        final Integer green = req.getGreen(); 
+                        final Integer red = req.getRed();
+                        final Integer green = req.getGreen();
                         final Integer blue = req.getBlue();
                         final Integer alpha = req.getAlpha();
 
-                        System.out.println("GRPC Freeplane::nodeColorSet(node_id: " + req.getNodeId() + ", color:" + red.toString() + " " + green.toString() + " " + blue.toString() + " " + alpha.toString() + ")"); 
+                        System.out.println("GRPC Freeplane::nodeColorSet(node_id: " + req.getNodeId() + ", color:" + red.toString() + " " + green.toString() + " " + blue.toString() + " " + alpha.toString() + ")");
 
 
                         NodeModel targetNode = map.getNodeForID(req.getNodeId());
@@ -218,13 +219,13 @@ public class GrpcRegistration {
                             mNodeStyleController.setColor(targetNode, new Color(red, green, blue, alpha));
                           } catch(Exception e) {
                             success = false;
-                          } 
+                          }
                         }
 
                         NodeColorSetResponse reply = NodeColorSetResponse.newBuilder().setSuccess(success).build();
       			responseObserver.onNext(reply);
       			responseObserver.onCompleted();
-                } 
+                }
 
                 @Override
     		public void nodeBackgroundColorSet(NodeBackgroundColorSetRequest req, StreamObserver<NodeBackgroundColorSetResponse> responseObserver) {
@@ -232,12 +233,12 @@ public class GrpcRegistration {
                         //final MLinkController mLinkController = (MLinkController) LinkController.getController();
                         final MNodeStyleController mNodeStyleController = (MNodeStyleController) NodeStyleController.getController();
                         final MapModel map = Controller.getCurrentController().getMap();
-                        final Integer red = req.getRed(); 
-                        final Integer green = req.getGreen(); 
+                        final Integer red = req.getRed();
+                        final Integer green = req.getGreen();
                         final Integer blue = req.getBlue();
                         final Integer alpha = req.getAlpha();
 
-                        System.out.println("GRPC Freeplane::nodeBackgroundColorSet(node_id: " + req.getNodeId() + ", color:" + red.toString() + " " + green.toString() + " " + blue.toString() + " " + alpha.toString() + ")"); 
+                        System.out.println("GRPC Freeplane::nodeBackgroundColorSet(node_id: " + req.getNodeId() + ", color:" + red.toString() + " " + green.toString() + " " + blue.toString() + " " + alpha.toString() + ")");
 
                         NodeModel targetNode = map.getNodeForID(req.getNodeId());
                         if (targetNode != null) {
@@ -247,29 +248,73 @@ public class GrpcRegistration {
                             mNodeStyleController.setBackgroundColor(targetNode, new Color(red, green, blue, alpha));
                           } catch(Exception e) {
                             success = false;
-                          } 
+                          }
                         }
 
                         NodeBackgroundColorSetResponse reply = NodeBackgroundColorSetResponse.newBuilder().setSuccess(success).build();
       			responseObserver.onNext(reply);
       			responseObserver.onCompleted();
-                } 
-                @Override 
+                }
+                @Override
     		public void statusInfoSet(StatusInfoSetRequest req, StreamObserver<StatusInfoSetResponse> responseObserver) {
                         boolean success = false;
                         final MapController mapController = Controller.getCurrentModeController().getMapController();
                         final String statusInfo = req.getStatusInfo();
-                                       
+
                         if (statusInfo != null && statusInfo.length() > 0) {
                             success = true;
                             final ViewController viewController = Controller.getCurrentController().getViewController();
                             viewController.out(statusInfo);
-                        } 
+                        }
 
                         StatusInfoSetResponse reply = StatusInfoSetResponse.newBuilder().setSuccess(success).build();
       			responseObserver.onNext(reply);
       			responseObserver.onCompleted();
-                } 
+                }
+		@Override
+		public void textFSM(TextFSMRequest req, StreamObserver<TextFSMResponse> responseObserver) {
+			final MapController mapController = Controller.getCurrentModeController().getMapController();
+			final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
+			boolean success = false;
+			int idx = 0;
+			System.out.println("GRPC Freeplane::TextFSM()");
+
+			JSONObject obj = new JSONObject(req.getJson());
+
+			String indexName = obj.getString("index");
+
+			JSONArray header = obj.getJSONArray("header");
+			System.out.println("Header: " + header.toString());
+
+			for (int i = 0; i < header.length(); i++) {
+      				String headerElement = header.getString(i);
+      				if (headerElement.equals(indexName)) {
+					idx = i;
+        				System.out.println("Match found at index " + i);
+					break;
+      				}
+    			}
+
+
+			JSONArray result = obj.getJSONArray("result");
+			System.out.println("Result: " + result.toString());
+
+			NodeModel rootNode = mapController.getRootNode();
+
+			for (int i = 0; i < result.length(); i++) {
+				JSONArray resultElement = result.getJSONArray(i);
+  				NodeModel newNodeModel = mapController.newNode(resultElement.get(idx).toString(), rootNode.getMap());
+				newNodeModel.setSide(mapController.suggestNewChildSide(rootNode, NodeModel.Side.DEFAULT));
+				newNodeModel.createID();
+  				mmapController.insertNode(newNodeModel, rootNode, false);
+			}
+
+
+
+			TextFSMResponse reply = TextFSMResponse.newBuilder().setSuccess(success).build();
+			responseObserver.onNext(reply);
+			responseObserver.onCompleted();
+		}
   	}
 
 }

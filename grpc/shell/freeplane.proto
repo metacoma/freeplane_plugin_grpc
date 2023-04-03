@@ -17,6 +17,7 @@ service Freeplane {
   rpc NodeColorSet (NodeColorSetRequest) returns (NodeColorSetResponse) {};
   rpc NodeBackgroundColorSet (NodeBackgroundColorSetRequest) returns (NodeBackgroundColorSetResponse) {};
   rpc StatusInfoSet (StatusInfoSetRequest) returns (StatusInfoSetResponse) {};
+  rpc TextFSM (TextFSMRequest) returns (TextFSMResponse) {};
 }
 
 message CreateChildRequest {
@@ -103,5 +104,13 @@ message StatusInfoSetRequest {
 }
 
 message StatusInfoSetResponse {
+    bool success = 1;
+}
+
+message TextFSMRequest {
+    string json = 1;
+}
+
+message TextFSMResponse {
     bool success = 1;
 }
