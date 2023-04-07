@@ -28,6 +28,7 @@ dependencies {
     lib "io.grpc:grpc-protobuf:${grpcVersion}"
     lib "io.grpc:grpc-stub:${grpcVersion}"
     lib "io.grpc:grpc-netty-shaded:${grpcVersion}"
+    lib "io.grpc:grpc-netty:${grpcVersion}"
     lib "com.google.protobuf:protobuf-java-util:${protobufVersion}"
     lib 'org.json:json:20210307'
 
