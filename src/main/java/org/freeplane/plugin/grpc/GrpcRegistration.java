@@ -39,11 +39,13 @@ import org.freeplane.core.util.Hyperlink;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.netty.NettyServerBuilder;
 import io.grpc.stub.StreamObserver;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.net.URI;
+import java.net.InetSocketAddress;
 
 import org.json.*;
 
@@ -58,17 +60,27 @@ import org.freeplane.plugin.openmaps.actions.ViewGrpcAction;
  */
 public class GrpcRegistration {
         private Server server;
-        private Integer port = 50051;
+
+    	private String listenAddress;
+    	private Integer bindPort;
+    	private final Integer defaultPort = 50051;
+
 	public GrpcRegistration(ModeController modeController) {
-                  try {
-                  server = ServerBuilder.forPort(port)
-                                  .addService(new FreeplaneImpl())
-                                          .build()
-                                                  .start();
+		listenAddress = System.getenv("GRPC_LISTEN_ADDR");
+		String portStr = System.getenv("GRPC_LISTEN_PORT");
+
+		bindPort = (portStr != null && portStr.isEmpty() == false) ? Integer.parseInt(portStr) : defaultPort;
+
+  		if (listenAddress == null || listenAddress.isEmpty()) {
+            		listenAddress = "0.0.0.0";
+        	}
+
+                try {
+      			server = NettyServerBuilder.forAddress(new InetSocketAddress(listenAddress, bindPort)) .addService(new FreeplaneImpl()).build().start();
                   } catch(IOException e) {
                      System.out.println("exception");
                   }
-                System.out.println("Freeplane grpc plugin loaded and listen " + port + " port");
+                System.out.println("Freeplane grpc plugin loaded and listen on " + listenAddress + ":" + bindPort);
 	}
  	static class FreeplaneImpl extends FreeplaneGrpc.FreeplaneImplBase {
 
@@ -303,10 +315,22 @@ public class GrpcRegistration {
 
 			for (int i = 0; i < result.length(); i++) {
 				JSONArray resultElement = result.getJSONArray(i);
+
   				NodeModel newNodeModel = mapController.newNode(resultElement.get(idx).toString(), rootNode.getMap());
 				newNodeModel.setSide(mapController.suggestNewChildSide(rootNode, NodeModel.Side.DEFAULT));
 				newNodeModel.createID();
   				mmapController.insertNode(newNodeModel, rootNode, false);
+
+				for (int j = 0; j < resultElement.length(); j++) {
+					Attribute newAttribute = new Attribute(header.getString(j), resultElement.get(j).toString());
+					MAttributeController.getController().addAttribute(newNodeModel, newAttribute);
+				}
+
+				/*
+				Attribute newAttribute = new Attribute(header.getString(i), resultElement.);
+				MAttributeController.getController().addAttribute(targetNode, newAttribute);
+				*/
+
 			}
 
 
