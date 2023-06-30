@@ -18,6 +18,7 @@ service Freeplane {
   rpc NodeBackgroundColorSet (NodeBackgroundColorSetRequest) returns (NodeBackgroundColorSetResponse) {};
   rpc StatusInfoSet (StatusInfoSetRequest) returns (StatusInfoSetResponse) {};
   rpc TextFSM (TextFSMRequest) returns (TextFSMResponse) {};
+  rpc MindMapFromJSON (MindMapFromJSONRequest) returns (MindMapFromJSONResponse) {};
 }
 
 message CreateChildRequest {
@@ -112,5 +113,12 @@ message TextFSMRequest {
 }
 
 message TextFSMResponse {
+    bool success = 1;
+}
+message MindMapFromJSONRequest {
+    string json = 1;
+}
+
+message MindMapFromJSONResponse {
     bool success = 1;
 }
