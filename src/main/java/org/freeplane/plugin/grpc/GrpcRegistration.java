@@ -339,6 +339,55 @@ public class GrpcRegistration {
 			responseObserver.onNext(reply);
 			responseObserver.onCompleted();
 		}
+
+		private static void recursiveJSONLoop(JSONObject jsonObject,NodeModel parentNode) {
+	    	    final MapController mapController = Controller.getCurrentModeController().getMapController();
+		    final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
+		    for (String key : jsonObject.keySet()) {
+			Object value = jsonObject.get(key);
+
+			System.out.println("GRPC recursiveJSONLoop, key " + key);
+
+			NodeModel newNodeModel = mapController.newNode(key, parentNode.getMap());
+			newNodeModel.setSide(mapController.suggestNewChildSide(parentNode, NodeModel.Side.DEFAULT));
+			newNodeModel.createID();
+			mmapController.insertNode(newNodeModel, parentNode, false);
+
+			if (value instanceof JSONObject) {
+			    // Nested object, recursively iterate
+			    recursiveJSONLoop((JSONObject) value, newNodeModel);
+			} else if (value instanceof JSONArray) {
+			    // Array of objects, iterate over each object
+			    JSONArray jsonArray = (JSONArray) value;
+			    for (int i = 0; i < jsonArray.length(); i++) {
+				Object arrayElement = jsonArray.get(i);
+				if (arrayElement instanceof JSONObject) {
+				    recursiveJSONLoop((JSONObject) arrayElement, newNodeModel);
+				}
+			    }
+			} else {
+			    // Leaf node, do something with the value
+			    System.out.println("Key: " + key + ", Value: " + value);
+			}
+		    }
+		}
+
+		@Override
+		public void mindMapFromJSON(MindMapFromJSONRequest req, StreamObserver<MindMapFromJSONResponse> responseObserver) {
+			final MapController mapController = Controller.getCurrentModeController().getMapController();
+			final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
+			boolean success = false;
+			System.out.println("GRPC Freeplane::MindMapFromJSON()");
+
+			NodeModel rootNode = mapController.getRootNode();
+
+			JSONObject obj = new JSONObject(req.getJson());
+			recursiveJSONLoop(obj, rootNode);
+
+			MindMapFromJSONResponse reply = MindMapFromJSONResponse.newBuilder().setSuccess(success).build();
+			responseObserver.onNext(reply);
+			responseObserver.onCompleted();
+		}
   	}
 
 }
