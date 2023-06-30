@@ -5,6 +5,7 @@ package org.freeplane.plugin.grpc;
 //
 import java.awt.Color;
 
+import org.freeplane.view.swing.features.FitToPage;
 import org.freeplane.features.icon.IconClickedEvent;
 import org.freeplane.features.icon.IconController;
 import org.freeplane.features.icon.IconMouseListener;
@@ -13,6 +14,7 @@ import org.freeplane.features.mode.ModeController;
 import org.freeplane.features.attribute.AttributeController;
 import org.freeplane.features.map.mindmapmode.MMapController;
 
+import org.freeplane.features.attribute.mindmapmode.AttributeUtilities;
 import org.freeplane.features.attribute.mindmapmode.MAttributeController;
 import org.freeplane.features.nodestyle.mindmapmode.MNodeStyleController;
 import org.freeplane.features.nodestyle.NodeStyleController;
@@ -348,18 +350,23 @@ public class GrpcRegistration {
 
 			System.out.println("GRPC recursiveJSONLoop, key " + key);
 
-			NodeModel newNodeModel = mapController.newNode(key, parentNode.getMap());
-			newNodeModel.setSide(mapController.suggestNewChildSide(parentNode, NodeModel.Side.DEFAULT));
-			newNodeModel.createID();
-			mmapController.insertNode(newNodeModel, parentNode, false);
 
 			if (value instanceof JSONObject) {
 			    // Nested object, recursively iterate
+			    NodeModel newNodeModel = mapController.newNode(key, parentNode.getMap());
+			    newNodeModel.setSide(mapController.suggestNewChildSide(parentNode, NodeModel.Side.DEFAULT));
+			    newNodeModel.createID();
+			    mmapController.insertNode(newNodeModel, parentNode, false);
 			    recursiveJSONLoop((JSONObject) value, newNodeModel);
 			} else if (value instanceof JSONArray) {
 			    // Array of objects, iterate over each object
 			    JSONArray jsonArray = (JSONArray) value;
+
 			    for (int i = 0; i < jsonArray.length(); i++) {
+				NodeModel newNodeModel = mapController.newNode(Integer.toString(i), parentNode.getMap());
+				newNodeModel.setSide(mapController.suggestNewChildSide(parentNode, NodeModel.Side.DEFAULT));
+				newNodeModel.createID();
+				mmapController.insertNode(newNodeModel, parentNode, false);
 				Object arrayElement = jsonArray.get(i);
 				if (arrayElement instanceof JSONObject) {
 				    recursiveJSONLoop((JSONObject) arrayElement, newNodeModel);
@@ -368,6 +375,8 @@ public class GrpcRegistration {
 			} else {
 			    // Leaf node, do something with the value
 			    System.out.println("Key: " + key + ", Value: " + value);
+			    Attribute newAttribute = new Attribute(key, value);
+		     	    MAttributeController.getController().addAttribute(parentNode, newAttribute);
 			}
 		    }
 		}
@@ -379,7 +388,20 @@ public class GrpcRegistration {
 			boolean success = false;
 			System.out.println("GRPC Freeplane::MindMapFromJSON()");
 
+			// "Refresh" json canvas
 			NodeModel rootNode = mapController.getRootNode();
+			mmapController.deleteNodes(rootNode.getChildren());
+
+
+               		final AttributeUtilities atrUtil = new AttributeUtilities();
+                  	if (atrUtil.hasAttributes(rootNode)) {
+                          final NodeAttributeTableModel natm = NodeAttributeTableModel.getModel(rootNode);
+                          final int j = natm.getRowCount();
+                          for (int i = 0; i < j; i++) {
+                                  AttributeController.getController().performRemoveRow(rootNode, natm, 0);
+                          }
+                  	}
+
 
 			JSONObject obj = new JSONObject(req.getJson());
 			recursiveJSONLoop(obj, rootNode);

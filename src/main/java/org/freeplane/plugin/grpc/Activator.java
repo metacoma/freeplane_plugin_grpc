@@ -10,7 +10,7 @@ import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
 /**
- * @author Blair Archibald 
+ * @author Blair Archibald
  */
 public class Activator implements BundleActivator {
 
@@ -22,7 +22,7 @@ public class Activator implements BundleActivator {
 			    }
 		    }, getProperties());
 	}
-	
+
 	private Hashtable<String, String[]> getProperties() {
 		final Hashtable<String, String[]> properties = new Hashtable<String, String[]>();
 		properties.put("mode", new String[] { MModeController.MODENAME });
