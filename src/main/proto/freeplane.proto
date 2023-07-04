@@ -19,6 +19,7 @@ service Freeplane {
   rpc StatusInfoSet (StatusInfoSetRequest) returns (StatusInfoSetResponse) {};
   rpc TextFSM (TextFSMRequest) returns (TextFSMResponse) {};
   rpc MindMapFromJSON (MindMapFromJSONRequest) returns (MindMapFromJSONResponse) {};
+  rpc MindMapToJSON (MindMapToJSONRequest) returns (MindMapToJSONResponse) {};
 }
 
 message CreateChildRequest {
@@ -115,10 +116,19 @@ message TextFSMRequest {
 message TextFSMResponse {
     bool success = 1;
 }
+
 message MindMapFromJSONRequest {
     string json = 1;
 }
 
 message MindMapFromJSONResponse {
     bool success = 1;
+}
+
+message MindMapToJSONRequest {
+}
+
+message MindMapToJSONResponse {
+    bool success = 1;
+    string json = 2;
 }
