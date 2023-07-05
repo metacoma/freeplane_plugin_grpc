@@ -59,6 +59,10 @@ import java.util.Map;
 import java.util.HashMap;
 import java.net.URI;
 import java.net.InetSocketAddress;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
 
 import org.json.*;
 
@@ -392,7 +396,6 @@ public class GrpcRegistration {
 		    }
 		}
 
-// START
 		@Override
 		public void mindMapFromJSON(MindMapFromJSONRequest req, StreamObserver<MindMapFromJSONResponse> responseObserver) {
 			final MapController mapController = Controller.getCurrentModeController().getMapController();
@@ -422,9 +425,16 @@ public class GrpcRegistration {
 			responseObserver.onNext(reply);
 			responseObserver.onCompleted();
 		}
-// END
+		private static String bodyText(String html) {
+        		// Parse HTML using Jsoup
+        		Document document = Jsoup.parse(html);
 
-// START
+        		// Extract printable text from HTML
+        		Element bodyElement = document.body();
+        		String printableText = bodyElement.text();
+
+        		return printableText;
+    		}
 		private void nodeWalk(Map<String, Object> map, NodeModel node) {
               		NodeModel[] children = node.getChildren().toArray(new NodeModel[] {});
 			if (children.length > 0) {
@@ -450,10 +460,10 @@ public class GrpcRegistration {
 				}
 			}
 			if (DetailModel.getDetail(node) != null) {
-		  	   map.put("detail", DetailModel.getDetailText(node));
+		  	   map.put("detail", bodyText(DetailModel.getDetailText(node)));
 			}
 			if (NoteModel.getNoteText(node) != null) {
-		   	   map.put("note", NoteModel.getNoteText(node));
+		   	   map.put("note", bodyText(NoteModel.getNoteText(node)));
 			}
                 }
 
@@ -463,39 +473,15 @@ public class GrpcRegistration {
 			boolean success = false;
 			final NodeModel rootNode = mapController.getRootNode();
 			Map<String, Object> result = new HashMap<>();
-/*
-			ObjectMapper om = new ObjectMapper();
- 			om.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
-			ObjectWriter ow = om.writer().withDefaultPrettyPrinter();
-			String json = "";
-try {
-	json = ow.writeValueAsString(rootNode.getChildren());
-} catch (JsonProcessingException e) {
-    throw new RuntimeException(e);
-}
-*/
 
 			final Gson gson = new Gson();
 
-			//String json = "";
-			/*
-			ObjectMapper objectMapper = new ObjectMapper();
-			try {
-    				json = objectMapper.writeValueAsString(rootNode);
-				success = true;
-			} catch (JsonProcessingException e) {
-    				// Handle the exception appropriately
-    				e.printStackTrace();
-			}
-			json = objectMapper.writeValueAsString(rootNode);
-			*/
 			nodeWalk(result, rootNode);
 			System.out.println("GRPC Freeplane::MindMapToJSON()");
 			MindMapToJSONResponse reply = MindMapToJSONResponse.newBuilder().setSuccess(success).setJson(gson.toJson(result)).build();
 			responseObserver.onNext(reply);
 			responseObserver.onCompleted();
        		}
-// END
        }
 
 
