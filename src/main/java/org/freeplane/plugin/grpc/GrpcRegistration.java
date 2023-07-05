@@ -5,6 +5,13 @@ package org.freeplane.plugin.grpc;
 //
 import java.awt.Color;
 
+import com.google.gson.Gson;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+
 import org.freeplane.view.swing.features.FitToPage;
 import org.freeplane.features.icon.IconClickedEvent;
 import org.freeplane.features.icon.IconController;
@@ -21,7 +28,9 @@ import org.freeplane.features.nodestyle.NodeStyleController;
 import org.freeplane.features.link.mindmapmode.MLinkController;
 import org.freeplane.features.text.mindmapmode.MTextController;
 import org.freeplane.features.text.TextController;
+import org.freeplane.features.text.DetailModel;
 import org.freeplane.features.link.LinkController;
+import org.freeplane.features.note.NoteModel;
 
 import org.freeplane.features.attribute.Attribute;
 import org.freeplane.features.attribute.NodeAttributeTableModel;
@@ -46,8 +55,14 @@ import io.grpc.stub.StreamObserver;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import java.util.Map;
+import java.util.HashMap;
 import java.net.URI;
 import java.net.InetSocketAddress;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
 
 import org.json.*;
 
@@ -410,6 +425,64 @@ public class GrpcRegistration {
 			responseObserver.onNext(reply);
 			responseObserver.onCompleted();
 		}
-  	}
+		private static String bodyText(String html) {
+        		// Parse HTML using Jsoup
+        		Document document = Jsoup.parse(html);
+
+        		// Extract printable text from HTML
+        		Element bodyElement = document.body();
+        		String printableText = bodyElement.text();
+
+        		return printableText;
+    		}
+		private void nodeWalk(Map<String, Object> map, NodeModel node) {
+              		NodeModel[] children = node.getChildren().toArray(new NodeModel[] {});
+			if (children.length > 0) {
+				Map<String, Object> childsMap = new HashMap<>();
+                  		for (final NodeModel child : children) {
+			  		System.out.println(node.getUserObject() + " -> " + child.getUserObject());
+					Map<String, Object> childMap = new HashMap<>();
+					childsMap.put(child.getUserObject().toString(), childMap);
+                          		nodeWalk(childMap, child);
+
+                  		}
+				map.put("children", childsMap);
+			}
+			final AttributeUtilities atrUtil = new AttributeUtilities();
+			if (atrUtil.hasAttributes(node)) {
+				Map<String, Object> attr_map = new HashMap<>();
+				map.put("attributes", attr_map);
+				NodeAttributeTableModel natm = NodeAttributeTableModel.getModel(node);
+				for (int i = 0; i < natm.getRowCount(); i++) {
+					Attribute attr = natm.getAttribute(i);
+					attr_map.put(attr.getName(), attr.getValue().toString());
+					System.out.println("Attribute " + attr.getName().toString());
+				}
+			}
+			if (DetailModel.getDetail(node) != null) {
+		  	   map.put("detail", bodyText(DetailModel.getDetailText(node)));
+			}
+			if (NoteModel.getNoteText(node) != null) {
+		   	   map.put("note", bodyText(NoteModel.getNoteText(node)));
+			}
+                }
+
+		@Override
+		public void mindMapToJSON(MindMapToJSONRequest req, StreamObserver<MindMapToJSONResponse> responseObserver) /*throws JsonProcessingException*/ {
+			final MapController mapController = Controller.getCurrentModeController().getMapController();
+			boolean success = false;
+			final NodeModel rootNode = mapController.getRootNode();
+			Map<String, Object> result = new HashMap<>();
+
+			final Gson gson = new Gson();
+
+			nodeWalk(result, rootNode);
+			System.out.println("GRPC Freeplane::MindMapToJSON()");
+			MindMapToJSONResponse reply = MindMapToJSONResponse.newBuilder().setSuccess(success).setJson(gson.toJson(result)).build();
+			responseObserver.onNext(reply);
+			responseObserver.onCompleted();
+       		}
+       }
+
 
 }

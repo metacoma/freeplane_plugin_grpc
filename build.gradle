@@ -31,6 +31,9 @@ dependencies {
     lib "io.grpc:grpc-netty:${grpcVersion}"
     lib "com.google.protobuf:protobuf-java-util:${protobufVersion}"
     lib 'org.json:json:20210307'
+    lib 'com.google.code.gson:gson:2.10.1'
+    lib 'com.fasterxml.jackson.core:jackson-databind:2.12.5'
+    lib 'org.jsoup:jsoup:1.13.1'
 
     compileOnly "org.apache.tomcat:annotations-api:6.0.53"
 
