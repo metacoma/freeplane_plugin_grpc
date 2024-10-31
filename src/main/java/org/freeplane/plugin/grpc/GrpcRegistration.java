@@ -358,42 +358,49 @@ public class GrpcRegistration {
 		}
 
 		private static void recursiveJSONLoop(JSONObject jsonObject,NodeModel parentNode) {
-	    	    final MapController mapController = Controller.getCurrentModeController().getMapController();
+	    	final MapController mapController = Controller.getCurrentModeController().getMapController();
 		    final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
+        final MTextController mTextController = (MTextController) TextController.getController();
 		    for (String key : jsonObject.keySet()) {
-			Object value = jsonObject.get(key);
+			    Object value = jsonObject.get(key);
 
-			System.out.println("GRPC recursiveJSONLoop, key " + key);
+			    System.out.println("GRPC recursiveJSONLoop, key " + key);
 
 
-			if (value instanceof JSONObject) {
-			    // Nested object, recursively iterate
-			    NodeModel newNodeModel = mapController.newNode(key, parentNode.getMap());
-			    newNodeModel.setSide(mapController.suggestNewChildSide(parentNode, NodeModel.Side.DEFAULT));
-			    newNodeModel.createID();
-			    mmapController.insertNode(newNodeModel, parentNode, false);
-			    recursiveJSONLoop((JSONObject) value, newNodeModel);
-			} else if (value instanceof JSONArray) {
-			    // Array of objects, iterate over each object
-			    JSONArray jsonArray = (JSONArray) value;
+          if (value instanceof JSONObject) {
+              // Nested object, recursively iterate
+              NodeModel newNodeModel = mapController.newNode(key, parentNode.getMap());
+              newNodeModel.setSide(mapController.suggestNewChildSide(parentNode, NodeModel.Side.DEFAULT));
+              newNodeModel.createID();
+              mmapController.insertNode(newNodeModel, parentNode, false);
+              recursiveJSONLoop((JSONObject) value, newNodeModel);
+          } else if (value instanceof JSONArray) {
+              // Array of objects, iterate over each object
+              JSONArray jsonArray = (JSONArray) value;
 
-			    for (int i = 0; i < jsonArray.length(); i++) {
-				NodeModel newNodeModel = mapController.newNode(Integer.toString(i), parentNode.getMap());
-				newNodeModel.setSide(mapController.suggestNewChildSide(parentNode, NodeModel.Side.DEFAULT));
-				newNodeModel.createID();
-				mmapController.insertNode(newNodeModel, parentNode, false);
-				Object arrayElement = jsonArray.get(i);
-				if (arrayElement instanceof JSONObject) {
-				    recursiveJSONLoop((JSONObject) arrayElement, newNodeModel);
-				}
-			    }
-			} else {
-			    // Leaf node, do something with the value
-			    System.out.println("Key: " + key + ", Value: " + value);
-			    Attribute newAttribute = new Attribute(key, value);
-		     	    MAttributeController.getController().addAttribute(parentNode, newAttribute);
-			}
-		    }
+              for (int i = 0; i < jsonArray.length(); i++) {
+                  NodeModel newNodeModel = mapController.newNode(Integer.toString(i), parentNode.getMap());
+                  newNodeModel.setSide(mapController.suggestNewChildSide(parentNode, NodeModel.Side.DEFAULT));
+                  newNodeModel.createID();
+                  mmapController.insertNode(newNodeModel, parentNode, false);
+                  Object arrayElement = jsonArray.get(i);
+                  if (arrayElement instanceof JSONObject) {
+                      recursiveJSONLoop((JSONObject) arrayElement, newNodeModel);
+                  }
+              }
+          } else {
+              if (key.equals("detail")) {
+                System.out.println("detail");
+                System.out.println("XXX Key: " + key + ", Value: " + value);
+                mTextController.setDetails(parentNode, value.toString());
+                //mTextController.setDetails(parentNode, "XXX");
+              } else {
+                System.out.println("AAA Key: " + key + ", Value: " + value);
+                Attribute newAttribute = new Attribute(key, value);
+                MAttributeController.getController().addAttribute(parentNode, newAttribute);
+              }
+          }
+        }
 		}
 
 		@Override
