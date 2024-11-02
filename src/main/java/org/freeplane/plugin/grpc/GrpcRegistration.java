@@ -27,6 +27,7 @@ import org.freeplane.features.nodestyle.mindmapmode.MNodeStyleController;
 import org.freeplane.features.nodestyle.NodeStyleController;
 import org.freeplane.features.link.mindmapmode.MLinkController;
 import org.freeplane.features.text.mindmapmode.MTextController;
+import org.freeplane.features.note.mindmapmode.MNoteController;
 import org.freeplane.features.text.TextController;
 import org.freeplane.features.text.DetailModel;
 import org.freeplane.features.link.LinkController;
@@ -66,15 +67,9 @@ import org.jsoup.nodes.Element;
 
 import org.json.*;
 
-/*
-import org.freeplane.plugin.openmaps.actions.InsertGrpcAction;
-import org.freeplane.plugin.openmaps.actions.RemoveGrpcAction;
-import org.freeplane.plugin.openmaps.actions.ViewGrpcAction;
-*/
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-/**
- * @author Blair Archibald
- */
 public class GrpcRegistration {
         private Server server;
 
@@ -316,13 +311,13 @@ public class GrpcRegistration {
 			System.out.println("Header: " + header.toString());
 
 			for (int i = 0; i < header.length(); i++) {
-      				String headerElement = header.getString(i);
-      				if (headerElement.equals(indexName)) {
-					idx = i;
-        				System.out.println("Match found at index " + i);
-					break;
-      				}
-    			}
+        String headerElement = header.getString(i);
+        if (headerElement.equals(indexName)) {
+          idx = i;
+          System.out.println("Match found at index " + i);
+          break;
+        }
+    	}
 
 
 			JSONArray result = obj.getJSONArray("result");
@@ -342,12 +337,6 @@ public class GrpcRegistration {
 					Attribute newAttribute = new Attribute(header.getString(j), resultElement.get(j).toString());
 					MAttributeController.getController().addAttribute(newNodeModel, newAttribute);
 				}
-
-				/*
-				Attribute newAttribute = new Attribute(header.getString(i), resultElement.);
-				MAttributeController.getController().addAttribute(targetNode, newAttribute);
-				*/
-
 			}
 
 
@@ -361,6 +350,9 @@ public class GrpcRegistration {
 	    	final MapController mapController = Controller.getCurrentModeController().getMapController();
 		    final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
         final MTextController mTextController = (MTextController) TextController.getController();
+        final MLinkController mLinkController = (MLinkController) LinkController.getController();
+        final MNodeStyleController mNodeStyleController = (MNodeStyleController) NodeStyleController.getController();
+		    final MNoteController mNoteController = MNoteController.getController();
 		    for (String key : jsonObject.keySet()) {
 			    Object value = jsonObject.get(key);
 
@@ -390,12 +382,30 @@ public class GrpcRegistration {
               }
           } else {
               if (key.equals("detail")) {
-                System.out.println("detail");
-                System.out.println("XXX Key: " + key + ", Value: " + value);
                 mTextController.setDetails(parentNode, value.toString());
-                //mTextController.setDetails(parentNode, "XXX");
+              } else if (key.equals("link")) { 
+                try {
+                  URI uri = new URI(value.toString());
+                  mLinkController.setLink(parentNode, new Hyperlink(uri));
+                } catch(Exception e) {
+                }
+              } else if (key.equals("note")) { 
+                mNoteController.setNoteText(parentNode, value.toString());
+              } else if (key.equals("color")) { 
+                int[] rgba = new int[4];
+                Pattern pattern = Pattern.compile("(\\d+)");
+                Matcher matcher = pattern.matcher(value.toString());
+
+                int index = 0;
+                while (matcher.find() && index < 4) {
+                    rgba[index++] = Integer.parseInt(matcher.group());
+                }
+
+                if (index < 4) {
+                    throw new IllegalArgumentException("Input string does not contain exactly four numeric values.");
+                }
+                mNodeStyleController.setBackgroundColor(parentNode, new Color(rgba[0], rgba[1], rgba[2], rgba[3]));
               } else {
-                System.out.println("AAA Key: " + key + ", Value: " + value);
                 Attribute newAttribute = new Attribute(key, value);
                 MAttributeController.getController().addAttribute(parentNode, newAttribute);
               }
@@ -412,17 +422,17 @@ public class GrpcRegistration {
 
 			// "Refresh" json canvas
 			NodeModel rootNode = mapController.getRootNode();
-			mmapController.deleteNodes(rootNode.getChildren());
+			//mmapController.deleteNodes(rootNode.getChildren());
 
 
-               		final AttributeUtilities atrUtil = new AttributeUtilities();
-                  	if (atrUtil.hasAttributes(rootNode)) {
-                          final NodeAttributeTableModel natm = NodeAttributeTableModel.getModel(rootNode);
-                          final int j = natm.getRowCount();
-                          for (int i = 0; i < j; i++) {
-                                  AttributeController.getController().performRemoveRow(rootNode, natm, 0);
-                          }
-                  	}
+      final AttributeUtilities atrUtil = new AttributeUtilities();
+        if (atrUtil.hasAttributes(rootNode)) {
+              final NodeAttributeTableModel natm = NodeAttributeTableModel.getModel(rootNode);
+              final int j = natm.getRowCount();
+              for (int i = 0; i < j; i++) {
+                      AttributeController.getController().performRemoveRow(rootNode, natm, 0);
+              }
+        }
 
 
 			JSONObject obj = new JSONObject(req.getJson());
