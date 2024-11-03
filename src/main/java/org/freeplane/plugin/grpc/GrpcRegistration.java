@@ -335,7 +335,12 @@ public class GrpcRegistration {
 
 				for (int j = 0; j < resultElement.length(); j++) {
 					Attribute newAttribute = new Attribute(header.getString(j), resultElement.get(j).toString());
-					MAttributeController.getController().addAttribute(newNodeModel, newAttribute);
+          try {
+					  MAttributeController.getController().addAttribute(newNodeModel, newAttribute);
+          } catch(Exception e) {
+            // sometimes this  happens
+            // https://github.com/metacoma/freeplane_plugin_grpc/issues/1
+          }
 				}
 			}
 
@@ -353,6 +358,8 @@ public class GrpcRegistration {
         final MLinkController mLinkController = (MLinkController) LinkController.getController();
         final MNodeStyleController mNodeStyleController = (MNodeStyleController) NodeStyleController.getController();
 		    final MNoteController mNoteController = MNoteController.getController();
+        final MAttributeController mAttributeController = MAttributeController.getController();
+
 		    for (String key : jsonObject.keySet()) {
 			    Object value = jsonObject.get(key);
 
@@ -407,7 +414,13 @@ public class GrpcRegistration {
                 mNodeStyleController.setBackgroundColor(parentNode, new Color(rgba[0], rgba[1], rgba[2], rgba[3]));
               } else {
                 Attribute newAttribute = new Attribute(key, value);
-                MAttributeController.getController().addAttribute(parentNode, newAttribute);
+                try {
+                  mAttributeController.addAttribute(parentNode, newAttribute);
+                } catch(Exception e) {
+                  // sometimes this  happens
+                  // https://github.com/metacoma/freeplane_plugin_grpc/issues/1
+			            System.out.println("addAttribute fails");
+                }
               }
           }
         }
