@@ -41,6 +41,7 @@ import org.freeplane.features.map.NodeModel;
 import org.freeplane.features.map.MapModel;
 import org.freeplane.features.map.SharedNodeData;
 import org.freeplane.features.map.NodeBuilder;
+import org.freeplane.features.map.IMapSelection;
 import org.freeplane.features.ui.ViewController;
 import org.freeplane.core.util.TextUtils;
 
@@ -432,9 +433,12 @@ public class GrpcRegistration {
 			final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
 			boolean success = false;
 			System.out.println("GRPC Freeplane::MindMapFromJSON()");
+      final String insert_mode_key = "_fp_import_root_node";
+
+      final IMapSelection selection = Controller.getCurrentController().getSelection();
+			NodeModel rootNode = selection.getSelected();
 
 			// "Refresh" json canvas
-			NodeModel rootNode = mapController.getRootNode();
 			//mmapController.deleteNodes(rootNode.getChildren());
 
 
@@ -449,6 +453,13 @@ public class GrpcRegistration {
 
 
 			JSONObject obj = new JSONObject(req.getJson());
+      if (obj.has(insert_mode_key)) {
+        if ("root".equals(obj.getString(insert_mode_key))) {
+			    rootNode = mapController.getRootNode();
+        }
+        obj.remove(insert_mode_key);
+      }
+      
 			recursiveJSONLoop(obj, rootNode);
 
 			MindMapFromJSONResponse reply = MindMapFromJSONResponse.newBuilder().setSuccess(success).build();

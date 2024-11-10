@@ -29,7 +29,7 @@ EOF
 } 
 
 JsonToString() {
-    jq | jq -c '@json'
+    jq | jq '. + {"_fp_insert_root_node": "root"}' | jq -c '@json'
 } 
 
 MindMapFromJson() {
