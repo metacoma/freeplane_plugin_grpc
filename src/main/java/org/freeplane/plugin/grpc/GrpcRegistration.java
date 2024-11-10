@@ -456,12 +456,15 @@ public class GrpcRegistration {
 			responseObserver.onCompleted();
 		}
 		private static String bodyText(String html) {
-        		// Parse HTML using Jsoup
-        		Document document = Jsoup.parse(html);
-
-        		// Extract printable text from HTML
-        		Element bodyElement = document.body();
-        		String printableText = bodyElement.text();
+        		String printableText = "";
+            try {
+        		  Document document = Jsoup.parse(html);
+        		  Element bodyElement = document.body();
+        		  printableText = bodyElement.text();
+            } catch(java.lang.NullPointerException e) {
+              // known issue https://github.com/metacoma/freeplane_plugin_grpc/issues/10
+              System.out.println("BodyText exception");
+            }
 
         		return printableText;
     		}
