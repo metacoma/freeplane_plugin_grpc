@@ -486,20 +486,17 @@ public class GrpcRegistration {
                 for (final NodeModel child : children) {
                     System.out.println(node.getUserObject() + " -> " + child.getUserObject());
                     Map<String, Object> childMap = new HashMap<>();
-                    childsMap.put(child.getUserObject().toString(), childMap);
+                    map.put(child.getUserObject().toString(), childMap);
                     nodeWalk(childMap, child);
-
                 }
-                map.put("children", childsMap);
+                map.put(node.getUserObject().toString(), childsMap);
             }
             final AttributeUtilities atrUtil = new AttributeUtilities();
             if (atrUtil.hasAttributes(node)) {
-                Map<String, Object> attr_map = new HashMap<>();
-                map.put("attributes", attr_map);
                 NodeAttributeTableModel natm = NodeAttributeTableModel.getModel(node);
                 for (int i = 0; i < natm.getRowCount(); i++) {
                     Attribute attr = natm.getAttribute(i);
-                    attr_map.put(attr.getName(), attr.getValue().toString());
+                    map.put(attr.getName(), attr.getValue().toString());
                     System.out.println("Attribute " + attr.getName().toString());
                 }
             }
@@ -509,7 +506,7 @@ public class GrpcRegistration {
             if (NoteModel.getNoteText(node) != null) {
                  map.put("note", bodyText(NoteModel.getNoteText(node)));
             }
-       }
+        }
 
         @Override
         public void mindMapToJSON(MindMapToJSONRequest req, StreamObserver<MindMapToJSONResponse> responseObserver) /*throws JsonProcessingException*/ {
@@ -526,5 +523,5 @@ public class GrpcRegistration {
             responseObserver.onNext(reply);
             responseObserver.onCompleted();
         }
-  }
+    }
 }
