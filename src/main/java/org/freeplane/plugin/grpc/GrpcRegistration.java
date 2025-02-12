@@ -113,10 +113,10 @@ public class GrpcRegistration {
                   System.out.println("parentNodeId == null");
               }
               if (rootNode != null) {
-                  NodeModel newNodeModel = mapController.newNode(newNodeName, rootNode.getMap());
+                  NodeModel newNodeModel = mmapController.newNode(newNodeName, rootNode.getMap());
                   newNodeModel.setSide(mapController.suggestNewChildSide(rootNode, NodeModel.Side.DEFAULT));
                   newNodeModel.createID();
-                  mmapController.insertNode(newNodeModel, rootNode, false);
+                  mmapController.insertNode(newNodeModel, rootNode, 0);
                   reply = CreateChildResponse.newBuilder().setNodeId(newNodeModel.getID()).setNodeText(newNodeModel.getText()).build();
               } else {
                   System.out.println("GRPC Freeplane::createChild(name: " + req.getName() + ", parent_node_id: " + req.getParentNodeId() + ") root node not found");
@@ -328,10 +328,10 @@ public class GrpcRegistration {
             for (int i = 0; i < result.length(); i++) {
                 JSONArray resultElement = result.getJSONArray(i);
 
-                NodeModel newNodeModel = mapController.newNode(resultElement.get(idx).toString(), rootNode.getMap());
+                NodeModel newNodeModel = mmapController.newNode(resultElement.get(idx).toString(), rootNode.getMap());
                 newNodeModel.setSide(mapController.suggestNewChildSide(rootNode, NodeModel.Side.DEFAULT));
                 newNodeModel.createID();
-                mmapController.insertNode(newNodeModel, rootNode, false);
+                mmapController.insertNode(newNodeModel, rootNode, 0);
 
                 for (int j = 0; j < resultElement.length(); j++) {
                     Attribute newAttribute = new Attribute(header.getString(j), resultElement.get(j).toString());
@@ -368,20 +368,20 @@ public class GrpcRegistration {
 
                 if (value instanceof JSONObject) {
                     // Nested object, recursively iterate
-                    NodeModel newNodeModel = mapController.newNode(key, parentNode.getMap());
+                    NodeModel newNodeModel = mmapController.newNode(key, parentNode.getMap());
                     newNodeModel.setSide(mapController.suggestNewChildSide(parentNode, NodeModel.Side.DEFAULT));
                     newNodeModel.createID();
-                    mmapController.insertNode(newNodeModel, parentNode, false);
+                    mmapController.insertNode(newNodeModel, parentNode, 0);
                     recursiveJSONLoop((JSONObject) value, newNodeModel);
                 } else if (value instanceof JSONArray) {
                     // Array of objects, iterate over each object
                     JSONArray jsonArray = (JSONArray) value;
 
                     for (int i = 0; i < jsonArray.length(); i++) {
-                        NodeModel newNodeModel = mapController.newNode(Integer.toString(i), parentNode.getMap());
+                        NodeModel newNodeModel = mmapController.newNode(Integer.toString(i), parentNode.getMap());
                         newNodeModel.setSide(mapController.suggestNewChildSide(parentNode, NodeModel.Side.DEFAULT));
                         newNodeModel.createID();
-                        mmapController.insertNode(newNodeModel, parentNode, false);
+                        mmapController.insertNode(newNodeModel, parentNode, 0);
                         Object arrayElement = jsonArray.get(i);
                         if (arrayElement instanceof JSONObject) {
                             recursiveJSONLoop((JSONObject) arrayElement, newNodeModel);
@@ -486,20 +486,17 @@ public class GrpcRegistration {
                 for (final NodeModel child : children) {
                     System.out.println(node.getUserObject() + " -> " + child.getUserObject());
                     Map<String, Object> childMap = new HashMap<>();
-                    childsMap.put(child.getUserObject().toString(), childMap);
+                    map.put(child.getUserObject().toString(), childMap);
                     nodeWalk(childMap, child);
-
                 }
-                map.put("children", childsMap);
+                map.put(node.getUserObject().toString(), childsMap);
             }
             final AttributeUtilities atrUtil = new AttributeUtilities();
             if (atrUtil.hasAttributes(node)) {
-                Map<String, Object> attr_map = new HashMap<>();
-                map.put("attributes", attr_map);
                 NodeAttributeTableModel natm = NodeAttributeTableModel.getModel(node);
                 for (int i = 0; i < natm.getRowCount(); i++) {
                     Attribute attr = natm.getAttribute(i);
-                    attr_map.put(attr.getName(), attr.getValue().toString());
+                    map.put(attr.getName(), attr.getValue().toString());
                     System.out.println("Attribute " + attr.getName().toString());
                 }
             }
@@ -509,7 +506,7 @@ public class GrpcRegistration {
             if (NoteModel.getNoteText(node) != null) {
                  map.put("note", bodyText(NoteModel.getNoteText(node)));
             }
-       }
+        }
 
         @Override
         public void mindMapToJSON(MindMapToJSONRequest req, StreamObserver<MindMapToJSONResponse> responseObserver) /*throws JsonProcessingException*/ {
@@ -526,5 +523,5 @@ public class GrpcRegistration {
             responseObserver.onNext(reply);
             responseObserver.onCompleted();
         }
-  }
+    }
 }
