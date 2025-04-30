@@ -204,6 +204,25 @@ public class GrpcRegistration {
         }
 
         @Override
+        public void nodeNoteSet(NodeNoteSetRequest req, StreamObserver<NodeNoteSetResponse> responseObserver) {
+            boolean success = false;
+            final MNoteController mNoteController = MNoteController.getController();
+            final MapModel map = Controller.getCurrentController().getMap();
+            final MTextController mTextController = (MTextController) TextController.getController();
+            System.out.println("GRPC Freeplane::nodeNoteSet(node_id: " + req.getNodeId() + ", details:" + req.getNote() + ")");
+
+            NodeModel targetNode = map.getNodeForID(req.getNodeId());
+            if (targetNode != null) {
+                success = true;
+                mNoteController.setNoteText(targetNode, req.getNote());
+            }
+
+            NodeNoteSetResponse reply = NodeNoteSetResponse.newBuilder().setSuccess(success).build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+        }
+
+        @Override
     		public void groovy(GroovyRequest req, StreamObserver<GroovyResponse> responseObserver) {
             boolean success = true;
             String groovyCode = new StringBuilder()
