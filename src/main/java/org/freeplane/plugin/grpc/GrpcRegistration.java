@@ -295,6 +295,22 @@ public class GrpcRegistration {
       			responseObserver.onNext(reply);
       			responseObserver.onCompleted();
         }
+        @Override
+    		public void getCurrentNode(GetCurrentNodeRequest req, StreamObserver<GetCurrentNodeResponse> responseObserver) {
+            boolean success = false;
+            final IMapSelection selection = Controller.getCurrentController().getSelection();
+            final MapModel map = Controller.getCurrentController().getMap();
+            NodeModel currentNode = selection.getSelected();
+            GetCurrentNodeResponse reply  = null;
+            if (currentNode != null) {
+              reply = GetCurrentNodeResponse.newBuilder().setNodeId(currentNode.getID()).setMapId(map.getTitle()).setSuccess(true).build();
+            } else {
+              reply = GetCurrentNodeResponse.newBuilder().setNodeId("-1").setMapId("-1").setSuccess(false).build();
+            } 
+            
+      			responseObserver.onNext(reply);
+      			responseObserver.onCompleted();
+        }
 		    @Override
         public void textFSM(TextFSMRequest req, StreamObserver<TextFSMResponse> responseObserver) {
             final MapController mapController = Controller.getCurrentModeController().getMapController();

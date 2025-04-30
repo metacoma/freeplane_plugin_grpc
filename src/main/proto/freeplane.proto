@@ -20,7 +20,9 @@ service Freeplane {
   rpc TextFSM (TextFSMRequest) returns (TextFSMResponse) {};
   rpc MindMapFromJSON (MindMapFromJSONRequest) returns (MindMapFromJSONResponse) {};
   rpc MindMapToJSON (MindMapToJSONRequest) returns (MindMapToJSONResponse) {};
+  rpc GetCurrentNode (GetCurrentNodeRequest) returns (GetCurrentNodeResponse) {};
 }
+
 
 message CreateChildRequest {
   string name = 1;
@@ -131,4 +133,13 @@ message MindMapToJSONRequest {
 message MindMapToJSONResponse {
     bool success = 1;
     string json = 2;
+}
+
+message GetCurrentNodeRequest {
+}
+
+message GetCurrentNodeResponse {
+  string map_id = 1;
+  string node_id = 2; 
+  bool success = 3;
 }
