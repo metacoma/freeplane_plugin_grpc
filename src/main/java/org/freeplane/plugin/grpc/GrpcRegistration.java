@@ -16,6 +16,8 @@ import org.freeplane.view.swing.features.FitToPage;
 import org.freeplane.features.icon.IconClickedEvent;
 import org.freeplane.features.icon.IconController;
 import org.freeplane.features.icon.IconMouseListener;
+import org.freeplane.features.icon.mindmapmode.MIconController;
+import org.freeplane.features.icon.Tag;
 import org.freeplane.features.mode.ModeController;
 
 import org.freeplane.features.attribute.AttributeController;
@@ -70,6 +72,9 @@ import org.json.*;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class GrpcRegistration {
         private Server server;
@@ -221,6 +226,30 @@ public class GrpcRegistration {
             responseObserver.onNext(reply);
             responseObserver.onCompleted();
         }
+
+        @Override
+        public void nodeTagSet(NodeTagSetRequest req, StreamObserver<NodeTagSetResponse> responseObserver) {
+            boolean success = false;
+            final MapModel map = Controller.getCurrentController().getMap();
+            final MIconController mIconController = (MIconController) IconController.getController();
+            //System.out.println("GRPC Freeplane::nodeTagSet(node_id: " + req.getNodeId() + ", details:" + req.getTags() + ")");
+
+            NodeModel targetNode = map.getNodeForID(req.getNodeId());
+            if (targetNode != null) {
+                List<Tag> tagList = req.getTagsList()
+                  .stream()
+                  .map(Tag::new) 
+                  .collect(Collectors.toList());
+
+                mIconController.setTags(targetNode, tagList, false);
+                success = true;
+            }
+
+            NodeTagSetResponse reply = NodeTagSetResponse.newBuilder().setSuccess(success).build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+        }
+
 
         @Override
     		public void groovy(GroovyRequest req, StreamObserver<GroovyResponse> responseObserver) {
