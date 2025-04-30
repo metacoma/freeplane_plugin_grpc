@@ -15,6 +15,7 @@ service Freeplane {
   rpc NodeDetailsSet (NodeDetailsSetRequest) returns (NodeDetailsSetResponse) {};
   rpc NodeNoteSet (NodeNoteSetRequest) returns (NodeNoteSetResponse) {};
   rpc NodeTagSet (NodeTagSetRequest) returns (NodeTagSetResponse) {};
+  rpc NodeTagAdd (NodeTagAddRequest) returns (NodeTagAddResponse) {};
   rpc Groovy (GroovyRequest) returns (GroovyResponse) {};
   rpc NodeColorSet (NodeColorSetRequest) returns (NodeColorSetResponse) {};
   rpc NodeBackgroundColorSet (NodeBackgroundColorSetRequest) returns (NodeBackgroundColorSetResponse) {};
@@ -163,4 +164,13 @@ message GetCurrentNodeResponse {
   string map_id = 1;
   string node_id = 2; 
   bool success = 3;
+}
+
+message NodeTagAddRequest {
+  string node_id = 1;
+  repeated string tags = 2;
+}
+
+message NodeTagAddResponse {
+  bool success = 1;
 }

@@ -74,7 +74,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.Arrays;
 
 public class GrpcRegistration {
         private Server server;
@@ -250,6 +252,46 @@ public class GrpcRegistration {
             responseObserver.onCompleted();
         }
 
+        @Override
+        public void nodeTagAdd(NodeTagAddRequest req, StreamObserver<NodeTagAddResponse> responseObserver) {
+            boolean success = false;
+            final MapModel map = Controller.getCurrentController().getMap();
+            final MIconController mIconController = (MIconController) IconController.getController();
+            System.out.println("GRPC Freeplane::nodeTagAdd(node_id: " + req.getNodeId() + ", new tags: " + req.getTagsList() + ")");
+
+            NodeModel targetNode = map.getNodeForID(req.getNodeId());
+
+            if (targetNode != null) {
+                // Get current tags
+                List<Tag> currentTags = mIconController.getTags(targetNode);
+
+                // Convert current tag contents to a set for uniqueness
+                Set<String> tagContentSet = currentTags.stream()
+                    .map(Tag::getContent)
+                    .collect(Collectors.toSet());
+
+                // Add new tags, avoiding duplicates
+                for (String newTagContent : req.getTagsList()) {
+                    tagContentSet.add(newTagContent);
+                }
+
+                // Convert back to List<Tag>
+                List<Tag> mergedTags = tagContentSet.stream()
+                    .map(Tag::new)
+                    .collect(Collectors.toList());
+
+                // Set merged tags
+                mIconController.setTags(targetNode, mergedTags, true);
+
+                success = true;
+            }
+
+            NodeTagAddResponse reply = NodeTagAddResponse.newBuilder().setSuccess(success).build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+        }
+
+
 
         @Override
     		public void groovy(GroovyRequest req, StreamObserver<GroovyResponse> responseObserver) {
@@ -419,6 +461,7 @@ public class GrpcRegistration {
             final MapController mapController = Controller.getCurrentModeController().getMapController();
             final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
             final MTextController mTextController = (MTextController) TextController.getController();
+            final MIconController mIconController = (MIconController) IconController.getController();
             final MLinkController mLinkController = (MLinkController) LinkController.getController();
             final MNodeStyleController mNodeStyleController = (MNodeStyleController) NodeStyleController.getController();
             final MNoteController mNoteController = MNoteController.getController();
@@ -452,7 +495,15 @@ public class GrpcRegistration {
                         }
                     }
                 } else {
-                    if (key.equals("detail")) {
+                    if (key.equals("tags")) {
+                      List<Tag> tagList = Arrays.stream(value.toString().split(","))
+                          .map(String::trim)
+                          .filter(s -> !s.isEmpty())
+                          .map(Tag::new)
+                          .collect(Collectors.toList());
+
+                      mIconController.setTags(parentNode, tagList, false);
+                    } else if (key.equals("detail")) {
                         mTextController.setDetails(parentNode, value.toString());
                     } else if (key.equals("link")) { 
                         try {
@@ -544,6 +595,7 @@ public class GrpcRegistration {
             return printableText;
         }
         private void nodeWalk(Map<String, Object> map, NodeModel node) {
+            final MIconController mIconController = (MIconController) IconController.getController();
             NodeModel[] children = node.getChildren().toArray(new NodeModel[] {});
             if (children.length > 0) {
                 Map<String, Object> childsMap = new HashMap<>();
@@ -569,6 +621,14 @@ public class GrpcRegistration {
             }
             if (NoteModel.getNoteText(node) != null) {
                  map.put("note", bodyText(NoteModel.getNoteText(node)));
+            }
+
+            List<Tag> nodeTags = mIconController.getTags(node);
+            if (nodeTags != null && !nodeTags.isEmpty()) {
+                String tagString = nodeTags.stream()
+                    .map(Tag::getContent)
+                    .collect(Collectors.joining(", "));
+                map.put("tags", tagString);
             }
         }
 
