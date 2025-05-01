@@ -18,7 +18,11 @@ import org.freeplane.features.icon.IconController;
 import org.freeplane.features.icon.IconMouseListener;
 import org.freeplane.features.icon.mindmapmode.MIconController;
 import org.freeplane.features.icon.Tag;
+import org.freeplane.features.icon.*;
+import org.freeplane.features.icon.MindIcon;
+import org.freeplane.features.icon.factory.IconStoreFactory;
 import org.freeplane.features.mode.ModeController;
+import org.freeplane.features.filter.Filter;
 
 import org.freeplane.features.attribute.AttributeController;
 import org.freeplane.features.map.mindmapmode.MMapController;
@@ -28,6 +32,7 @@ import org.freeplane.features.attribute.mindmapmode.MAttributeController;
 import org.freeplane.features.nodestyle.mindmapmode.MNodeStyleController;
 import org.freeplane.features.nodestyle.NodeStyleController;
 import org.freeplane.features.link.mindmapmode.MLinkController;
+import org.freeplane.features.link.ConnectorModel;
 import org.freeplane.features.text.mindmapmode.MTextController;
 import org.freeplane.features.note.mindmapmode.MNoteController;
 import org.freeplane.features.text.TextController;
@@ -45,12 +50,19 @@ import org.freeplane.features.map.SharedNodeData;
 import org.freeplane.features.map.NodeBuilder;
 import org.freeplane.features.map.IMapSelection;
 import org.freeplane.features.ui.ViewController;
+import org.freeplane.core.resources.ResourceController;
 import org.freeplane.core.util.TextUtils;
 
 import org.freeplane.api.Attributes;
 import org.freeplane.core.util.Hyperlink;
 //import org.freeplane.plugin.script.FormulaUtils;
 //import org.freeplane.plugin.script.FormulaUtils;
+//
+//
+
+import org.freeplane.features.attribute.AttributeMatchesCondition;
+
+
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
@@ -73,17 +85,66 @@ import org.json.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.Arrays;
 
 public class GrpcRegistration {
-        private Server server;
+      private Server server;
 
     	private String listenAddress;
     	private Integer bindPort;
     	private final Integer defaultPort = 50051;
+      public static NodeModel findNodeByAttributeUUID(List<NodeModel> nodes, String uuid) {
+          for (NodeModel node : nodes) {
+              NodeAttributeTableModel natm = NodeAttributeTableModel.getModel(node);
+              for (int i = 0; i < natm.getRowCount(); i++) {
+                  Attribute attr = natm.getAttribute(i);
+                  if ("_uuid".equals(attr.getName()) && uuid.equals(attr.getValue().toString())) {
+                      return node;
+                  }
+              }
+          }
+          return null;
+      }
+
+      public static List<Map.Entry<String, String>> parseRelationships(String relationshipValue) {
+            List<Map.Entry<String, String>> relationships = new ArrayList<>();
+            if (relationshipValue == null || relationshipValue.isEmpty()) {
+                return relationships;
+            }
+
+            String[] entries = relationshipValue.split(",");
+            for (String entry : entries) {
+                String[] parts = entry.split(":");
+                if (parts.length == 2) {
+                    String uuid = parts[0].trim();
+                    String type = parts[1].trim();
+                    relationships.add(new AbstractMap.SimpleEntry<>(uuid, type));
+                }
+            }
+
+            return relationships;
+        }
+
+      public static List<NodeModel> collectSubtreeNodes(NodeModel root) {
+          List<NodeModel> result = new ArrayList<>();
+          collectSubtreeNodesRecursive(root, result);
+          return result;
+      }
+
+      private static void collectSubtreeNodesRecursive(NodeModel node, List<NodeModel> result) {
+          if (node == null) {
+              return;
+          }
+          result.add(node);
+          for (NodeModel child : node.getChildren()) {
+              collectSubtreeNodesRecursive(child, result);
+          }
+      }
 
 	    public GrpcRegistration(ModeController modeController) {
           listenAddress = System.getenv("GRPC_LISTEN_ADDR");
@@ -291,6 +352,29 @@ public class GrpcRegistration {
             responseObserver.onCompleted();
         }
 
+        @Override
+        public void nodeConnect(NodeConnectRequest req, StreamObserver<NodeConnectResponse> responseObserver) {
+            boolean success = false;
+            final MLinkController mLinkController = (MLinkController) LinkController.getController();
+            final MapModel map = Controller.getCurrentController().getMap();
+            final NodeModel sourceNode = map.getNodeForID(req.getSourceNodeId());
+            final NodeModel targetNode = map.getNodeForID(req.getTargetNodeId());
+            final String relationship = req.getRelationship().toString();
+
+            if (sourceNode != null && targetNode != null) {
+                ConnectorModel conn = mLinkController.addConnector(sourceNode, targetNode);
+                if (conn != null) {
+                  if (relationship != null) {
+                      conn.setMiddleLabel(relationship);
+                  }
+                  success = true;
+                }
+            }
+            NodeConnectResponse reply = NodeConnectResponse.newBuilder().setSuccess(success).build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+        }
+
 
 
         @Override
@@ -343,7 +427,6 @@ public class GrpcRegistration {
          @Override
     		public void nodeBackgroundColorSet(NodeBackgroundColorSetRequest req, StreamObserver<NodeBackgroundColorSetResponse> responseObserver) {
             boolean success = false;
-            //final MLinkController mLinkController = (MLinkController) LinkController.getController();
             final MNodeStyleController mNodeStyleController = (MNodeStyleController) NodeStyleController.getController();
             final MapModel map = Controller.getCurrentController().getMap();
             final Integer red = req.getRed();
@@ -458,6 +541,7 @@ public class GrpcRegistration {
 		    }
 
         private static void recursiveJSONLoop(JSONObject jsonObject,NodeModel parentNode) {
+            final ResourceController resourceController = ResourceController.getResourceController();
             final MapController mapController = Controller.getCurrentModeController().getMapController();
             final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
             final MTextController mTextController = (MTextController) TextController.getController();
@@ -495,6 +579,18 @@ public class GrpcRegistration {
                         }
                     }
                 } else {
+                    if (key.equals("icons")) {
+                       List<String> iconList = Arrays.stream(value.toString().split(","))
+                                  .map(String::trim)
+                                  .collect(Collectors.toList());
+
+                       for (String iconName : iconList) {
+                          MindIcon icon = IconStoreFactory.ICON_STORE.getMindIcon(iconName);
+                          if (icon != null) {
+                            parentNode.addIcon(icon);
+                          }
+                       }
+                    } 
                     if (key.equals("tags")) {
                       List<Tag> tagList = Arrays.stream(value.toString().split(","))
                           .map(String::trim)
@@ -546,7 +642,10 @@ public class GrpcRegistration {
         public void mindMapFromJSON(MindMapFromJSONRequest req, StreamObserver<MindMapFromJSONResponse> responseObserver) {
             final MapController mapController = Controller.getCurrentModeController().getMapController();
             final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
+            final MLinkController mLinkController = (MLinkController) LinkController.getController();
             boolean success = false;
+            final AttributeController attributeController = AttributeController.getController();
+
             System.out.println("GRPC Freeplane::MindMapFromJSON()");
             final String insert_mode_key = "_fp_import_root_node";
 
@@ -577,6 +676,57 @@ public class GrpcRegistration {
             
             recursiveJSONLoop(obj, rootNode);
 
+            List<NodeModel> newNodes = collectSubtreeNodes(rootNode);
+
+            System.out.println("====");
+            System.out.println("childrenCount: " + rootNode.getChildCount());
+            System.out.println("Total nodes: " + newNodes.size());
+
+        
+            for (NodeModel node : newNodes) {
+
+              if (atrUtil.hasAttributes(node)) {
+
+                  NodeAttributeTableModel natm = NodeAttributeTableModel.getModel(node);
+                  System.out.println("node has attributes " + natm.getRowCount());
+                  for (int i = 0; i < natm.getRowCount(); i++) {
+                      Attribute attr = natm.getAttribute(i);
+                      //System.out.println("node has attribute " + attr.getName().toString() + " -> " + attr.getValue().toString());
+                      if (attr.getName().equals("_relationship")) {
+                        NodeModel sourceNode = node;
+                        String relValue = attr.getValue().toString();
+                        List<Map.Entry<String, String>> pairs = parseRelationships(relValue);
+
+                        for (Map.Entry<String, String> pair : pairs) {
+                            String uuid = pair.getKey();
+                            String relType = pair.getValue();
+                            NodeModel targetNode = findNodeByAttributeUUID(newNodes, uuid);
+                            if (targetNode != null) {
+                                System.out.println("Relationship: " + node + " --[" + relType + "]--> " + targetNode);
+                                ConnectorModel conn = mLinkController.addConnector(sourceNode, targetNode);
+                                conn.setMiddleLabel(relType);
+                            } else {
+                                System.out.println("UUID not found: " + uuid);
+                            }
+                        }
+                     } 
+                  }
+              }
+            }
+            /*
+            for (NodeModel node : newNodes) {
+                if (atrUtil.hasAttributes(node)) {
+                  final NodeAttributeTableModel attributes = NodeAttributeTableModel.getModel(node);
+                  for (int i = attributes.getRowCount() - 1; i >= 0; i--) {
+                    if (attributes.getAttribute(i).getName().equals("uuid")) {
+                      attributeController.performRemoveRow(node, attributes, i);
+                    }
+                  }
+                }
+            }
+            */
+            System.out.println("====");
+          
             MindMapFromJSONResponse reply = MindMapFromJSONResponse.newBuilder().setSuccess(success).build();
             responseObserver.onNext(reply);
             responseObserver.onCompleted();
