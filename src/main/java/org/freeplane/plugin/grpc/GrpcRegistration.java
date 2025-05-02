@@ -361,6 +361,8 @@ public class GrpcRegistration {
             final NodeModel targetNode = map.getNodeForID(req.getTargetNodeId());
             final String relationship = req.getRelationship().toString();
 
+            System.out.println("GRPC Freeplane::nodeConnect(source_node_id: " + req.getSourceNodeId() + ", target_node_id: " + req.getTargetNodeId() + ", relationship: " + relationship + ")");
+
             if (sourceNode != null && targetNode != null) {
                 ConnectorModel conn = mLinkController.addConnector(sourceNode, targetNode);
                 if (conn != null) {
@@ -368,13 +370,40 @@ public class GrpcRegistration {
                       conn.setMiddleLabel(relationship);
                   }
                   success = true;
-                }
+                } else {
+                  System.out.println("GRPC Freeplane::nodeConnect(source_node_id: " + req.getSourceNodeId() + ", target_node_id: " + req.getTargetNodeId() + ", relationship: " + relationship + ") failed, conn = null");
+                } 
             }
             NodeConnectResponse reply = NodeConnectResponse.newBuilder().setSuccess(success).build();
             responseObserver.onNext(reply);
             responseObserver.onCompleted();
         }
 
+
+        @Override
+        public void nodeAddIcon(NodeAddIconRequest req, StreamObserver<NodeAddIconResponse> responseObserver) {
+            boolean success = false;
+            final MLinkController mLinkController = (MLinkController) LinkController.getController();
+            final MapModel map = Controller.getCurrentController().getMap();
+            final NodeModel targetNode = map.getNodeForID(req.getNodeId());
+            final String iconName = req.getIconName().toString();
+
+            System.out.println("GRPC Freeplane::nodeConnect(node_id: " + req.getNodeId() + ", icon_name: " + req.getIconName() + ")");
+
+            if (targetNode != null) {
+                MindIcon icon = IconStoreFactory.ICON_STORE.getMindIcon(iconName);
+                if (icon != null) {
+                  targetNode.addIcon(icon);
+                  success = true;
+                } else {
+                  System.out.println("GRPC Freeplane::nodeConnect(node_id: " + req.getNodeId() + ", icon_name: " + req.getIconName() + ") failed, icon == null");
+                } 
+
+            }
+            NodeAddIconResponse reply = NodeAddIconResponse.newBuilder().setSuccess(success).build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+        }
 
 
         @Override
@@ -643,6 +672,7 @@ public class GrpcRegistration {
             final MapController mapController = Controller.getCurrentModeController().getMapController();
             final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
             final MLinkController mLinkController = (MLinkController) LinkController.getController();
+            final MapModel map = Controller.getCurrentController().getMap();
             boolean success = false;
             final AttributeController attributeController = AttributeController.getController();
 
@@ -668,11 +698,22 @@ public class GrpcRegistration {
 
             JSONObject obj = new JSONObject(req.getJson());
             if (obj.has(insert_mode_key)) {
-                if ("root".equals(obj.getString(insert_mode_key))) {
+                String mode = obj.getString(insert_mode_key);
+
+                if ("root".equals(mode)) {
                     rootNode = mapController.getRootNode();
                 }
+
+                if (mode.startsWith("ID_")) {
+                    NodeModel pickNode = map.getNodeForID(mode);
+                    if (pickNode != null) {
+                      rootNode = pickNode;
+                    } 
+                }
+
                 obj.remove(insert_mode_key);
             }
+
             
             recursiveJSONLoop(obj, rootNode);
 
