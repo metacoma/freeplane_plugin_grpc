@@ -310,7 +310,7 @@ public class GrpcRegistration {
             if (targetNode != null) {
                 List<Tag> tagList = req.getTagsList()
                   .stream()
-                  .map(Tag::new) 
+                  .map(Tag::new)
                   .collect(Collectors.toList());
 
                 mIconController.setTags(targetNode, tagList, false);
@@ -381,7 +381,7 @@ public class GrpcRegistration {
                   success = true;
                 } else {
                   System.out.println("GRPC Freeplane::nodeConnect(source_node_id: " + req.getSourceNodeId() + ", target_node_id: " + req.getTargetNodeId() + ", relationship: " + relationship + ") failed, conn = null");
-                } 
+                }
             }
             NodeConnectResponse reply = NodeConnectResponse.newBuilder().setSuccess(success).build();
             responseObserver.onNext(reply);
@@ -406,7 +406,7 @@ public class GrpcRegistration {
                   success = true;
                 } else {
                   System.out.println("GRPC Freeplane::nodeConnect(node_id: " + req.getNodeId() + ", icon_name: " + req.getIconName() + ") failed, icon == null");
-                } 
+                }
 
             }
             NodeAddIconResponse reply = NodeAddIconResponse.newBuilder().setSuccess(success).build();
@@ -517,8 +517,8 @@ public class GrpcRegistration {
               reply = GetCurrentNodeResponse.newBuilder().setNodeId(currentNode.getID()).setMapId(map.getTitle()).setSuccess(true).build();
             } else {
               reply = GetCurrentNodeResponse.newBuilder().setNodeId("-1").setMapId("-1").setSuccess(false).build();
-            } 
-            
+            }
+
       			responseObserver.onNext(reply);
       			responseObserver.onCompleted();
         }
@@ -557,16 +557,16 @@ public class GrpcRegistration {
                       NodeModel rootNode = newMapModel.getRootNode();
 
                       rootNode.setText(mapFilePath);
-                      fileManager.save(newMapModel); 
+                      fileManager.save(newMapModel);
                       success = true;
                   } catch (IOException e2) {
-                      e2.printStackTrace(); 
+                      e2.printStackTrace();
                       success = false;
                   }
 
               }
             }
-            
+
       			responseObserver.onNext(OpenMapResponse.newBuilder().setSuccess(success).build());
       			responseObserver.onCompleted();
         }
@@ -676,7 +676,7 @@ public class GrpcRegistration {
                             parentNode.addIcon(icon);
                           }
                        }
-                    } 
+                    }
                     if (key.equals("tags")) {
                       List<Tag> tagList = Arrays.stream(value.toString().split(","))
                           .map(String::trim)
@@ -687,16 +687,16 @@ public class GrpcRegistration {
                       mIconController.setTags(parentNode, tagList, false);
                     } else if (key.equals("detail")) {
                         mTextController.setDetails(parentNode, value.toString());
-                    } else if (key.equals("link")) { 
+                    } else if (key.equals("link")) {
                         try {
                             URI uri = new URI(value.toString());
                             mLinkController.setLink(parentNode, new Hyperlink(uri));
                         } catch(Exception e) {
-                            //TODO(@metacoma) handle exception 
+                            //TODO(@metacoma) handle exception
                         }
-                    } else if (key.equals("note")) { 
+                    } else if (key.equals("note")) {
                         mNoteController.setNoteText(parentNode, value.toString());
-                    } else if (key.equals("color")) { 
+                    } else if (key.equals("color")) {
                         int[] rgba = new int[4];
                         Pattern pattern = Pattern.compile("(\\d+)");
                         Matcher matcher = pattern.matcher(value.toString());
@@ -765,13 +765,13 @@ public class GrpcRegistration {
                     NodeModel pickNode = map.getNodeForID(mode);
                     if (pickNode != null) {
                       rootNode = pickNode;
-                    } 
+                    }
                 }
 
                 obj.remove(insert_mode_key);
             }
 
-            
+
             recursiveJSONLoop(obj, rootNode);
 
             List<NodeModel> newNodes = collectSubtreeNodes(rootNode);
@@ -780,7 +780,7 @@ public class GrpcRegistration {
             System.out.println("childrenCount: " + rootNode.getChildCount());
             System.out.println("Total nodes: " + newNodes.size());
 
-        
+
             for (NodeModel node : newNodes) {
 
               if (atrUtil.hasAttributes(node)) {
@@ -807,7 +807,7 @@ public class GrpcRegistration {
                                 System.out.println("UUID not found: " + uuid);
                             }
                         }
-                     } 
+                     }
                   }
               }
             }
@@ -824,7 +824,7 @@ public class GrpcRegistration {
             }
             */
             System.out.println("====");
-          
+
             MindMapFromJSONResponse reply = MindMapFromJSONResponse.newBuilder().setSuccess(success).build();
             responseObserver.onNext(reply);
             responseObserver.onCompleted();
@@ -873,10 +873,11 @@ public class GrpcRegistration {
 
             List<Tag> nodeTags = mIconController.getTags(node);
             if (nodeTags != null && !nodeTags.isEmpty()) {
-                String tagString = nodeTags.stream()
+                List<String> tags = nodeTags.stream()
                     .map(Tag::getContent)
-                    .collect(Collectors.joining(", "));
-                map.put("tags", tagString);
+                    .collect(Collectors.toList());
+
+                map.put("tags", tags);
             }
         }
 
