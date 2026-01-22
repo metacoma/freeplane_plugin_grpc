@@ -26,6 +26,7 @@ service Freeplane {
   rpc MindMapFromJSON (MindMapFromJSONRequest) returns (MindMapFromJSONResponse) {};
   rpc MindMapToJSON (MindMapToJSONRequest) returns (MindMapToJSONResponse) {};
   rpc GetCurrentNode (GetCurrentNodeRequest) returns (GetCurrentNodeResponse) {};
+  rpc OpenMap (OpenMapRequest) returns (OpenMapResponse) {};
 }
 
 
@@ -193,5 +194,13 @@ message NodeAddIconRequest {
 }
 
 message NodeAddIconResponse {
+  bool success = 1;
+}
+
+message OpenMapRequest {
+  string file_path = 1;
+}
+
+message OpenMapResponse {
   bool success = 1;
 }

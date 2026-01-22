@@ -50,6 +50,8 @@ import org.freeplane.features.map.SharedNodeData;
 import org.freeplane.features.map.NodeBuilder;
 import org.freeplane.features.map.IMapSelection;
 import org.freeplane.features.ui.ViewController;
+import org.freeplane.features.url.mindmapmode.MFileManager;
+import org.freeplane.features.mode.mindmapmode.MModeController;
 import org.freeplane.core.resources.ResourceController;
 import org.freeplane.core.util.TextUtils;
 
@@ -59,6 +61,8 @@ import org.freeplane.core.util.Hyperlink;
 //import org.freeplane.plugin.script.FormulaUtils;
 //
 //
+import java.io.File;
+import java.net.URL;
 
 import org.freeplane.features.attribute.AttributeMatchesCondition;
 
@@ -69,6 +73,8 @@ import io.grpc.ServerBuilder;
 import io.grpc.netty.NettyServerBuilder;
 import io.grpc.stub.StreamObserver;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.io.FileNotFoundException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.Map;
@@ -91,6 +97,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.Arrays;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class GrpcRegistration {
       private Server server;
@@ -511,6 +520,54 @@ public class GrpcRegistration {
             } 
             
       			responseObserver.onNext(reply);
+      			responseObserver.onCompleted();
+        }
+        @Override
+    		public void openMap(OpenMapRequest req, StreamObserver<OpenMapResponse> responseObserver) {
+				    final Controller controller = Controller.getCurrentController();
+					  final ModeController modeController = controller.getModeController(MModeController.MODENAME);
+            final MapController mapController = Controller.getCurrentModeController().getMapController();
+					  final MFileManager fileManager = MFileManager.getController(modeController);
+            boolean success = false;
+            String mapFilePath = req.getFilePath();
+            URL mindmapURL = null;
+
+            System.out.println("GRPC Freeplane::openMap(mapFilePath: " + mapFilePath + ")");
+
+            if (mapFilePath != null) {
+
+              String path = System.getProperty("user.home") + "/mindmaps/" + mapFilePath;
+              File file = new File(path);
+
+              try {
+                  mindmapURL = file.toURI().toURL();
+                  mapController.openMap(mindmapURL);
+                  System.out.println("GRPC Freeplane::openMap(URI: " + path + ")");
+                  success = true;
+
+              } catch (Exception e) {
+                  System.err.println("XXXX file not found, create new map " + mapFilePath);
+                  Path dirPath = file.getParentFile().toPath();
+
+                  try {
+                      Files.createDirectories(dirPath);
+
+                      MapModel newMapModel = mapController.newMap();
+                      newMapModel.setURL(mindmapURL);
+                      NodeModel rootNode = newMapModel.getRootNode();
+
+                      rootNode.setText(mapFilePath);
+                      fileManager.save(newMapModel); 
+                      success = true;
+                  } catch (IOException e2) {
+                      e2.printStackTrace(); 
+                      success = false;
+                  }
+
+              }
+            }
+            
+      			responseObserver.onNext(OpenMapResponse.newBuilder().setSuccess(success).build());
       			responseObserver.onCompleted();
         }
 		    @Override
