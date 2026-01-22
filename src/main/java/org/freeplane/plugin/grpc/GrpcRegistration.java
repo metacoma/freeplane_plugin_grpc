@@ -79,6 +79,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Collections;
 import java.net.URI;
 import java.net.InetSocketAddress;
 import org.jsoup.Jsoup;
@@ -842,35 +843,53 @@ public class GrpcRegistration {
 
             return printableText;
         }
+
         private void nodeWalk(Map<String, Object> map, NodeModel node) {
-            final MIconController mIconController = (MIconController) IconController.getController();
+            final MIconController mIconController =
+                (MIconController) IconController.getController();
+
+            map.put("text", node.getUserObject().toString());
+
+            // ---------- children ----------
             NodeModel[] children = node.getChildren().toArray(new NodeModel[] {});
             if (children.length > 0) {
-                Map<String, Object> childsMap = new HashMap<>();
-                for (final NodeModel child : children) {
-                    System.out.println(node.getUserObject() + " -> " + child.getUserObject());
+                List<Map<String, Object>> childrenList = new ArrayList<>();
+
+                for (NodeModel child : children) {
                     Map<String, Object> childMap = new HashMap<>();
-                    map.put(child.getUserObject().toString(), childMap);
                     nodeWalk(childMap, child);
+                    childrenList.add(childMap);
                 }
-                map.put(node.getUserObject().toString(), childsMap);
+
+                map.put("children", childrenList);
             }
+
+            // ---------- attributes ----------
             final AttributeUtilities atrUtil = new AttributeUtilities();
             if (atrUtil.hasAttributes(node)) {
+                Map<String, Object> attributes = new HashMap<>();
+
                 NodeAttributeTableModel natm = NodeAttributeTableModel.getModel(node);
                 for (int i = 0; i < natm.getRowCount(); i++) {
                     Attribute attr = natm.getAttribute(i);
-                    map.put(attr.getName(), attr.getValue().toString());
-                    System.out.println("Attribute " + attr.getName().toString());
+                    attributes.put(attr.getName(), String.valueOf(attr.getValue()));
+                }
+
+                if (!attributes.isEmpty()) {
+                    map.put("attributes", attributes);
                 }
             }
+
+            // ---------- detail / note ----------
             if (DetailModel.getDetail(node) != null) {
-                 map.put("detail", bodyText(DetailModel.getDetailText(node)));
-            }
-            if (NoteModel.getNoteText(node) != null) {
-                 map.put("note", bodyText(NoteModel.getNoteText(node)));
+                map.put("detail", bodyText(DetailModel.getDetailText(node)));
             }
 
+            if (NoteModel.getNoteText(node) != null) {
+                map.put("note", bodyText(NoteModel.getNoteText(node)));
+            }
+
+            // ---------- tags ----------
             List<Tag> nodeTags = mIconController.getTags(node);
             if (nodeTags != null && !nodeTags.isEmpty()) {
                 List<String> tags = nodeTags.stream()
@@ -880,6 +899,9 @@ public class GrpcRegistration {
                 map.put("tags", tags);
             }
         }
+
+
+
 
         @Override
         public void mindMapToJSON(MindMapToJSONRequest req, StreamObserver<MindMapToJSONResponse> responseObserver) /*throws JsonProcessingException*/ {
