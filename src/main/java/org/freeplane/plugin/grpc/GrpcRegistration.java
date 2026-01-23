@@ -52,6 +52,8 @@ import org.freeplane.features.map.IMapSelection;
 import org.freeplane.features.ui.ViewController;
 import org.freeplane.features.url.mindmapmode.MFileManager;
 import org.freeplane.features.mode.mindmapmode.MModeController;
+import org.freeplane.features.icon.IconController;
+import org.freeplane.features.icon.NamedIcon;
 import org.freeplane.core.resources.ResourceController;
 import org.freeplane.core.util.TextUtils;
 
@@ -80,6 +82,8 @@ import java.util.logging.Logger;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Collections;
+import java.util.Collection;
+
 import java.net.URI;
 import java.net.InetSocketAddress;
 import org.jsoup.Jsoup;
@@ -901,6 +905,15 @@ public class GrpcRegistration {
 
                 map.put("tags", tags);
             }
+
+            if (node.getIcons().size() > 0) {
+                List<String> icons = node.getIcons().stream()
+                    .map(NamedIcon::getName)
+                    .collect(Collectors.toList());
+
+                map.put("icons", icons);
+            }
+
         }
 
 
