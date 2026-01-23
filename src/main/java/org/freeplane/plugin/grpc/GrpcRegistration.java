@@ -848,7 +848,9 @@ public class GrpcRegistration {
             final MIconController mIconController =
                 (MIconController) IconController.getController();
 
+
             map.put("text", node.getUserObject().toString());
+            map.put("id", node.getID());
 
             // ---------- children ----------
             NodeModel[] children = node.getChildren().toArray(new NodeModel[] {});
@@ -888,6 +890,7 @@ public class GrpcRegistration {
             if (NoteModel.getNoteText(node) != null) {
                 map.put("note", bodyText(NoteModel.getNoteText(node)));
             }
+
 
             // ---------- tags ----------
             List<Tag> nodeTags = mIconController.getTags(node);
