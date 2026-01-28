@@ -58,6 +58,7 @@ import org.freeplane.core.resources.ResourceController;
 import org.freeplane.core.util.TextUtils;
 
 import org.freeplane.api.Attributes;
+//import org.freeplane.api.Controller;
 import org.freeplane.core.util.Hyperlink;
 //import org.freeplane.plugin.script.FormulaUtils;
 //import org.freeplane.plugin.script.FormulaUtils;
@@ -681,8 +682,7 @@ public class GrpcRegistration {
                             parentNode.addIcon(icon);
                           }
                        }
-                    }
-                    if (key.equals("tags")) {
+                    } else if (key.equals("tags")) {
                       List<Tag> tagList = Arrays.stream(value.toString().split(","))
                           .map(String::trim)
                           .filter(s -> !s.isEmpty())
@@ -690,7 +690,8 @@ public class GrpcRegistration {
                           .collect(Collectors.toList());
 
                       mIconController.setTags(parentNode, tagList, false);
-                    } else if (key.equals("detail")) {
+                    }
+                    if (key.equals("detail")) {
                         mTextController.setDetails(parentNode, value.toString());
                     } else if (key.equals("link")) {
                         try {
@@ -919,6 +920,29 @@ public class GrpcRegistration {
             nodeWalk(result, rootNode);
             System.out.println("GRPC Freeplane::MindMapToJSON()");
             MindMapToJSONResponse reply = MindMapToJSONResponse.newBuilder().setSuccess(success).setJson(gson.toJson(result)).build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+        }
+
+        @Override
+        public void focusNode(FocusNodeRequest req, StreamObserver<FocusNodeResponse> responseObserver) {
+            boolean success = false;
+            final Controller controller = Controller.getCurrentController();
+            final MapModel map = Controller.getCurrentController().getMap();
+            final NodeModel targetNode = map.getNodeForID(req.getNodeId());
+
+            System.out.println("GRPC Freeplane::focusNode(node_id: " + req.getNodeId() + ")");
+
+            if (targetNode != null) {
+			        targetNode.setChildNodeSidesAsNow();
+		          controller.getSelection().scrollNodeToCenter(targetNode, false);
+			        controller.getMapViewManager().setViewRoot(targetNode);
+              success = true;
+            } else {
+              System.out.println("GRPC Freeplane::focusNode(node_id: " + req.getNodeId() + ") failed, targetNode == null");
+            }
+
+            FocusNodeResponse reply = FocusNodeResponse.newBuilder().setSuccess(success).build();
             responseObserver.onNext(reply);
             responseObserver.onCompleted();
         }
