@@ -816,18 +816,6 @@ public class GrpcRegistration {
                   }
               }
             }
-            /*
-            for (NodeModel node : newNodes) {
-                if (atrUtil.hasAttributes(node)) {
-                  final NodeAttributeTableModel attributes = NodeAttributeTableModel.getModel(node);
-                  for (int i = attributes.getRowCount() - 1; i >= 0; i--) {
-                    if (attributes.getAttribute(i).getName().equals("uuid")) {
-                      attributeController.performRemoveRow(node, attributes, i);
-                    }
-                  }
-                }
-            }
-            */
             System.out.println("====");
 
             MindMapFromJSONResponse reply = MindMapFromJSONResponse.newBuilder().setSuccess(success).build();
