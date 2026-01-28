@@ -27,6 +27,7 @@ service Freeplane {
   rpc MindMapToJSON (MindMapToJSONRequest) returns (MindMapToJSONResponse) {};
   rpc GetCurrentNode (GetCurrentNodeRequest) returns (GetCurrentNodeResponse) {};
   rpc OpenMap (OpenMapRequest) returns (OpenMapResponse) {};
+  rpc FocusNode (FocusNodeRequest) returns (FocusNodeResponse) {};
 }
 
 
@@ -165,7 +166,7 @@ message GetCurrentNodeRequest {
 
 message GetCurrentNodeResponse {
   string map_id = 1;
-  string node_id = 2; 
+  string node_id = 2;
   bool success = 3;
 }
 
@@ -202,5 +203,13 @@ message OpenMapRequest {
 }
 
 message OpenMapResponse {
+  bool success = 1;
+}
+
+message FocusNodeRequest {
+  string node_id = 1;
+}
+
+message FocusNodeResponse {
   bool success = 1;
 }
