@@ -38,6 +38,7 @@ import org.freeplane.features.note.mindmapmode.MNoteController;
 import org.freeplane.features.text.TextController;
 import org.freeplane.features.text.DetailModel;
 import org.freeplane.features.link.LinkController;
+import org.freeplane.features.link.NodeLinks;
 import org.freeplane.features.note.NoteModel;
 
 import org.freeplane.features.attribute.Attribute;
@@ -881,6 +882,9 @@ public class GrpcRegistration {
 
             if (NoteModel.getNoteText(node) != null) {
                 map.put("note", bodyText(NoteModel.getNoteText(node)));
+            }
+            if (NodeLinks.getLink(node) != null) {
+                map.put("link", NodeLinks.getLink(node).toString());
             }
 
 
