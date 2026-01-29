@@ -690,8 +690,7 @@ public class GrpcRegistration {
                           .collect(Collectors.toList());
 
                       mIconController.setTags(parentNode, tagList, false);
-                    }
-                    if (key.equals("detail")) {
+                    } else if (key.equals("detail")) {
                         mTextController.setDetails(parentNode, value.toString());
                     } else if (key.equals("link")) {
                         try {
@@ -929,13 +928,16 @@ public class GrpcRegistration {
             boolean success = false;
             final Controller controller = Controller.getCurrentController();
             final MapModel map = Controller.getCurrentController().getMap();
+            final MapController mapController = Controller.getCurrentModeController().getMapController();
+            final IMapSelection selection = Controller.getCurrentController().getSelection();
             final NodeModel targetNode = map.getNodeForID(req.getNodeId());
 
             System.out.println("GRPC Freeplane::focusNode(node_id: " + req.getNodeId() + ")");
 
             if (targetNode != null) {
-			        targetNode.setChildNodeSidesAsNow();
-		          controller.getSelection().scrollNodeToCenter(targetNode, false);
+              selection.selectAsTheOnlyOneSelected(targetNode);
+			        //targetNode.setChildNodeSidesAsNow();
+		          //controller.getSelection().scrollNodeToCenter(targetNode, false);
 			        controller.getMapViewManager().setViewRoot(targetNode);
               success = true;
             } else {
