@@ -1,112 +1,84 @@
-//package org.freeplane.plugin.grpc;
 package org.freeplane.plugin.grpc;
-//import org.freeplane.plugin.grpc.HelloWorldServer;
-//import io.grpc.examples.helloworld;
-//
+
 import java.awt.Color;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
-import com.google.gson.Gson;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
-
-import org.freeplane.view.swing.features.FitToPage;
+import org.freeplane.core.resources.ResourceController;
+import org.freeplane.core.util.Hyperlink;
+import org.freeplane.core.util.TextUtils;
+import org.freeplane.features.attribute.Attribute;
+import org.freeplane.features.attribute.AttributeController;
+import org.freeplane.features.attribute.AttributeMatchesCondition;
+import org.freeplane.features.attribute.NodeAttributeTableModel;
+import org.freeplane.features.attribute.mindmapmode.AttributeUtilities;
+import org.freeplane.features.attribute.mindmapmode.MAttributeController;
+import org.freeplane.features.filter.Filter;
 import org.freeplane.features.icon.IconClickedEvent;
 import org.freeplane.features.icon.IconController;
 import org.freeplane.features.icon.IconMouseListener;
-import org.freeplane.features.icon.mindmapmode.MIconController;
 import org.freeplane.features.icon.Tag;
 import org.freeplane.features.icon.*;
-import org.freeplane.features.icon.MindIcon;
-import org.freeplane.features.icon.factory.IconStoreFactory;
-import org.freeplane.features.mode.ModeController;
-import org.freeplane.features.filter.Filter;
-
-import org.freeplane.features.attribute.AttributeController;
-import org.freeplane.features.map.mindmapmode.MMapController;
-
-import org.freeplane.features.attribute.mindmapmode.AttributeUtilities;
-import org.freeplane.features.attribute.mindmapmode.MAttributeController;
-import org.freeplane.features.nodestyle.mindmapmode.MNodeStyleController;
-import org.freeplane.features.nodestyle.NodeStyleController;
-import org.freeplane.features.link.mindmapmode.MLinkController;
+import org.freeplane.features.icon.mindmapmode.MIconController;
 import org.freeplane.features.link.ConnectorModel;
-import org.freeplane.features.text.mindmapmode.MTextController;
-import org.freeplane.features.note.mindmapmode.MNoteController;
-import org.freeplane.features.text.TextController;
-import org.freeplane.features.text.DetailModel;
 import org.freeplane.features.link.LinkController;
 import org.freeplane.features.link.NodeLinks;
-import org.freeplane.features.note.NoteModel;
-
-import org.freeplane.features.attribute.Attribute;
-import org.freeplane.features.attribute.NodeAttributeTableModel;
-import org.freeplane.features.mode.Controller;
-import org.freeplane.features.map.MapController;
-import org.freeplane.features.map.NodeModel;
-import org.freeplane.features.map.MapModel;
-import org.freeplane.features.map.SharedNodeData;
-import org.freeplane.features.map.NodeBuilder;
+import org.freeplane.features.link.mindmapmode.MLinkController;
 import org.freeplane.features.map.IMapSelection;
-import org.freeplane.features.ui.ViewController;
-import org.freeplane.features.url.mindmapmode.MFileManager;
+import org.freeplane.features.map.MapController;
+import org.freeplane.features.map.MapModel;
+import org.freeplane.features.map.NodeBuilder;
+import org.freeplane.features.map.NodeModel;
+import org.freeplane.features.map.SharedNodeData;
+import org.freeplane.features.map.mindmapmode.MMapController;
+import org.freeplane.features.mode.Controller;
+import org.freeplane.features.mode.ModeController;
 import org.freeplane.features.mode.mindmapmode.MModeController;
-import org.freeplane.features.icon.IconController;
-import org.freeplane.features.icon.NamedIcon;
-import org.freeplane.core.resources.ResourceController;
-import org.freeplane.core.util.TextUtils;
+import org.freeplane.features.nodestyle.NodeStyleController;
+import org.freeplane.features.nodestyle.mindmapmode.MNodeStyleController;
+import org.freeplane.features.note.NoteModel;
+import org.freeplane.features.note.mindmapmode.MNoteController;
+import org.freeplane.features.text.DetailModel;
+import org.freeplane.features.text.TextController;
+import org.freeplane.features.text.mindmapmode.MTextController;
+import org.freeplane.view.swing.features.FitToPage;
 
-import org.freeplane.api.Attributes;
-//import org.freeplane.api.Controller;
-import org.freeplane.core.util.Hyperlink;
-//import org.freeplane.plugin.script.FormulaUtils;
-//import org.freeplane.plugin.script.FormulaUtils;
-//
-//
-import java.io.File;
-import java.net.URL;
-
-import org.freeplane.features.attribute.AttributeMatchesCondition;
-
-
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.google.gson.Gson;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.netty.NettyServerBuilder;
 import io.grpc.stub.StreamObserver;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.io.FileNotFoundException;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Collections;
-import java.util.Collection;
-
-import java.net.URI;
-import java.net.InetSocketAddress;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
-
 import org.json.*;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.Arrays;
-
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 public class GrpcRegistration {
       private Server server;
