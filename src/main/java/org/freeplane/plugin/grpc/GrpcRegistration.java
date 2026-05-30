@@ -111,9 +111,9 @@ import java.nio.file.Path;
 public class GrpcRegistration {
       private Server server;
 
-    	private String listenAddress;
-    	private Integer bindPort;
-    	private final Integer defaultPort = 50051;
+    private String listenAddress;
+        private Integer bindPort;
+        private final Integer defaultPort = 50051;
       public static NodeModel findNodeByAttributeUUID(List<NodeModel> nodes, String uuid) {
           for (NodeModel node : nodes) {
               NodeAttributeTableModel natm = NodeAttributeTableModel.getModel(node);
@@ -162,7 +162,7 @@ public class GrpcRegistration {
           }
       }
 
-	    public GrpcRegistration(ModeController modeController) {
+        public GrpcRegistration(ModeController modeController) {
           listenAddress = System.getenv("GRPC_LISTEN_ADDR");
           String portStr = System.getenv("GRPC_LISTEN_PORT");
 
@@ -173,15 +173,15 @@ public class GrpcRegistration {
           }
 
           try {
-      		    server = NettyServerBuilder.forAddress(new InetSocketAddress(listenAddress, bindPort)).addService(new FreeplaneImpl()).build().start();
+                  server = NettyServerBuilder.forAddress(new InetSocketAddress(listenAddress, bindPort)).addService(new FreeplaneImpl()).build().start();
           } catch(IOException e) {
               System.out.println("Failed to listen socket exception");
           }
           System.out.println("Freeplane grpc plugin loaded and listen on " + listenAddress + ":" + bindPort);
-	    }
- 	    static class FreeplaneImpl extends FreeplaneGrpc.FreeplaneImplBase {
-    	    @Override
-    		  public void createChild(CreateChildRequest req, StreamObserver<CreateChildResponse> responseObserver) {
+        }
+         static class FreeplaneImpl extends FreeplaneGrpc.FreeplaneImplBase {
+            @Override
+              public void createChild(CreateChildRequest req, StreamObserver<CreateChildResponse> responseObserver) {
               final MapController mapController = Controller.getCurrentModeController().getMapController();
               final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
               final MapModel map = Controller.getCurrentController().getMap();
@@ -208,11 +208,11 @@ public class GrpcRegistration {
               }
 
 
-      			  responseObserver.onNext(reply);
-      			  responseObserver.onCompleted();
-    		}
-    		@Override
-    		public void deleteChild(DeleteChildRequest req, StreamObserver<DeleteChildResponse> responseObserver) {
+                    responseObserver.onNext(reply);
+                    responseObserver.onCompleted();
+            }
+            @Override
+            public void deleteChild(DeleteChildRequest req, StreamObserver<DeleteChildResponse> responseObserver) {
             System.out.println("GRPC Freeplane::deleteChild(" + req.getNodeId() + ")");
             final MapController mapController = Controller.getCurrentModeController().getMapController();
             final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
@@ -226,11 +226,11 @@ public class GrpcRegistration {
             }
 
             DeleteChildResponse reply = DeleteChildResponse.newBuilder().setSuccess(success).build();
-      			responseObserver.onNext(reply);
-      			responseObserver.onCompleted();
-    		}
+                  responseObserver.onNext(reply);
+                  responseObserver.onCompleted();
+            }
         @Override
-    		public void nodeAttributeAdd(NodeAttributeAddRequest req, StreamObserver<NodeAttributeAddResponse> responseObserver) {
+            public void nodeAttributeAdd(NodeAttributeAddRequest req, StreamObserver<NodeAttributeAddResponse> responseObserver) {
             System.out.println("GRPC Freeplane::nodeAttributeAdd(node_id: " + req.getNodeId() + ", name:" + req.getAttributeName() + ", value: " + req.getAttributeValue() + ")");
             final MapModel map = Controller.getCurrentController().getMap();
             boolean success = false;
@@ -243,11 +243,11 @@ public class GrpcRegistration {
             }
 
             NodeAttributeAddResponse reply = NodeAttributeAddResponse.newBuilder().setSuccess(success).build();
-      			responseObserver.onNext(reply);
-      			responseObserver.onCompleted();
+                  responseObserver.onNext(reply);
+                  responseObserver.onCompleted();
         }
         @Override
-    		public void nodeLinkSet(NodeLinkSetRequest req, StreamObserver<NodeLinkSetResponse> responseObserver) {
+            public void nodeLinkSet(NodeLinkSetRequest req, StreamObserver<NodeLinkSetResponse> responseObserver) {
             boolean success = false;
             final MLinkController mLinkController = (MLinkController) LinkController.getController();
             final MapModel map = Controller.getCurrentController().getMap();
@@ -265,12 +265,12 @@ public class GrpcRegistration {
             }
 
             NodeLinkSetResponse reply = NodeLinkSetResponse.newBuilder().setSuccess(success).build();
-      			responseObserver.onNext(reply);
-      			responseObserver.onCompleted();
+                  responseObserver.onNext(reply);
+                  responseObserver.onCompleted();
        }
 
         @Override
-    		public void nodeDetailsSet(NodeDetailsSetRequest req, StreamObserver<NodeDetailsSetResponse> responseObserver) {
+            public void nodeDetailsSet(NodeDetailsSetRequest req, StreamObserver<NodeDetailsSetResponse> responseObserver) {
             boolean success = false;
             final MapModel map = Controller.getCurrentController().getMap();
             final MTextController mTextController = (MTextController) TextController.getController();
@@ -283,8 +283,8 @@ public class GrpcRegistration {
             }
 
             NodeDetailsSetResponse reply = NodeDetailsSetResponse.newBuilder().setSuccess(success).build();
-      			responseObserver.onNext(reply);
-      			responseObserver.onCompleted();
+                  responseObserver.onNext(reply);
+                  responseObserver.onCompleted();
         }
 
         @Override
@@ -423,7 +423,7 @@ public class GrpcRegistration {
 
 
         @Override
-    		public void groovy(GroovyRequest req, StreamObserver<GroovyResponse> responseObserver) {
+            public void groovy(GroovyRequest req, StreamObserver<GroovyResponse> responseObserver) {
             boolean success = true;
             String groovyCode = new StringBuilder()
                  .append("import org.freeplane.plugin.script.proxy.ScriptUtils;")
@@ -434,12 +434,12 @@ public class GrpcRegistration {
             // TODO(@metacoma) eval groovy script
             System.out.println("GRPC Freeplane::groovy(" + groovyCode + ")");
             GroovyResponse reply = GroovyResponse.newBuilder().setSuccess(success).build();
-      			responseObserver.onNext(reply);
-      			responseObserver.onCompleted();
+                  responseObserver.onNext(reply);
+                  responseObserver.onCompleted();
         }
 
         @Override
-    		public void nodeColorSet(NodeColorSetRequest req, StreamObserver<NodeColorSetResponse> responseObserver) {
+            public void nodeColorSet(NodeColorSetRequest req, StreamObserver<NodeColorSetResponse> responseObserver) {
             boolean success = false;
             //final MLinkController mLinkController = (MLinkController) LinkController.getController();
             final MNodeStyleController mNodeStyleController = (MNodeStyleController) NodeStyleController.getController();
@@ -470,7 +470,7 @@ public class GrpcRegistration {
         }
 
          @Override
-    		public void nodeBackgroundColorSet(NodeBackgroundColorSetRequest req, StreamObserver<NodeBackgroundColorSetResponse> responseObserver) {
+            public void nodeBackgroundColorSet(NodeBackgroundColorSetRequest req, StreamObserver<NodeBackgroundColorSetResponse> responseObserver) {
             boolean success = false;
             final MNodeStyleController mNodeStyleController = (MNodeStyleController) NodeStyleController.getController();
             final MapModel map = Controller.getCurrentController().getMap();
@@ -498,7 +498,7 @@ public class GrpcRegistration {
             responseObserver.onCompleted();
         }
         @Override
-    		public void statusInfoSet(StatusInfoSetRequest req, StreamObserver<StatusInfoSetResponse> responseObserver) {
+            public void statusInfoSet(StatusInfoSetRequest req, StreamObserver<StatusInfoSetResponse> responseObserver) {
             boolean success = false;
             final MapController mapController = Controller.getCurrentModeController().getMapController();
             final String statusInfo = req.getStatusInfo();
@@ -510,11 +510,11 @@ public class GrpcRegistration {
             }
 
             StatusInfoSetResponse reply = StatusInfoSetResponse.newBuilder().setSuccess(success).build();
-      			responseObserver.onNext(reply);
-      			responseObserver.onCompleted();
+                  responseObserver.onNext(reply);
+                  responseObserver.onCompleted();
         }
         @Override
-    		public void getCurrentNode(GetCurrentNodeRequest req, StreamObserver<GetCurrentNodeResponse> responseObserver) {
+            public void getCurrentNode(GetCurrentNodeRequest req, StreamObserver<GetCurrentNodeResponse> responseObserver) {
             boolean success = false;
             final IMapSelection selection = Controller.getCurrentController().getSelection();
             final MapModel map = Controller.getCurrentController().getMap();
@@ -526,15 +526,15 @@ public class GrpcRegistration {
               reply = GetCurrentNodeResponse.newBuilder().setNodeId("-1").setMapId("-1").setSuccess(false).build();
             }
 
-      			responseObserver.onNext(reply);
-      			responseObserver.onCompleted();
+                  responseObserver.onNext(reply);
+                  responseObserver.onCompleted();
         }
         @Override
-    		public void openMap(OpenMapRequest req, StreamObserver<OpenMapResponse> responseObserver) {
-				    final Controller controller = Controller.getCurrentController();
-					  final ModeController modeController = controller.getModeController(MModeController.MODENAME);
+            public void openMap(OpenMapRequest req, StreamObserver<OpenMapResponse> responseObserver) {
+                    final Controller controller = Controller.getCurrentController();
+                      final ModeController modeController = controller.getModeController(MModeController.MODENAME);
             final MapController mapController = Controller.getCurrentModeController().getMapController();
-					  final MFileManager fileManager = MFileManager.getController(modeController);
+                      final MFileManager fileManager = MFileManager.getController(modeController);
             boolean success = false;
             String mapFilePath = req.getFilePath();
             URL mindmapURL = null;
@@ -574,10 +574,10 @@ public class GrpcRegistration {
               }
             }
 
-      			responseObserver.onNext(OpenMapResponse.newBuilder().setSuccess(success).build());
-      			responseObserver.onCompleted();
+                  responseObserver.onNext(OpenMapResponse.newBuilder().setSuccess(success).build());
+                  responseObserver.onCompleted();
         }
-		    @Override
+            @Override
         public void textFSM(TextFSMRequest req, StreamObserver<TextFSMResponse> responseObserver) {
             final MapController mapController = Controller.getCurrentModeController().getMapController();
             final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
@@ -631,7 +631,7 @@ public class GrpcRegistration {
             TextFSMResponse reply = TextFSMResponse.newBuilder().setSuccess(success).build();
             responseObserver.onNext(reply);
             responseObserver.onCompleted();
-		    }
+            }
 
         private static void recursiveJSONLoop(JSONObject jsonObject,NodeModel parentNode) {
             final ResourceController resourceController = ResourceController.getResourceController();
@@ -940,9 +940,9 @@ public class GrpcRegistration {
 
             if (targetNode != null) {
               selection.selectAsTheOnlyOneSelected(targetNode);
-			        //targetNode.setChildNodeSidesAsNow();
-		          //controller.getSelection().scrollNodeToCenter(targetNode, false);
-			        controller.getMapViewManager().setViewRoot(targetNode);
+                    //targetNode.setChildNodeSidesAsNow();
+                  //controller.getSelection().scrollNodeToCenter(targetNode, false);
+                    controller.getMapViewManager().setViewRoot(targetNode);
               success = true;
             } else {
               System.out.println("GRPC Freeplane::focusNode(node_id: " + req.getNodeId() + ") failed, targetNode == null");
