@@ -3,8 +3,8 @@ plugins {
 }
 
 java {
-  sourceCompatibility = 1.8
-  targetCompatibility = 1.8
+  sourceCompatibility = JavaVersion.VERSION_21
+  targetCompatibility = JavaVersion.VERSION_21
 }
 
 def grpcVersion = '1.52.0' // CURRENT_GRPC_VERSION
@@ -35,7 +35,6 @@ dependencies {
     lib "com.google.protobuf:protobuf-java-util:${protobufVersion}"
     lib 'org.json:json:20210307'
     lib 'com.google.code.gson:gson:2.10.1'
-    lib 'com.fasterxml.jackson.core:jackson-databind:2.12.5'
     lib 'org.jsoup:jsoup:1.13.1'
 
     compileOnly "org.apache.tomcat:annotations-api:6.0.53"
