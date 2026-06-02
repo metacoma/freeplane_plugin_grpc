@@ -212,7 +212,9 @@ class Node:
         """Get the style information for this node.
 
         Returns:
-            A dictionary with style properties.
+            A dictionary with a 'style' key whose value is the
+            Groovy result (a map of style property names to values,
+            or a string representation thereof).
 
         Raises:
             FreeplaneOperationError: If the operation fails.
@@ -255,7 +257,9 @@ class Node:
         """Get the foreground color of this node.
 
         Returns:
-            A dictionary with 'red', 'green', 'blue', 'alpha' keys.
+            A dictionary with a 'color' key whose value is the
+            Groovy result (a map with 'red', 'green', 'blue', 'alpha'
+            keys, or a string representation thereof).
 
         Raises:
             FreeplaneOperationError: If the operation fails.
@@ -379,7 +383,9 @@ class Node:
         """Get the custom attributes of this node.
 
         Returns:
-            A dictionary of attribute name-value pairs.
+            A dictionary with an 'attributes' key whose value is the
+            Groovy result (a map of attribute name-value pairs,
+            or a string representation thereof).
 
         Raises:
             FreeplaneOperationError: If the operation fails.
@@ -519,11 +525,13 @@ class Node:
 
     # -- icons --------------------------------------------------------------
 
-    def get_icons(self) -> list[str]:
+    def get_icons(self) -> dict:
         """Get the icons of this node.
 
         Returns:
-            A list of icon names.
+            A dictionary with an 'icons' key whose value is the
+            Groovy result (may be a list of icon names or a string
+            representation thereof).
 
         Raises:
             FreeplaneOperationError: If the operation fails.

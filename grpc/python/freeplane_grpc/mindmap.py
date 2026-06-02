@@ -265,14 +265,14 @@ class MindMap:
         result = self._client.groovy(groovy_code)
         return "Error" not in result
 
-    def import_map(self, path: str) -> bool:
+    def import_map(self, path: str) -> MindMap:
         """Import a mind map from a file.
 
         Args:
             path: Path to the map file (.mm, .xml, etc.).
 
         Returns:
-            True if the import succeeded.
+            A MindMap instance for the imported map.
 
         Raises:
             FreeplaneOperationError: If the operation fails.

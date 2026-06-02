@@ -173,14 +173,14 @@ class FreeplaneClient:
             )
         return MindMap(client=self, map_id=resp.map_id, node_id=resp.node_id)
 
-    def selected_node(self) -> MindMap:
-        """Get the currently selected node as a MindMap context.
+    def selected_map(self) -> MindMap:
+        """Get the current mind map as a context rooted at the selected node.
 
         Convenience wrapper around current_map() that returns a MindMap
-        with the selected node set.
+        with the currently focused node set.
 
         Returns:
-            A MindMap instance pointing to the selected node.
+            A MindMap instance rooted at the selected node.
 
         Raises:
             FreeplaneConnectionError: If the connection fails.
