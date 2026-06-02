@@ -15,6 +15,7 @@ import org.freeplane.features.icon.factory.IconStoreFactory;
 import org.freeplane.features.icon.mindmapmode.MIconController;
 import org.freeplane.features.link.ConnectorModel;
 import org.freeplane.features.link.LinkController;
+import org.freeplane.features.link.NodeLinks;
 import org.freeplane.features.link.mindmapmode.MLinkController;
 import org.freeplane.features.map.IMapSelection;
 import org.freeplane.features.map.MapController;
@@ -24,6 +25,7 @@ import org.freeplane.features.map.mindmapmode.MMapController;
 import org.freeplane.features.mode.Controller;
 import org.freeplane.features.mode.ModeController;
 import org.freeplane.features.mode.mindmapmode.MModeController;
+import org.freeplane.features.note.NoteModel;
 import org.freeplane.features.note.mindmapmode.MNoteController;
 import org.freeplane.features.nodestyle.NodeStyleController;
 import org.freeplane.features.nodestyle.mindmapmode.MNodeStyleController;
@@ -714,6 +716,269 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
         }
 
         final FocusNodeResponse reply = FocusNodeResponse.newBuilder().setSuccess(success).build();
+        responseObserver.onNext(reply);
+        responseObserver.onCompleted();
+    }
+
+    // --- Group A: Node Inspection ---
+
+    @Override
+    public void getNodeText(final GetNodeTextRequest req,
+                            final StreamObserver<GetNodeTextResponse> responseObserver) {
+        final MapModel map = Controller.getCurrentController().getMap();
+        LOG.info("GRPC Freeplane::getNodeText(node_id: " + req.getNodeId() + ")");
+
+        final NodeModel targetNode = map.getNodeForID(req.getNodeId());
+        GetNodeTextResponse reply;
+
+        if (targetNode != null) {
+            final String text = targetNode.getText();
+            reply = GetNodeTextResponse.newBuilder()
+                .setSuccess(true)
+                .setNodeId(targetNode.getID())
+                .setText(text)
+                .build();
+        } else {
+            LOG.warning("GRPC Freeplane::getNodeText node not found: " + req.getNodeId());
+            reply = GetNodeTextResponse.newBuilder()
+                .setSuccess(false)
+                .setNodeId(req.getNodeId())
+                .setErrorMessage("Node not found: " + req.getNodeId())
+                .build();
+        }
+
+        responseObserver.onNext(reply);
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getParentNode(final GetParentNodeRequest req,
+                              final StreamObserver<GetParentNodeResponse> responseObserver) {
+        final MapModel map = Controller.getCurrentController().getMap();
+        LOG.info("GRPC Freeplane::getParentNode(node_id: " + req.getNodeId() + ")");
+
+        final NodeModel targetNode = map.getNodeForID(req.getNodeId());
+        GetParentNodeResponse reply;
+
+        if (targetNode != null) {
+            final NodeModel parentNode = targetNode.getParentNode();
+            if (parentNode != null) {
+                reply = GetParentNodeResponse.newBuilder()
+                    .setSuccess(true)
+                    .setNodeId(targetNode.getID())
+                    .setParentNodeId(parentNode.getID())
+                    .setParentNodeText(parentNode.getText())
+                    .build();
+            } else {
+                // targetNode is the root or has no parent
+                reply = GetParentNodeResponse.newBuilder()
+                    .setSuccess(true)
+                    .setNodeId(targetNode.getID())
+                    .setParentNodeId("")
+                    .setParentNodeText("")
+                    .build();
+            }
+        } else {
+            LOG.warning("GRPC Freeplane::getParentNode node not found: " + req.getNodeId());
+            reply = GetParentNodeResponse.newBuilder()
+                .setSuccess(false)
+                .setNodeId(req.getNodeId())
+                .setErrorMessage("Node not found: " + req.getNodeId())
+                .build();
+        }
+
+        responseObserver.onNext(reply);
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void listChildNodes(final ListChildNodesRequest req,
+                               final StreamObserver<ListChildNodesResponse> responseObserver) {
+        final MapModel map = Controller.getCurrentController().getMap();
+        LOG.info("GRPC Freeplane::listChildNodes(node_id: " + req.getNodeId() + ")");
+
+        final NodeModel targetNode = map.getNodeForID(req.getNodeId());
+        ListChildNodesResponse.Builder replyBuilder = ListChildNodesResponse.newBuilder().setSuccess(false);
+
+        if (targetNode != null) {
+            int childCount = targetNode.getChildCount();
+            LOG.info("GRPC Freeplane::listChildNodes found " + childCount + " children");
+            for (NodeModel child : targetNode.getChildren()) {
+                replyBuilder.addChildren(ChildNodeInfo.newBuilder()
+                    .setNodeId(child.getID())
+                    .setText(child.getText())
+                    .build());
+            }
+            replyBuilder.setSuccess(true);
+        } else {
+            LOG.warning("GRPC Freeplane::listChildNodes node not found: " + req.getNodeId());
+            replyBuilder.setErrorMessage("Node not found: " + req.getNodeId());
+        }
+
+        responseObserver.onNext(replyBuilder.build());
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getNodeNote(final GetNodeNoteRequest req,
+                            final StreamObserver<GetNodeNoteResponse> responseObserver) {
+        final MapModel map = Controller.getCurrentController().getMap();
+        LOG.info("GRPC Freeplane::getNodeNote(node_id: " + req.getNodeId() + ")");
+
+        final NodeModel targetNode = map.getNodeForID(req.getNodeId());
+        GetNodeNoteResponse reply;
+
+        if (targetNode != null) {
+            org.freeplane.features.note.NoteModel note = org.freeplane.features.note.NoteModel.getNote(targetNode);
+            if (note != null) {
+                String noteText = org.freeplane.features.note.NoteModel.getNoteText(targetNode);
+                if (noteText == null) {
+                    noteText = "";
+                }
+                reply = GetNodeNoteResponse.newBuilder()
+                    .setSuccess(true)
+                    .setNodeId(targetNode.getID())
+                    .setNote(noteText)
+                    .setHasNote(true)
+                    .build();
+            } else {
+                reply = GetNodeNoteResponse.newBuilder()
+                    .setSuccess(true)
+                    .setNodeId(targetNode.getID())
+                    .setNote("")
+                    .setHasNote(false)
+                    .build();
+            }
+        } else {
+            LOG.warning("GRPC Freeplane::getNodeNote node not found: " + req.getNodeId());
+            reply = GetNodeNoteResponse.newBuilder()
+                .setSuccess(false)
+                .setNodeId(req.getNodeId())
+                .setErrorMessage("Node not found: " + req.getNodeId())
+                .build();
+        }
+
+        responseObserver.onNext(reply);
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getNodeLink(final GetNodeLinkRequest req,
+                            final StreamObserver<GetNodeLinkResponse> responseObserver) {
+        final MapModel map = Controller.getCurrentController().getMap();
+        LOG.info("GRPC Freeplane::getNodeLink(node_id: " + req.getNodeId() + ")");
+
+        final NodeModel targetNode = map.getNodeForID(req.getNodeId());
+        GetNodeLinkResponse reply;
+
+        if (targetNode != null) {
+            Hyperlink hyperlink = NodeLinks.getLink(targetNode);
+            if (hyperlink != null && hyperlink.getUri() != null) {
+                reply = GetNodeLinkResponse.newBuilder()
+                    .setSuccess(true)
+                    .setNodeId(targetNode.getID())
+                    .setLink(hyperlink.getUri().toString())
+                    .setHasLink(true)
+                    .build();
+            } else {
+                reply = GetNodeLinkResponse.newBuilder()
+                    .setSuccess(true)
+                    .setNodeId(targetNode.getID())
+                    .setLink("")
+                    .setHasLink(false)
+                    .build();
+            }
+        } else {
+            LOG.warning("GRPC Freeplane::getNodeLink node not found: " + req.getNodeId());
+            reply = GetNodeLinkResponse.newBuilder()
+                .setSuccess(false)
+                .setNodeId(req.getNodeId())
+                .setErrorMessage("Node not found: " + req.getNodeId())
+                .build();
+        }
+
+        responseObserver.onNext(reply);
+        responseObserver.onCompleted();
+    }
+
+    // --- Group B: Node Manipulation ---
+
+    @Override
+    public void setNodeText(final SetNodeTextRequest req,
+                            final StreamObserver<SetNodeTextResponse> responseObserver) {
+        final MapModel map = Controller.getCurrentController().getMap();
+        LOG.info("GRPC Freeplane::setNodeText(node_id: " + req.getNodeId() + ", text: " + req.getText() + ")");
+
+        final NodeModel targetNode = map.getNodeForID(req.getNodeId());
+        SetNodeTextResponse reply;
+
+        if (targetNode != null) {
+            targetNode.setText(req.getText());
+            reply = SetNodeTextResponse.newBuilder()
+                .setSuccess(true)
+                .setNodeId(targetNode.getID())
+                .build();
+        } else {
+            LOG.warning("GRPC Freeplane::setNodeText node not found: " + req.getNodeId());
+            reply = SetNodeTextResponse.newBuilder()
+                .setSuccess(false)
+                .setNodeId(req.getNodeId())
+                .setErrorMessage("Node not found: " + req.getNodeId())
+                .build();
+        }
+
+        responseObserver.onNext(reply);
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void moveNode(final MoveNodeRequest req,
+                         final StreamObserver<MoveNodeResponse> responseObserver) {
+        final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
+        final MapModel map = Controller.getCurrentController().getMap();
+        LOG.info("GRPC Freeplane::moveNode(node_id: " + req.getNodeId() + ", new_parent_node_id: " + req.getNewParentNodeId() + ")");
+
+        final NodeModel nodeToMove = map.getNodeForID(req.getNodeId());
+        final NodeModel newParent = map.getNodeForID(req.getNewParentNodeId());
+        String errorMessage = null;
+
+        if (nodeToMove == null) {
+            LOG.warning("GRPC Freeplane::moveNode node to move not found: " + req.getNodeId());
+            errorMessage = "Node not found: " + req.getNodeId();
+        } else if (newParent == null) {
+            LOG.warning("GRPC Freeplane::moveNode new parent not found: " + req.getNewParentNodeId());
+            errorMessage = "New parent node not found: " + req.getNewParentNodeId();
+        } else if (nodeToMove == newParent) {
+            LOG.warning("GRPC Freeplane::moveNode node cannot be moved under itself");
+            errorMessage = "Node cannot be moved under itself";
+        } else if (req.getNodeId().equals(req.getNewParentNodeId())) {
+            LOG.warning("GRPC Freeplane::moveNode node ID equals new parent node ID");
+            errorMessage = "Node cannot be moved under itself";
+        } else {
+            // Check if newParent is already a descendant of nodeToMove (would create a cycle)
+            NodeModel check = newParent;
+            boolean isDescendant = false;
+            while (check != null) {
+                if (check == nodeToMove) {
+                    isDescendant = true;
+                    break;
+                }
+                check = check.getParentNode();
+            }
+
+            if (isDescendant) {
+                LOG.warning("GRPC Freeplane::moveNode would create a cycle; new parent is a descendant of node");
+                errorMessage = "Cannot move node: new parent is a descendant of the node";
+            } else {
+                // Use Freeplane's moveNodeAndItsClones to preserve full subtree and metadata
+                mmapController.moveNodeAndItsClones(nodeToMove, newParent, newParent.getChildCount());
+            }
+        }
+
+        final MoveNodeResponse reply = errorMessage != null
+            ? MoveNodeResponse.newBuilder().setSuccess(false).setErrorMessage(errorMessage).build()
+            : MoveNodeResponse.newBuilder().setSuccess(true).build();
+
         responseObserver.onNext(reply);
         responseObserver.onCompleted();
     }
