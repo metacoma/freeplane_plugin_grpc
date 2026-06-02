@@ -14,8 +14,8 @@ cd "${SCRIPT_DIR}"
 
 # Send a Groovy snippet that reads the current node's text.
 # The script uses the Freeplane 'node' binding available in scripts.
-cat <<'EOF' | jq | ${GRPC_CALL} freeplane.Freeplane/Groovy
+cat <<'EOF' | ${GRPC_CALL} freeplane.Freeplane/Groovy
 {
-  "groovy_code": "def n = node.text\n\"Current node text: \" + n"
+  "groovy_code": "node.text"
 }
 EOF
