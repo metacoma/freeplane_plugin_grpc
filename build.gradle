@@ -48,6 +48,8 @@ dependencies {
     testImplementation "org.mockito:mockito-core:3.4.0"
 }
 
+ext.bundleImports = 'org.freeplane.plugin.script.*'
+
 protobuf {
     protoc { artifact = "com.google.protobuf:protoc:${protocVersion}" }
     plugins {
