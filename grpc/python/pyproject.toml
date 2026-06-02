@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "freeplane-grpc"
+version = "0.1.0"
+description = "Python client library for Freeplane gRPC plugin"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "grpcio>=1.60.0",
+    "protobuf>=4.25.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "grpcio-tools>=1.60.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["freeplane_grpc*"]
+
+[tool.setuptools.package-data]
+freeplane_grpc = ["*.py", "*.pyi"]
