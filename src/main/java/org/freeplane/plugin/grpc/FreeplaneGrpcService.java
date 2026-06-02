@@ -312,16 +312,76 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
 
     @Override
     public void groovy(final GroovyRequest req, final StreamObserver<GroovyResponse> responseObserver) {
-        // TODO(@metacoma) eval groovy script
-        final StringBuilder groovyCode = new StringBuilder()
-            .append("import org.freeplane.plugin.script.proxy.ScriptUtils;")
-            .append("def c = ScriptUtils.c();")
-            .append("def node = ScriptUtils.node();")
-            .append(req.getGroovyCode());
-        LOG.info("GRPC Freeplane::groovy(" + groovyCode + ")");
-        final GroovyResponse reply = GroovyResponse.newBuilder().setSuccess(true).build();
-        responseObserver.onNext(reply);
-        responseObserver.onCompleted();
+        final String groovyCode = req.getGroovyCode();
+        if (groovyCode == null || groovyCode.isEmpty()) {
+            final GroovyResponse emptyReply = GroovyResponse.newBuilder()
+                .setSuccess(false)
+                .setErrorMessage("Groovy code request is empty")
+                .build();
+            responseObserver.onNext(emptyReply);
+            responseObserver.onCompleted();
+            return;
+        }
+
+        try {
+            // Get current controller and selected node
+            final Controller controller = Controller.getCurrentController();
+            final org.freeplane.features.map.NodeModel node =
+                controller != null
+                    ? controller.getSelection().getSelected()
+                    : null;
+
+            if (node == null) {
+                final GroovyResponse noNodeReply = GroovyResponse.newBuilder()
+                    .setSuccess(false)
+                    .setErrorMessage("No active Freeplane node selected")
+                    .build();
+                responseObserver.onNext(noNodeReply);
+                responseObserver.onCompleted();
+                return;
+            }
+
+            // Use permissive scripting permissions.
+            // Rationale: gRPC worker threads cannot show UI permission dialogs.
+            // gRPC callers are assumed trusted (local network or authenticated).
+            final org.freeplane.plugin.script.ScriptingPermissions permissions =
+                org.freeplane.plugin.script.ScriptingPermissions.getPermissiveScriptingPermissions();
+
+            // Execute the script via Freeplane's ScriptingEngine.
+            // This creates a GroovyScript, wraps it in ScriptRunner, and executes it.
+            final Object result = org.freeplane.plugin.script.ScriptingEngine.executeScript(
+                node, groovyCode, permissions);
+
+            final GroovyResponse reply = GroovyResponse.newBuilder()
+                .setSuccess(true)
+                .setResult(result != null ? result.toString() : "")
+                .build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+
+        } catch (final org.freeplane.plugin.script.ExecuteScriptException e) {
+            // Script execution failed — extract cause message
+            final Throwable cause = e.getCause();
+            final String errorMsg = cause != null ? cause.getClass().getName() + ": " + cause.getMessage()
+                                                   : e.getMessage();
+            LOG.warning("GRPC Freeplane::groovy execution failed: " + (errorMsg != null ? errorMsg : "Script execution failed"));
+            final GroovyResponse errorReply = GroovyResponse.newBuilder()
+                .setSuccess(false)
+                .setErrorMessage(errorMsg != null ? errorMsg : "Script execution failed")
+                .build();
+            responseObserver.onNext(errorReply);
+            responseObserver.onCompleted();
+
+        } catch (final Exception e) {
+            // Unexpected error (e.g., no controller, threading issues)
+            LOG.severe("GRPC Freeplane::groovy unexpected error: " + e.getMessage());
+            final GroovyResponse errorReply = GroovyResponse.newBuilder()
+                .setSuccess(false)
+                .setErrorMessage(e.getClass().getName() + ": " + e.getMessage())
+                .build();
+            responseObserver.onNext(errorReply);
+            responseObserver.onCompleted();
+        }
     }
 
     @Override
