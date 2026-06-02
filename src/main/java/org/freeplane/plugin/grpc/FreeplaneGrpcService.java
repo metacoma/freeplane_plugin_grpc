@@ -934,21 +934,26 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
     @Override
     public void moveNode(final MoveNodeRequest req,
                          final StreamObserver<MoveNodeResponse> responseObserver) {
-        final MapController mapController = Controller.getCurrentModeController().getMapController();
-        final MMapController mmapController = (MMapController) mapController;
+        final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
         final MapModel map = Controller.getCurrentController().getMap();
         LOG.info("GRPC Freeplane::moveNode(node_id: " + req.getNodeId() + ", new_parent_node_id: " + req.getNewParentNodeId() + ")");
 
         final NodeModel nodeToMove = map.getNodeForID(req.getNodeId());
         final NodeModel newParent = map.getNodeForID(req.getNewParentNodeId());
-        boolean success = false;
+        String errorMessage = null;
 
         if (nodeToMove == null) {
             LOG.warning("GRPC Freeplane::moveNode node to move not found: " + req.getNodeId());
+            errorMessage = "Node not found: " + req.getNodeId();
         } else if (newParent == null) {
             LOG.warning("GRPC Freeplane::moveNode new parent not found: " + req.getNewParentNodeId());
+            errorMessage = "New parent node not found: " + req.getNewParentNodeId();
         } else if (nodeToMove == newParent) {
             LOG.warning("GRPC Freeplane::moveNode node cannot be moved under itself");
+            errorMessage = "Node cannot be moved under itself";
+        } else if (req.getNodeId().equals(req.getNewParentNodeId())) {
+            LOG.warning("GRPC Freeplane::moveNode node ID equals new parent node ID");
+            errorMessage = "Node cannot be moved under itself";
         } else {
             // Check if newParent is already a descendant of nodeToMove (would create a cycle)
             NodeModel check = newParent;
@@ -963,21 +968,18 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
 
             if (isDescendant) {
                 LOG.warning("GRPC Freeplane::moveNode would create a cycle; new parent is a descendant of node");
+                errorMessage = "Cannot move node: new parent is a descendant of the node";
             } else {
-                // Delete node from its current position and re-insert under new parent
-                mmapController.deleteNode(nodeToMove);
-                nodeToMove.createID();
-                final NodeModel newNodeModel = mmapController.newNode(nodeToMove.getText(), nodeToMove.getMap());
-                newNodeModel.setSide(mapController.suggestNewChildSide(newParent, NodeModel.Side.DEFAULT));
-                newNodeModel.createID();
-                mmapController.insertNode(newNodeModel, newParent, 0);
-                // Copy over the original node's ID to preserve references
-                newNodeModel.setID(nodeToMove.getID());
-                success = true;
+                // Use Freeplane's moveNodeAndItsClones to preserve full subtree and metadata
+                mmapController.moveNodeAndItsClones(nodeToMove, newParent, newParent.getChildCount());
             }
         }
 
-        responseObserver.onNext(MoveNodeResponse.newBuilder().setSuccess(success).build());
+        final MoveNodeResponse reply = errorMessage != null
+            ? MoveNodeResponse.newBuilder().setSuccess(false).setErrorMessage(errorMessage).build()
+            : MoveNodeResponse.newBuilder().setSuccess(true).build();
+
+        responseObserver.onNext(reply);
         responseObserver.onCompleted();
     }
 }
