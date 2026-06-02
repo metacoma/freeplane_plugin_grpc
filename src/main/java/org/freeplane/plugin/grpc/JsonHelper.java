@@ -2,7 +2,6 @@ package org.freeplane.plugin.grpc;
 
 import org.freeplane.core.util.Hyperlink;
 import org.freeplane.features.attribute.Attribute;
-import org.freeplane.features.attribute.AttributeController;
 import org.freeplane.features.attribute.NodeAttributeTableModel;
 import org.freeplane.features.attribute.mindmapmode.AttributeUtilities;
 import org.freeplane.features.attribute.mindmapmode.MAttributeController;
