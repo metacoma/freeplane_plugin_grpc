@@ -86,6 +86,8 @@ sleep 1
 
 # --- Start window manager ---
 WM_LOG="$RUNTIME_DIR/wm.log"
+# Export DISPLAY so child processes (including the WM) can see it
+export DISPLAY=":$DISPLAY_NUM"
 start_window_manager() {
     local wm="$1"
     echo "Starting $wm ..."
