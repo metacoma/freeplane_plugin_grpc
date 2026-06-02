@@ -26,6 +26,7 @@ repositories {
 
 dependencies {
     implementation project(':freeplane')
+    implementation project(':freeplane_plugin_script')
 
 
     lib "io.grpc:grpc-protobuf:${grpcVersion}"
