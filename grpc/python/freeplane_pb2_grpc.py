@@ -134,6 +134,41 @@ class FreeplaneStub:
                 request_serializer=freeplane__pb2.FocusNodeRequest.SerializeToString,
                 response_deserializer=freeplane__pb2.FocusNodeResponse.FromString,
                 _registered_method=True)
+        self.GetNodeText = channel.unary_unary(
+                '/freeplane.Freeplane/GetNodeText',
+                request_serializer=freeplane__pb2.GetNodeTextRequest.SerializeToString,
+                response_deserializer=freeplane__pb2.GetNodeTextResponse.FromString,
+                _registered_method=True)
+        self.GetParentNode = channel.unary_unary(
+                '/freeplane.Freeplane/GetParentNode',
+                request_serializer=freeplane__pb2.GetParentNodeRequest.SerializeToString,
+                response_deserializer=freeplane__pb2.GetParentNodeResponse.FromString,
+                _registered_method=True)
+        self.ListChildNodes = channel.unary_unary(
+                '/freeplane.Freeplane/ListChildNodes',
+                request_serializer=freeplane__pb2.ListChildNodesRequest.SerializeToString,
+                response_deserializer=freeplane__pb2.ListChildNodesResponse.FromString,
+                _registered_method=True)
+        self.GetNodeNote = channel.unary_unary(
+                '/freeplane.Freeplane/GetNodeNote',
+                request_serializer=freeplane__pb2.GetNodeNoteRequest.SerializeToString,
+                response_deserializer=freeplane__pb2.GetNodeNoteResponse.FromString,
+                _registered_method=True)
+        self.GetNodeLink = channel.unary_unary(
+                '/freeplane.Freeplane/GetNodeLink',
+                request_serializer=freeplane__pb2.GetNodeLinkRequest.SerializeToString,
+                response_deserializer=freeplane__pb2.GetNodeLinkResponse.FromString,
+                _registered_method=True)
+        self.SetNodeText = channel.unary_unary(
+                '/freeplane.Freeplane/SetNodeText',
+                request_serializer=freeplane__pb2.SetNodeTextRequest.SerializeToString,
+                response_deserializer=freeplane__pb2.SetNodeTextResponse.FromString,
+                _registered_method=True)
+        self.MoveNode = channel.unary_unary(
+                '/freeplane.Freeplane/MoveNode',
+                request_serializer=freeplane__pb2.MoveNodeRequest.SerializeToString,
+                response_deserializer=freeplane__pb2.MoveNodeResponse.FromString,
+                _registered_method=True)
 
 
 class FreeplaneServicer:
@@ -259,6 +294,52 @@ class FreeplaneServicer:
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetNodeText(self, request, context):
+        """--- Group A: Node Inspection ---
+
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetParentNode(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ListChildNodes(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetNodeNote(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetNodeLink(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SetNodeText(self, request, context):
+        """--- Group B: Node Manipulation ---
+
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def MoveNode(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_FreeplaneServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -361,6 +442,41 @@ def add_FreeplaneServicer_to_server(servicer, server):
                     servicer.FocusNode,
                     request_deserializer=freeplane__pb2.FocusNodeRequest.FromString,
                     response_serializer=freeplane__pb2.FocusNodeResponse.SerializeToString,
+            ),
+            'GetNodeText': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetNodeText,
+                    request_deserializer=freeplane__pb2.GetNodeTextRequest.FromString,
+                    response_serializer=freeplane__pb2.GetNodeTextResponse.SerializeToString,
+            ),
+            'GetParentNode': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetParentNode,
+                    request_deserializer=freeplane__pb2.GetParentNodeRequest.FromString,
+                    response_serializer=freeplane__pb2.GetParentNodeResponse.SerializeToString,
+            ),
+            'ListChildNodes': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListChildNodes,
+                    request_deserializer=freeplane__pb2.ListChildNodesRequest.FromString,
+                    response_serializer=freeplane__pb2.ListChildNodesResponse.SerializeToString,
+            ),
+            'GetNodeNote': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetNodeNote,
+                    request_deserializer=freeplane__pb2.GetNodeNoteRequest.FromString,
+                    response_serializer=freeplane__pb2.GetNodeNoteResponse.SerializeToString,
+            ),
+            'GetNodeLink': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetNodeLink,
+                    request_deserializer=freeplane__pb2.GetNodeLinkRequest.FromString,
+                    response_serializer=freeplane__pb2.GetNodeLinkResponse.SerializeToString,
+            ),
+            'SetNodeText': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetNodeText,
+                    request_deserializer=freeplane__pb2.SetNodeTextRequest.FromString,
+                    response_serializer=freeplane__pb2.SetNodeTextResponse.SerializeToString,
+            ),
+            'MoveNode': grpc.unary_unary_rpc_method_handler(
+                    servicer.MoveNode,
+                    request_deserializer=freeplane__pb2.MoveNodeRequest.FromString,
+                    response_serializer=freeplane__pb2.MoveNodeResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -903,6 +1019,195 @@ class Freeplane:
             '/freeplane.Freeplane/FocusNode',
             freeplane__pb2.FocusNodeRequest.SerializeToString,
             freeplane__pb2.FocusNodeResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetNodeText(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/freeplane.Freeplane/GetNodeText',
+            freeplane__pb2.GetNodeTextRequest.SerializeToString,
+            freeplane__pb2.GetNodeTextResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetParentNode(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/freeplane.Freeplane/GetParentNode',
+            freeplane__pb2.GetParentNodeRequest.SerializeToString,
+            freeplane__pb2.GetParentNodeResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListChildNodes(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/freeplane.Freeplane/ListChildNodes',
+            freeplane__pb2.ListChildNodesRequest.SerializeToString,
+            freeplane__pb2.ListChildNodesResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetNodeNote(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/freeplane.Freeplane/GetNodeNote',
+            freeplane__pb2.GetNodeNoteRequest.SerializeToString,
+            freeplane__pb2.GetNodeNoteResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetNodeLink(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/freeplane.Freeplane/GetNodeLink',
+            freeplane__pb2.GetNodeLinkRequest.SerializeToString,
+            freeplane__pb2.GetNodeLinkResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SetNodeText(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/freeplane.Freeplane/SetNodeText',
+            freeplane__pb2.SetNodeTextRequest.SerializeToString,
+            freeplane__pb2.SetNodeTextResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def MoveNode(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/freeplane.Freeplane/MoveNode',
+            freeplane__pb2.MoveNodeRequest.SerializeToString,
+            freeplane__pb2.MoveNodeResponse.FromString,
             options,
             channel_credentials,
             insecure,
