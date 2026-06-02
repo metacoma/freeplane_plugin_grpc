@@ -3,7 +3,7 @@ import com.google.gson.Gson;
 import io.grpc.Server;
 import io.grpc.netty.NettyServerBuilder;
 import io.grpc.stub.StreamObserver;
-import org.freeplane.core.resources.ResourceController;
+
 import org.freeplane.core.util.Hyperlink;
 import org.freeplane.features.attribute.Attribute;
 import org.freeplane.features.attribute.AttributeController;
@@ -23,7 +23,6 @@ import org.freeplane.features.link.mindmapmode.MLinkController;
 import org.freeplane.features.map.IMapSelection;
 import org.freeplane.features.map.MapController;
 import org.freeplane.features.map.MapModel;
-import org.freeplane.features.map.NodeBuilder;
 import org.freeplane.features.map.NodeModel;
 import org.freeplane.features.map.mindmapmode.MMapController;
 import org.freeplane.features.mode.Controller;
@@ -47,7 +46,6 @@ import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
@@ -708,7 +706,7 @@ public class GrpcRegistration {
             }
         }
 
-     @Override
+        @Override
         public void mindMapFromJSON(final MindMapFromJSONRequest req,
                                     final StreamObserver<MindMapFromJSONResponse> responseObserver) {
             final MapController mapController = Controller.getCurrentModeController().getMapController();
@@ -722,7 +720,7 @@ public class GrpcRegistration {
             final String insert_mode_key = "_fp_import_root_node";
 
             final IMapSelection selection = Controller.getCurrentController().getSelection();
-            final NodeModel rootNode = selection.getSelected();
+            NodeModel rootNode = selection.getSelected();
 
             // "Refresh" json canvas
             // mmapController.deleteNodes(rootNode.getChildren());
@@ -792,7 +790,7 @@ public class GrpcRegistration {
             responseObserver.onNext(reply);
             responseObserver.onCompleted();
         }
-       private static String bodyText(final String html) {
+        private static String bodyText(final String html) {
             String printableText = "";
             try {
                 final Document document = Jsoup.parse(html);
@@ -876,7 +874,7 @@ public class GrpcRegistration {
 
         @Override
         public void mindMapToJSON(final MindMapToJSONRequest req,
-                                  final StreamObserver<MindMapToJSONResponse> responseObserver) /*throws JsonProcessingException*/ {
+                                  final StreamObserver<MindMapToJSONResponse> responseObserver) {
             final MapController mapController = Controller.getCurrentModeController().getMapController();
             final NodeModel rootNode = mapController.getRootNode();
             final Map<String, Object> result = new HashMap<>();
