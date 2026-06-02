@@ -3,8 +3,8 @@ plugins {
 }
 
 java {
-  sourceCompatibility = JavaVersion.VERSION_21
-  targetCompatibility = JavaVersion.VERSION_21
+  sourceCompatibility = 1.8
+  targetCompatibility = 1.8
 }
 
 def grpcVersion = '1.52.0' // CURRENT_GRPC_VERSION
