@@ -8,9 +8,7 @@ from typing import TYPE_CHECKING
 
 from freeplane_grpc._stub import FreeplaneStub
 from freeplane_grpc.exceptions import FreeplaneConnectionError, FreeplaneOperationError
-
-if TYPE_CHECKING:
-    from freeplane_grpc.mindmap import MindMap
+from freeplane_grpc.mindmap import MindMap
 
 
 class FreeplaneClient:
@@ -72,7 +70,7 @@ class FreeplaneClient:
         try:
             self._channel = grpc.insecure_channel(f"{self._host}:{self._port}")
             # Verify the channel is usable
-            self._channel.channel_ready().result(timeout=5)
+            grpc.channel_ready_future(self._channel).result(timeout=5)
         except grpc.FutureTimeoutError:
             raise FreeplaneConnectionError(
                 f"Failed to connect to Freeplane gRPC server at "
@@ -166,7 +164,8 @@ class FreeplaneClient:
             FreeplaneConnectionError: If the connection fails.
             FreeplaneOperationError: If the server reports failure.
         """
-        resp = self._call(self._stub.GetCurrentNode)
+        from freeplane_pb2 import GetCurrentNodeRequest
+        resp = self._call(self._stub.GetCurrentNode, GetCurrentNodeRequest())
         if not resp.success:
             raise FreeplaneOperationError(
                 resp.error_message if resp.error_message else "No map currently open"
