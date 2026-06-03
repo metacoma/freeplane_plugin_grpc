@@ -1,6 +1,5 @@
 package org.freeplane.plugin.grpc;
 
-import com.google.gson.Gson;
 import io.grpc.stub.StreamObserver;
 import org.freeplane.core.util.Hyperlink;
 import org.freeplane.features.attribute.Attribute;
@@ -598,17 +597,13 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
         final MLinkController mLinkController = (MLinkController) LinkController.getController();
         final MapModel map = Controller.getCurrentController().getMap();
         boolean success = false;
-        final AttributeController attributeController = AttributeController.getController();
 
         LOG.info("GRPC Freeplane::MindMapFromJSON()");
-        final String insert_mode_key = "_fp_import_root_node";
 
         final IMapSelection selection = Controller.getCurrentController().getSelection();
         NodeModel rootNode = selection.getSelected();
 
-        // "Refresh" json canvas
-        // mmapController.deleteNodes(rootNode.getChildren());
-
+        // Clear existing attributes on the target node
         final AttributeUtilities atrUtil = new AttributeUtilities();
         if (atrUtil.hasAttributes(rootNode)) {
             final NodeAttributeTableModel natm = NodeAttributeTableModel.getModel(rootNode);
@@ -618,50 +613,40 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
             }
         }
 
-        final JSONObject obj = new JSONObject(req.getJson());
-        if (obj.has(insert_mode_key)) {
-            final String mode = obj.getString(insert_mode_key);
-
-            if ("root".equals(mode)) {
-                rootNode = mapController.getRootNode();
-            }
-
-            if (mode.startsWith("ID_")) {
-                final NodeModel pickNode = map.getNodeForID(mode);
-                if (pickNode != null) {
-                    rootNode = pickNode;
-                }
-            }
-
-            obj.remove(insert_mode_key);
-        }
-
-        jsonHelper.recursiveJSONLoop(obj, rootNode);
+        // Import using canonical format with legacy migration.
+        // mindMapFromJSON handles _fp_import_root_node and legacy format detection.
+        jsonHelper.mindMapFromJSON(req.getJson(), rootNode, JsonHelper.LEGACY_FP_IMPORT_ROOT);
 
         final List<NodeModel> newNodes = NodeUtils.collectSubtreeNodes(rootNode);
 
         LOG.info("childrenCount: " + rootNode.getChildCount() + ", Total nodes: " + newNodes.size());
 
+        // Process relationships (connectors) for all nodes in the imported subtree
         for (final NodeModel node : newNodes) {
             if (atrUtil.hasAttributes(node)) {
                 final NodeAttributeTableModel natm = NodeAttributeTableModel.getModel(node);
                 for (int i = 0; i < natm.getRowCount(); i++) {
                     final Attribute attr = natm.getAttribute(i);
-                    if (attr.getName().equals("_relationship")) {
+                    if (attr.getName().equals(JsonHelper.LEGACY_RELATIONSHIP_ATTR)) {
                         final NodeModel sourceNode = node;
                         final String relValue = attr.getValue().toString();
                         final List<Map.Entry<String, String>> pairs = NodeUtils.parseRelationships(relValue);
 
                         for (final Map.Entry<String, String> pair : pairs) {
-                            final String uuid = pair.getKey();
+                            final String targetId = pair.getKey();
                             final String relType = pair.getValue();
-                            final NodeModel targetNode = NodeUtils.findNodeByAttributeUUID(newNodes, uuid);
+                            // Use target_id directly (canonical format) or fall back to UUID lookup (legacy)
+                            NodeModel targetNode = map.getNodeForID(targetId);
+                            if (targetNode == null) {
+                                // Legacy fallback: try UUID lookup
+                                targetNode = NodeUtils.findNodeByAttributeUUID(newNodes, targetId);
+                            }
                             if (targetNode != null) {
-                                LOG.info("Relationship: " + node + " --[" + relType + "]--> " + targetNode);
+                                LOG.info("Relationship: " + sourceNode + " --[" + relType + "]--> " + targetNode);
                                 final ConnectorModel conn = mLinkController.addConnector(sourceNode, targetNode);
                                 conn.setMiddleLabel(relType);
                             } else {
-                                LOG.warning("UUID not found: " + uuid);
+                                LOG.warning("Target node not found for: " + targetId);
                             }
                         }
                     }
@@ -680,15 +665,14 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
                               final StreamObserver<MindMapToJSONResponse> responseObserver) {
         final MapController mapController = Controller.getCurrentModeController().getMapController();
         final NodeModel rootNode = mapController.getRootNode();
-        final Map<String, Object> result = new java.util.HashMap<>();
-
-        final Gson gson = new Gson();
+        // Use LinkedHashMap for deterministic field ordering in canonical JSON
+        final Map<String, Object> result = new java.util.LinkedHashMap<>();
 
         jsonHelper.nodeWalk(result, rootNode);
         LOG.info("GRPC Freeplane::MindMapToJSON()");
         final MindMapToJSONResponse reply = MindMapToJSONResponse.newBuilder()
             .setSuccess(true)
-            .setJson(gson.toJson(result))
+            .setJson(JsonHelper.toJson(result))
             .build();
         responseObserver.onNext(reply);
         responseObserver.onCompleted();
