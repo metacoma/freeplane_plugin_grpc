@@ -165,9 +165,22 @@ fi
 
 mkdir -p "$RUNTIME_DIR"
 FREEPLANE_LOG="$RUNTIME_DIR/freeplane.log"
+
+# --- Ensure a mindmap file is available for Freeplane to open ---
+MINDMAP_FILE="$RUNTIME_DIR/smoke_test_map.mm"
+if [[ ! -f "$MINDMAP_FILE" ]]; then
+    cat > "$MINDMAP_FILE" <<'MMEOF'
+<map version="freeplane 1.9.0">
+<node TEXT="Smoke Test Map" FOLDED="false" ID="ID_00000001" CREATED="0000000000000" MODIFIED="0000000000000">
+</node>
+</map>
+MMEOF
+    log_info "Created temporary mindmap file: $MINDMAP_FILE"
+fi
+
 log_info "Starting Freeplane from $FREEPLANE_LAUNCHER ..."
 
-$FREEPLANE_LAUNCHER > "$FREEPLANE_LOG" 2>&1 &
+$FREEPLANE_LAUNCHER "$MINDMAP_FILE" > "$FREEPLANE_LOG" 2>&1 &
 FREEPLANE_PID=$!
 echo "$FREEPLANE_PID" > "$RUNTIME_DIR/freeplane.pid"
 log_info "Freeplane started (PID $FREEPLANE_PID)"
