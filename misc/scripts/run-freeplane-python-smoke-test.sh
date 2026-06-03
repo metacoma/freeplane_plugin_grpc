@@ -216,6 +216,50 @@ if ! kill -0 "$FREEPLANE_PID" 2>/dev/null; then
 fi
 log_info "Freeplane is still running (PID $FREEPLANE_PID)"
 
+# --- Wait for MindMap mode to fully activate (poll gRPC server) ---
+log_info "Waiting for MindMap mode to activate (polling gRPC server)..."
+MAP_READY=false
+PYTHON_CHECK_MAP="$PLUGIN_REPO/misc/scripts/_check_grpc_map.py"
+cat > "$PYTHON_CHECK_MAP" <<'PYEOF'
+import sys, os, grpc
+from freeplane_pb2 import GetCurrentNodeRequest
+import freeplane_pb2_grpc
+
+host = os.environ.get("GRPC_HOST", "127.0.0.1")
+port = int(os.environ.get("GRPC_PORT", "50051"))
+timeout = float(os.environ.get("GRPC_TIMEOUT", "3"))
+
+try:
+    ch = grpc.insecure_channel(f"{host}:{port}")
+    stub = freeplane_pb2_grpc.FreeplaneStub(ch)
+    resp = stub.GetCurrentNode(GetCurrentNodeRequest(), timeout=timeout)
+    if resp.success:
+        print("OK")
+    else:
+        print("NO_MAP")
+except Exception:
+    print("FAIL")
+PYEOF
+
+for i in $(seq 1 60); do
+    RESULT=$(GRPC_HOST="$GRPC_HOST" GRPC_PORT="$GRPC_PORT" GRPC_TIMEOUT="3" python3 "$PYTHON_CHECK_MAP" 2>/dev/null)
+    if [[ "$RESULT" == "OK" ]]; then
+        MAP_READY=true
+        log_info "MindMap mode activated after $((i * 2)) seconds"
+        break
+    fi
+    sleep 2
+done
+
+rm -f "$PYTHON_CHECK_MAP"
+
+if ! $MAP_READY; then
+    log_error "gRPC server ready but no map available after 120 seconds"
+    log_error "Freeplane log (last 30 lines):"
+    tail -30 "$FREEPLANE_LOG" 2>/dev/null || true
+    exit 1
+fi
+
 # --- Step 5: Run Python example ---
 echo ""
 echo "=========================================="
