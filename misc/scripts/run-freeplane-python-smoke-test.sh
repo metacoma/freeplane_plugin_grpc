@@ -102,8 +102,10 @@ echo "=========================================="
 PLUGIN_INTEGRATED=false
 if [[ ! -d "$FREEPLANE_SRC/freeplane_plugin_grpc" ]]; then
     log_info "Copying plugin to Freeplane source tree..."
+    # Create the target subdirectory so plugin files land in the correct location
+    mkdir -p "$FREEPLANE_SRC/freeplane_plugin_grpc"
     # Use tar to avoid copying .git, __pycache__, and build artifacts
-    (cd "$PLUGIN_REPO" && tar cf - --exclude='.git' --exclude='__pycache__' --exclude='*.egg-info' --exclude='*.egg' --exclude='.gradle' --exclude='build' --exclude='.pytest_cache' --exclude='.venv' --exclude='*.pyc' .) | (cd "$FREEPLANE_SRC" && tar xf -)
+    (cd "$PLUGIN_REPO" && tar cf - --exclude='.git' --exclude='__pycache__' --exclude='*.egg-info' --exclude='*.egg' --exclude='.gradle' --exclude='build' --exclude='.pytest_cache' --exclude='.venv' --exclude='*.pyc' .) | (cd "$FREEPLANE_SRC/freeplane_plugin_grpc" && tar xf -)
     PLUGIN_INTEGRATED=true
 else
     log_info "Plugin directory already exists in Freeplane source tree"

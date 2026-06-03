@@ -51,7 +51,7 @@ install_packages() {
     fi
 }
 
-install_packages xvfb xauth openbox procps
+install_packages xvfb xauth openbox procps netcat-openbsd
 
 # --- Find a free display number starting from 99 ---
 find_free_display() {
