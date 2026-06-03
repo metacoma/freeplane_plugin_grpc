@@ -94,6 +94,37 @@ else
     log_info "No previous Freeplane instance detected"
 fi
 
+# --- Step 0b: Integrate plugin into Freeplane build ---
+echo ""
+echo "=========================================="
+echo " Step 0b: Integrate plugin into Freeplane build"
+echo "=========================================="
+PLUGIN_INTEGRATED=false
+if [[ ! -d "$FREEPLANE_SRC/freeplane_plugin_grpc" ]]; then
+    log_info "Copying plugin to Freeplane source tree..."
+    cp -r "$PLUGIN_REPO" "$FREEPLANE_SRC/freeplane_plugin_grpc"
+    PLUGIN_INTEGRATED=true
+else
+    log_info "Plugin directory already exists in Freeplane source tree"
+fi
+
+# Check if plugin is included in settings.gradle
+SETTINGS_FILE="$FREEPLANE_SRC/settings.gradle"
+if [[ -f "$SETTINGS_FILE" ]]; then
+    if ! grep -q "'freeplane_plugin_grpc'" "$SETTINGS_FILE" 2>/dev/null && \
+       ! grep -q '"freeplane_plugin_grpc"' "$SETTINGS_FILE" 2>/dev/null; then
+        log_info "Adding freeplane_plugin_grpc to settings.gradle..."
+        # Add after the 'include' line (before the closing parenthesis)
+        sed -i "/include/i\\    'freeplane_plugin_grpc'," "$SETTINGS_FILE"
+        log_info "Plugin added to settings.gradle"
+    else
+        log_info "freeplane_plugin_grpc already in settings.gradle"
+    fi
+else
+    log_error "settings.gradle not found at $SETTINGS_FILE"
+    exit 1
+fi
+
 # --- Step 1: Full Freeplane build ---
 echo ""
 echo "=========================================="
@@ -315,6 +346,21 @@ if [[ -f "${PLUGIN_REPO}/misc/scripts/stop-xvfb-freeplane-env.sh" ]]; then
     bash "${PLUGIN_REPO}/misc/scripts/stop-xvfb-freeplane-env.sh"
 else
     log_warn "Stop script not found, skipping Xvfb cleanup"
+fi
+
+# Revert plugin integration changes in Freeplane source tree
+if [[ "$PLUGIN_INTEGRATED" == "true" ]]; then
+    log_info "Reverting plugin integration changes in Freeplane source tree..."
+    if [[ -d "$FREEPLANE_SRC/freeplane_plugin_grpc" ]]; then
+        rm -rf "$FREEPLANE_SRC/freeplane_plugin_grpc"
+        log_info "Removed copied plugin directory"
+    fi
+    SETTINGS_FILE="$FREEPLANE_SRC/settings.gradle"
+    if [[ -f "$SETTINGS_FILE" ]]; then
+        # Remove the line we added
+        sed -i "/^    'freeplane_plugin_grpc',$/d" "$SETTINGS_FILE"
+        log_info "Reverted settings.gradle"
+    fi
 fi
 
 # --- Final result ---
