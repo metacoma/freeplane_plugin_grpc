@@ -40,10 +40,13 @@ class TestFreeplaneClientInit(unittest.TestCase):
 class TestFreeplaneClientContextManager(unittest.TestCase):
     """Test context-manager protocol."""
 
+    @patch("grpc.channel_ready_future")
     @patch("grpc.insecure_channel")
-    def test_context_manager_connects_and_closes(self, mock_channel_cls):
+    def test_context_manager_connects_and_closes(
+        self, mock_channel_cls, mock_ready_future
+    ):
         mock_channel = MagicMock()
-        mock_channel.channel_ready.return_value.result.return_value = None
+        mock_ready_future.return_value.result.return_value = None
         mock_channel_cls.return_value = mock_channel
 
         with FreeplaneClient(host="127.0.0.1", port=50051) as client:
@@ -89,10 +92,13 @@ class TestFreeplaneClientImport(unittest.TestCase):
 class TestFreeplaneClientConnect(unittest.TestCase):
     """Test connection behavior."""
 
+    @patch("grpc.channel_ready_future")
     @patch("grpc.insecure_channel")
-    def test_connect_creates_channel(self, mock_channel_cls):
+    def test_connect_creates_channel(
+        self, mock_channel_cls, mock_ready_future
+    ):
         mock_channel = MagicMock()
-        mock_channel.channel_ready.return_value.result.return_value = None
+        mock_ready_future.return_value.result.return_value = None
         mock_channel_cls.return_value = mock_channel
 
         client = FreeplaneClient()
@@ -101,21 +107,25 @@ class TestFreeplaneClientConnect(unittest.TestCase):
         mock_channel_cls.assert_called_once_with("127.0.0.1:50051")
         self.assertIsNotNone(client._channel)
 
+    @patch("grpc.channel_ready_future")
     @patch("grpc.insecure_channel")
-    def test_connect_timeout_raises(self, mock_channel_cls):
+    def test_connect_timeout_raises(
+        self, mock_channel_cls, mock_ready_future
+    ):
         import grpc
         mock_channel = MagicMock()
-        mock_channel.channel_ready.return_value.result.side_effect = grpc.FutureTimeoutError()
+        mock_ready_future.return_value.result.side_effect = grpc.FutureTimeoutError()
         mock_channel_cls.return_value = mock_channel
 
         client = FreeplaneClient()
         with self.assertRaises(FreeplaneConnectionError):
             client.connect()
 
+    @patch("grpc.channel_ready_future")
     @patch("grpc.insecure_channel")
-    def test_close_clears_channel(self, mock_channel_cls):
+    def test_close_clears_channel(self, mock_channel_cls, mock_ready_future):
         mock_channel = MagicMock()
-        mock_channel.channel_ready.return_value.result.return_value = None
+        mock_ready_future.return_value.result.return_value = None
         mock_channel_cls.return_value = mock_channel
 
         client = FreeplaneClient()
@@ -129,10 +139,11 @@ class TestFreeplaneClientConnect(unittest.TestCase):
 class TestFreeplaneClientCall(unittest.TestCase):
     """Test the internal _call helper."""
 
+    @patch("grpc.channel_ready_future")
     @patch("grpc.insecure_channel")
-    def test_call_success(self, mock_channel_cls):
+    def test_call_success(self, mock_channel_cls, mock_ready_future):
         mock_channel = MagicMock()
-        mock_channel.channel_ready.return_value.result.return_value = None
+        mock_ready_future.return_value.result.return_value = None
         mock_channel_cls.return_value = mock_channel
 
         client = FreeplaneClient()
@@ -147,10 +158,11 @@ class TestFreeplaneClientCall(unittest.TestCase):
         result = client._call(client._grpc_stub.TestMethod)
         self.assertTrue(result.success)
 
+    @patch("grpc.channel_ready_future")
     @patch("grpc.insecure_channel")
-    def test_call_server_failure_raises(self, mock_channel_cls):
+    def test_call_server_failure_raises(self, mock_channel_cls, mock_ready_future):
         mock_channel = MagicMock()
-        mock_channel.channel_ready.return_value.result.return_value = None
+        mock_ready_future.return_value.result.return_value = None
         mock_channel_cls.return_value = mock_channel
 
         client = FreeplaneClient()
@@ -166,11 +178,14 @@ class TestFreeplaneClientCall(unittest.TestCase):
         with self.assertRaises(FreeplaneOperationError):
             client._call(client._grpc_stub.TestMethod)
 
+    @patch("grpc.channel_ready_future")
     @patch("grpc.insecure_channel")
-    def test_call_grpc_error_raises_connection_error(self, mock_channel_cls):
+    def test_call_grpc_error_raises_connection_error(
+        self, mock_channel_cls, mock_ready_future
+    ):
         import grpc
         mock_channel = MagicMock()
-        mock_channel.channel_ready.return_value.result.return_value = None
+        mock_ready_future.return_value.result.return_value = None
         mock_channel_cls.return_value = mock_channel
 
         client = FreeplaneClient()
