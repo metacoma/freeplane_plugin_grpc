@@ -257,7 +257,8 @@ for i in $(seq 1 60); do
     sleep 2
 done
 
-rm -f "$PYTHON_CHECK_MAP"
+# Do not delete PYTHON_CHECK_MAP — it is a committed script in the repo
+# rm -f "$PYTHON_CHECK_MAP"
 
 if ! $MAP_READY; then
     log_error "gRPC server ready but no map available after 120 seconds"
