@@ -222,6 +222,12 @@ MAP_READY=false
 PYTHON_CHECK_MAP="$PLUGIN_REPO/misc/scripts/_check_grpc_map.py"
 cat > "$PYTHON_CHECK_MAP" <<'PYEOF'
 import sys, os, grpc
+
+# Add proto stubs to path
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PLUGIN_REPO = os.path.realpath(os.path.join(SCRIPT_DIR, "..", ".."))
+sys.path.insert(0, os.path.join(PLUGIN_REPO, "grpc/python"))
+
 from freeplane_pb2 import GetCurrentNodeRequest
 import freeplane_pb2_grpc
 
