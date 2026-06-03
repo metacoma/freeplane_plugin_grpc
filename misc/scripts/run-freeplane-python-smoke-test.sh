@@ -102,7 +102,8 @@ echo "=========================================="
 PLUGIN_INTEGRATED=false
 if [[ ! -d "$FREEPLANE_SRC/freeplane_plugin_grpc" ]]; then
     log_info "Copying plugin to Freeplane source tree..."
-    cp -r "$PLUGIN_REPO" "$FREEPLANE_SRC/freeplane_plugin_grpc"
+    # Use tar to avoid copying .git, __pycache__, and build artifacts
+    (cd "$PLUGIN_REPO" && tar cf - --exclude='.git' --exclude='__pycache__' --exclude='*.egg-info' --exclude='*.egg' --exclude='.gradle' --exclude='build' --exclude='.pytest_cache' --exclude='.venv' --exclude='*.pyc' .) | (cd "$FREEPLANE_SRC" && tar xf -)
     PLUGIN_INTEGRATED=true
 else
     log_info "Plugin directory already exists in Freeplane source tree"
@@ -114,8 +115,8 @@ if [[ -f "$SETTINGS_FILE" ]]; then
     if ! grep -q "'freeplane_plugin_grpc'" "$SETTINGS_FILE" 2>/dev/null && \
        ! grep -q '"freeplane_plugin_grpc"' "$SETTINGS_FILE" 2>/dev/null; then
         log_info "Adding freeplane_plugin_grpc to settings.gradle..."
-        # Add after the 'include' line (before the closing parenthesis)
-        sed -i "/include/i\\    'freeplane_plugin_grpc'," "$SETTINGS_FILE"
+        # Append a standalone include statement (Gradle supports multiple include() calls)
+        echo "include 'freeplane_plugin_grpc'" >> "$SETTINGS_FILE"
         log_info "Plugin added to settings.gradle"
     else
         log_info "freeplane_plugin_grpc already in settings.gradle"
@@ -357,8 +358,8 @@ if [[ "$PLUGIN_INTEGRATED" == "true" ]]; then
     fi
     SETTINGS_FILE="$FREEPLANE_SRC/settings.gradle"
     if [[ -f "$SETTINGS_FILE" ]]; then
-        # Remove the line we added
-        sed -i "/^    'freeplane_plugin_grpc',$/d" "$SETTINGS_FILE"
+        # Remove the standalone include line we added
+        sed -i "/^include 'freeplane_plugin_grpc'$/d" "$SETTINGS_FILE"
         log_info "Reverted settings.gradle"
     fi
 fi
