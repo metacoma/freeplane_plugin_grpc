@@ -167,6 +167,7 @@ class FreeplaneClient:
             FreeplaneOperationError: If the server reports failure.
         """
         from freeplane_pb2 import GetCurrentNodeRequest
+        from freeplane_grpc.mindmap import MindMap
         resp = self._call(self._stub.GetCurrentNode, GetCurrentNodeRequest())
         if not resp.success:
             raise FreeplaneOperationError(
