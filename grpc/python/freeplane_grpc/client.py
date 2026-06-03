@@ -72,7 +72,7 @@ class FreeplaneClient:
         try:
             self._channel = grpc.insecure_channel(f"{self._host}:{self._port}")
             # Verify the channel is usable
-            self._channel.channel_ready().result(timeout=5)
+            grpc.channel_ready_future(self._channel).result(timeout=5)
         except grpc.FutureTimeoutError:
             raise FreeplaneConnectionError(
                 f"Failed to connect to Freeplane gRPC server at "
