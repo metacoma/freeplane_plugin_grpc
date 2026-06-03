@@ -613,9 +613,23 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
             }
         }
 
+        // Resolve _fp_import_root_node insert mode to determine the target node.
+        // This restores the legacy behavior that was lost in the refactor.
+        final JSONObject importJson = new JSONObject(req.getJson());
+        if (importJson.has(JsonHelper.LEGACY_FP_IMPORT_ROOT)) {
+            final String mode = importJson.getString(JsonHelper.LEGACY_FP_IMPORT_ROOT);
+            if ("root".equals(mode)) {
+                rootNode = mapController.getRootNode();
+            } else if (mode.startsWith("ID_")) {
+                final NodeModel pickNode = map.getNodeForID(mode);
+                if (pickNode != null) {
+                    rootNode = pickNode;
+                }
+            }
+        }
+
         // Import using canonical format with legacy migration.
-        // mindMapFromJSON handles _fp_import_root_node and legacy format detection.
-        jsonHelper.mindMapFromJSON(req.getJson(), rootNode, JsonHelper.LEGACY_FP_IMPORT_ROOT);
+        jsonHelper.mindMapFromJSON(req.getJson(), rootNode);
 
         final List<NodeModel> newNodes = NodeUtils.collectSubtreeNodes(rootNode);
 
@@ -649,6 +663,19 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
                                 LOG.warning("Target node not found for: " + targetId);
                             }
                         }
+                    }
+                }
+            }
+        }
+
+        // Clean up _relationship attributes after connector creation to prevent leakage into export
+        for (final NodeModel node : newNodes) {
+            if (atrUtil.hasAttributes(node)) {
+                final NodeAttributeTableModel natm = NodeAttributeTableModel.getModel(node);
+                for (int i = natm.getRowCount() - 1; i >= 0; i--) {
+                    final Attribute attr = natm.getAttribute(i);
+                    if (attr.getName().equals(JsonHelper.LEGACY_RELATIONSHIP_ATTR)) {
+                        AttributeController.getController().performRemoveRow(node, natm, i);
                     }
                 }
             }

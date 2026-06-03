@@ -151,7 +151,11 @@ public final class JsonHelper {
             final NodeAttributeTableModel natm = NodeAttributeTableModel.getModel(node);
             for (int i = 0; i < natm.getRowCount(); i++) {
                 final Attribute attr = natm.getAttribute(i);
-                attributes.put(attr.getName(), String.valueOf(attr.getValue()));
+                final String attrName = attr.getName();
+                // Filter out internal attributes that should not appear in exported JSON
+                if (!LEGACY_UUID_ATTR.equals(attrName) && !LEGACY_RELATIONSHIP_ATTR.equals(attrName)) {
+                    attributes.put(attrName, String.valueOf(attr.getValue()));
+                }
             }
             if (!attributes.isEmpty()) {
                 result.put(FIELD_ATTRIBUTES, attributes);
@@ -253,17 +257,10 @@ public final class JsonHelper {
      *
      * @param jsonInput  raw JSON string (may be legacy or canonical format)
      * @param parentNode the parent node under which to insert the imported tree
-     * @param insertModeKey the legacy key for insert mode (e.g., "_fp_import_root_node")
      * @return the JSONObject representing the root of the imported tree (for connector processing)
      */
-    JSONObject mindMapFromJSON(String jsonInput, NodeModel parentNode, String insertModeKey) {
+    JSONObject mindMapFromJSON(String jsonInput, NodeModel parentNode) {
         JSONObject obj = new JSONObject(jsonInput);
-
-        // Handle legacy insert mode
-        if (obj.has(insertModeKey)) {
-            obj = obj.getJSONObject(insertModeKey);
-            obj.put("insert_mode", insertModeKey);
-        }
 
         // Detect legacy format and migrate if needed
         if (isLegacyFormat(obj)) {
@@ -321,12 +318,6 @@ public final class JsonHelper {
                 JSONObject nodeObj = new JSONObject();
                 nodeObj.put(FIELD_TEXT, key);
                 nodeObj.put(FIELD_CHILDREN, migrateLegacyChildren(nestedObj));
-                JSONObject childrenWrapper = new JSONObject();
-                childrenWrapper.put(FIELD_CHILDREN, new JSONArray(List.of(nodeObj)));
-                // Merge into result
-                for (String ck : canonical.keySet()) {
-                    // Shouldn't happen for single-root, but handle gracefully
-                }
                 canonical = nodeObj;
                 // If there are multiple top-level keys, wrap in children array
                 if (legacy.keySet().size() > 1) {

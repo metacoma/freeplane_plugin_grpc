@@ -231,6 +231,15 @@ def main() -> int:
             return 1
 
         # Import canonical JSON into Freeplane
+        # First, clear the current root node's children to isolate imported content
+        print("\n--- Clearing existing map state ---")
+        mindmap = client.current_map()
+        root = mindmap.root()
+        children_before = list(root.children())
+        for child in children_before:
+            child.delete()
+        print(f"✓ Cleared {len(children_before)} existing children")
+
         print("\n--- Importing canonical JSON ---")
         try:
             success = client.mind_map_from_json(canonical_json)
@@ -315,6 +324,14 @@ def main() -> int:
         print("TEST 2: Legacy format import")
         print("=" * 60)
 
+        # Clear existing children to isolate the legacy import
+        mindmap2 = client.current_map()
+        root2 = mindmap2.root()
+        children_before2 = list(root2.children())
+        for child in children_before2:
+            child.delete()
+        print(f"✓ Cleared {len(children_before2)} existing children")
+
         legacy_json = create_legacy_json(marker)
         print(f"\nCreated legacy JSON ({len(legacy_json)} chars)")
 
@@ -350,6 +367,14 @@ def main() -> int:
         print("\n" + "=" * 60)
         print("TEST 3: Verify properties through gRPC")
         print("=" * 60)
+
+        # Clear existing children to isolate the canonical re-import
+        mindmap3 = client.current_map()
+        root3 = mindmap3.root()
+        children_before3 = list(root3.children())
+        for child in children_before3:
+            child.delete()
+        print(f"✓ Cleared {len(children_before3)} existing children")
 
         # Re-import canonical data for gRPC verification
         client.mind_map_from_json(canonical_json)
@@ -394,6 +419,14 @@ def main() -> int:
         print("\n" + "=" * 60)
         print("TEST 4: Export → Import → Export consistency")
         print("=" * 60)
+
+        # Clear existing children to ensure a clean state for round-trip
+        mindmap4 = client.current_map()
+        root4 = mindmap4.root()
+        children_before4 = list(root4.children())
+        for child in children_before4:
+            child.delete()
+        print(f"✓ Cleared {len(children_before4)} existing children")
 
         # Export current map
         json1 = client.get_map_to_json()
