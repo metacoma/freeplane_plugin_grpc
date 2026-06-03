@@ -39,6 +39,8 @@ import java.awt.Color;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,11 +99,12 @@ public final class JsonHelper {
     static final String LEGACY_RELATIONSHIP_ATTR = "_relationship";
 
     /** Set of keys that identify canonical-format node objects. */
-    private static final java.util.Set<String> CANONICAL_KEYS = java.util.Set.of(
+    private static final java.util.Set<String> CANONICAL_KEYS =
+        Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
             FIELD_TEXT, FIELD_ID, FIELD_CHILDREN, FIELD_ATTRIBUTES,
             FIELD_DETAIL, FIELD_NOTE, FIELD_LINK, FIELD_TAGS,
             FIELD_ICONS, FIELD_BACKGROUND_COLOR, FIELD_FOLDED, FIELD_RELATIONSHIPS
-    );
+        )));
 
     /** Gson instance for deterministic JSON serialization (LinkedHashMap preserves insertion order). */
     private static final Gson GSON = new GsonBuilder()
@@ -283,8 +286,7 @@ public final class JsonHelper {
         }
 
         // Process canonical format
-        Map<String, NodeModel> idToNode = new LinkedHashMap<>();
-        recursiveJSONLoopCanonical(obj, parentNode, idToNode);
+        recursiveJSONLoopCanonical(obj, parentNode);
 
         return obj;
     }
@@ -337,7 +339,7 @@ public final class JsonHelper {
                 // If there are multiple top-level keys, wrap in children array
                 if (legacy.keySet().size() > 1) {
                     JSONObject wrapper = new JSONObject();
-                    wrapper.put(FIELD_CHILDREN, new JSONArray(List.of(canonical)));
+                    wrapper.put(FIELD_CHILDREN, new JSONArray(Arrays.asList(canonical)));
                     return wrapper;
                 }
             } else if (value instanceof JSONArray) {
@@ -362,7 +364,7 @@ public final class JsonHelper {
                 nodeObj.put(FIELD_CHILDREN, childrenArray);
                 if (legacy.keySet().size() > 1) {
                     JSONObject wrapper = new JSONObject();
-                    wrapper.put(FIELD_CHILDREN, new JSONArray(List.of(nodeObj)));
+                    wrapper.put(FIELD_CHILDREN, new JSONArray(Arrays.asList(nodeObj)));
                     return wrapper;
                 }
                 canonical = nodeObj;
@@ -375,7 +377,7 @@ public final class JsonHelper {
                 }
                 if (legacy.keySet().size() > 1) {
                     JSONObject wrapper = new JSONObject();
-                    wrapper.put(FIELD_CHILDREN, new JSONArray(List.of(nodeObj)));
+                    wrapper.put(FIELD_CHILDREN, new JSONArray(Arrays.asList(nodeObj)));
                     return wrapper;
                 }
                 canonical = nodeObj;
@@ -421,8 +423,7 @@ public final class JsonHelper {
     /**
      * Canonical import: processes a JSONObject in the canonical format.
      */
-    private void recursiveJSONLoopCanonical(JSONObject jsonObject, NodeModel parentNode,
-                                            Map<String, NodeModel> idToNode) {
+    private void recursiveJSONLoopCanonical(JSONObject jsonObject, NodeModel parentNode) {
         final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
         final MTextController mTextController = (MTextController) TextController.getController();
         final MIconController mIconController = (MIconController) IconController.getController();
@@ -445,9 +446,6 @@ public final class JsonHelper {
         // means the first child ends up at index 0 after all insertions.
         mmapController.insertNode(newNodeModel, parentNode, 0);
 
-        // Store ID mapping for connector resolution
-        idToNode.put(newNodeModel.getID(), newNodeModel);
-
         // Extract and set ID hint (for reference; actual ID is already set)
         if (jsonObject.has(FIELD_ID)) {
             // The ID in the JSON is informational; Freeplane generates its own IDs.
@@ -469,7 +467,7 @@ public final class JsonHelper {
                     Object childObj = childrenArray.get(i);
                     if (childObj instanceof JSONObject) {
                         JSONObject childJson = (JSONObject) childObj;
-                        recursiveJSONLoopCanonical(childJson, newNodeModel, idToNode);
+                        recursiveJSONLoopCanonical(childJson, newNodeModel);
                     }
                 }
             }
