@@ -10,6 +10,8 @@ if TYPE_CHECKING:
 from freeplane_grpc.exceptions import FreeplaneOperationError, NodeNotFoundError
 from freeplane_grpc.node import Node
 
+from freeplane_pb2 import GetCurrentNodeRequest
+
 
 class MindMap:
     """Represents a Freeplane mind map.
@@ -71,7 +73,9 @@ class MindMap:
         current_id = self._node_id
         if not current_id:
             # Try to get current node first
-            resp = self._client._call(self._client._stub.GetCurrentNode)
+            resp = self._client._call(
+                self._client._stub.GetCurrentNode, GetCurrentNodeRequest()
+            )
             if resp.success:
                 current_id = resp.node_id
             else:
@@ -110,7 +114,9 @@ class MindMap:
         Raises:
             FreeplaneOperationError: If no node is selected.
         """
-        resp = self._client._call(self._client._stub.GetCurrentNode)
+        resp = self._client._call(
+            self._client._stub.GetCurrentNode, GetCurrentNodeRequest()
+        )
         if not resp.success or not resp.node_id:
             raise FreeplaneOperationError("No node currently selected")
         return Node(
