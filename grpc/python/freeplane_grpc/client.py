@@ -166,7 +166,8 @@ class FreeplaneClient:
             FreeplaneConnectionError: If the connection fails.
             FreeplaneOperationError: If the server reports failure.
         """
-        resp = self._call(self._stub.GetCurrentNode)
+        from freeplane_pb2 import GetCurrentNodeRequest
+        resp = self._call(self._stub.GetCurrentNode, GetCurrentNodeRequest())
         if not resp.success:
             raise FreeplaneOperationError(
                 resp.error_message if resp.error_message else "No map currently open"
