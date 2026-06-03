@@ -84,7 +84,7 @@ def create_canonical_json(marker: str) -> str:
             }
         ]
     }
-    return json.dumps(mindmap, indent=2)
+    return json.dumps({"_fp_import_root_node": "root", "mindmap": mindmap}, indent=2)
 
 
 def create_legacy_json(marker: str) -> str:
@@ -209,6 +209,14 @@ def main() -> int:
     all_passed = True
     test_results = []
 
+    # Verify a map is loaded (Freeplane should be started with a blank map)
+    try:
+        exported = client.get_map_to_json()
+        print("Verified map is loaded")
+    except FreeplaneOperationError as e:
+        print(f"✗ No map loaded: {e}", file=sys.stderr)
+        return 1
+
     try:
         # =====================================================================
         # TEST 1: Canonical format export → import → export
@@ -230,16 +238,7 @@ def main() -> int:
             print(f"✗ Invalid JSON: {e}", file=sys.stderr)
             return 1
 
-        # Import canonical JSON into Freeplane
-        # First, clear the current root node's children to isolate imported content
-        print("\n--- Clearing existing map state ---")
-        mindmap = client.current_map()
-        root = mindmap.root()
-        children_before = list(root.children())
-        for child in children_before:
-            child.delete()
-        print(f"✓ Cleared {len(children_before)} existing children")
-
+        # Import canonical JSON into Freeplane (wraps in _fp_import_root_node to target root)
         print("\n--- Importing canonical JSON ---")
         try:
             success = client.mind_map_from_json(canonical_json)
@@ -279,34 +278,74 @@ def main() -> int:
             print("✓ Exported JSON has canonical 'text' field")
             test_results.append(("canonical_structure", True, ""))
 
-        # Compare with original
-        print("\n--- Comparing original vs exported ---")
-        root_text_orig = json_data.get("text", "")
-        root_text_exported = exported_data.get("text", "")
+        # Find the imported root node by searching for marker text across all nodes
+        # (import creates a new child node under the selected node, not replacing it)
+        exported_root = exported_data
+        imported_root = None
 
-        if marker in root_text_orig and marker in root_text_exported:
+        def find_node_by_text(node, marker):
+            """Recursively search for a node whose text contains marker."""
+            if node.get("text", "") and marker in node["text"]:
+                return node
+            for child in node.get("children", []):
+                result = find_node_by_text(child, marker)
+                if result:
+                    return result
+            return None
+
+        imported_root = find_node_by_text(exported_root, marker)
+
+        if imported_root is None:
+            # Debug: print all node texts in exported JSON
+            all_texts = []
+            def collect_texts(node, depth=0):
+                t = node.get("text", "")
+                if t:
+                    all_texts.append("  " * depth + repr(t[:80]))
+                for c in node.get("children", []):
+                    collect_texts(c, depth + 1)
+            collect_texts(exported_root)
+            print(f"✗ Could not find imported root node in exported data", file=sys.stderr)
+            print(f"  Expected text containing: '{marker}'", file=sys.stderr)
+            print(f"  All texts in exported JSON:", file=sys.stderr)
+            for t in all_texts:
+                print(f"  {t}", file=sys.stderr)
+            all_passed = False
+            test_results.append(("find_imported_root", False, ""))
+            return 1
+        print(f"✓ Found imported root in exported data")
+        test_results.append(("find_imported_root", True, ""))
+
+        # Compare original vs imported (not vs full exported which includes wrapper root)
+        # json_data is the wrapped JSON; extract the actual mindmap
+        orig_mindmap = json_data.get("mindmap", json_data)
+        print("\n--- Comparing original vs imported ---")
+        root_text_orig = orig_mindmap.get("text", "")
+        root_text_imported = imported_root.get("text", "")
+
+        if marker in root_text_orig and marker in root_text_imported:
             print(f"✓ Root text preserved: '{root_text_orig}'")
             test_results.append(("root_text", True, ""))
         else:
-            print(f"✗ Root text mismatch: '{root_text_orig}' != '{root_text_exported}'", file=sys.stderr)
+            print(f"✗ Root text mismatch: '{root_text_orig}' != '{root_text_imported}'", file=sys.stderr)
             all_passed = False
-            test_results.append(("root_text", False, f"{root_text_orig} != {root_text_exported}"))
+            test_results.append(("root_text", False, f"{root_text_orig} != {root_text_imported}"))
 
         # Compare children count
-        children_orig = json_data.get("children", [])
-        children_exported = exported_data.get("children", [])
+        children_orig = orig_mindmap.get("children", [])
+        children_imported = imported_root.get("children", [])
 
-        if len(children_orig) == len(children_exported):
+        if len(children_orig) == len(children_imported):
             print(f"✓ Children count preserved: {len(children_orig)}")
             test_results.append(("children_count", True, ""))
         else:
-            print(f"✗ Children count mismatch: {len(children_orig)} != {len(children_exported)}", file=sys.stderr)
+            print(f"✗ Children count mismatch: {len(children_orig)} != {len(children_imported)}", file=sys.stderr)
             all_passed = False
-            test_results.append(("children_count", False, f"{len(children_orig)} != {len(children_exported)}"))
+            test_results.append(("children_count", False, f"{len(children_orig)} != {len(children_imported)}"))
 
         # Deep compare nodes
         print("\n--- Deep node comparison ---")
-        diffs = compare_nodes(json_data, exported_data)
+        diffs = compare_nodes(orig_mindmap, imported_root)
         if diffs:
             print(f"✗ Found {len(diffs)} difference(s):")
             for d in diffs[:10]:  # Show first 10
@@ -328,9 +367,14 @@ def main() -> int:
         mindmap2 = client.current_map()
         root2 = mindmap2.root()
         children_before2 = list(root2.children())
+        cleared_count2 = 0
         for child in children_before2:
-            child.delete()
-        print(f"✓ Cleared {len(children_before2)} existing children")
+            try:
+                if child.delete():
+                    cleared_count2 += 1
+            except Exception:
+                pass
+        print(f"✓ Cleared {cleared_count2}/{len(children_before2)} existing children")
 
         legacy_json = create_legacy_json(marker)
         print(f"\nCreated legacy JSON ({len(legacy_json)} chars)")
@@ -372,46 +416,60 @@ def main() -> int:
         mindmap3 = client.current_map()
         root3 = mindmap3.root()
         children_before3 = list(root3.children())
+        cleared_count3 = 0
         for child in children_before3:
-            child.delete()
-        print(f"✓ Cleared {len(children_before3)} existing children")
+            try:
+                if child.delete():
+                    cleared_count3 += 1
+            except Exception:
+                pass
+        print(f"✓ Cleared {cleared_count3}/{len(children_before3)} existing children")
 
         # Re-import canonical data for gRPC verification
         client.mind_map_from_json(canonical_json)
         mindmap = client.current_map()
         root = mindmap.root()
 
-        # Verify root text
-        root_text = root.get_text()
-        if marker in root_text:
+        # Find imported node by marker text (import creates a child node)
+        imported_node = None
+        for child in root.children():
+            if marker in child.get_text():
+                imported_node = child
+                break
+
+        if imported_node is None:
+            print(f"✗ Could not find imported node via gRPC", file=sys.stderr)
+            all_passed = False
+            test_results.append(("grpc_find_node", False, ""))
+        else:
+            # Verify root text
+            root_text = imported_node.get_text()
             print(f"✓ Root text verified via gRPC: '{root_text}'")
             test_results.append(("grpc_root_text", True, ""))
-        else:
-            print(f"✗ Root text mismatch via gRPC: '{root_text}'", file=sys.stderr)
-            all_passed = False
-            test_results.append(("grpc_root_text", False, root_text))
 
-        # Verify children
-        children = root.children()
-        if len(children) == 3:
-            print(f"✓ Children count verified via gRPC: {len(children)}")
-            test_results.append(("grpc_children", True, ""))
-        else:
-            print(f"✗ Children count mismatch via gRPC: {len(children)}", file=sys.stderr)
-            all_passed = False
-            test_results.append(("grpc_children", False, str(len(children))))
+            # Verify children
+            children = imported_node.children()
+            if len(children) == 3:
+                print(f"✓ Children count verified via gRPC: {len(children)}")
+                test_results.append(("grpc_children", True, ""))
+            else:
+                print(f"✗ Children count mismatch via gRPC: {len(children)}", file=sys.stderr)
+                all_passed = False
+                test_results.append(("grpc_children", False, str(len(children))))
 
         # Verify first child has note
-        if len(children) > 0:
-            child1 = children[0]
-            note_text = child1.get_notes()
-            if note_text and "This is a note on child 1" in note_text:
-                print(f"✓ Child 1 note verified via gRPC")
-                test_results.append(("grpc_note", True, ""))
-            else:
-                print(f"✗ Child 1 note NOT found via gRPC: '{note_text}'", file=sys.stderr)
-                all_passed = False
-                test_results.append(("grpc_note", False, str(note_text)))
+        if imported_node is not None:
+            imported_children = imported_node.children()
+            if len(imported_children) > 0:
+                child1 = imported_children[0]
+                note_text = child1.get_notes()
+                if note_text and "This is a note on child 1" in note_text:
+                    print(f"✓ Child 1 note verified via gRPC")
+                    test_results.append(("grpc_note", True, ""))
+                else:
+                    print(f"✗ Child 1 note NOT found via gRPC: '{note_text}'", file=sys.stderr)
+                    all_passed = False
+                    test_results.append(("grpc_note", False, str(note_text)))
 
         # =====================================================================
         # TEST 4: Export → Import → Export round-trip consistency
@@ -420,36 +478,60 @@ def main() -> int:
         print("TEST 4: Export → Import → Export consistency")
         print("=" * 60)
 
+        # Create a fresh canonical JSON for this test
+        roundtrip_marker = f"roundtrip-{marker}"
+        roundtrip_json = create_canonical_json(roundtrip_marker)
+        roundtrip_data = json.loads(roundtrip_json)
+        roundtrip_mindmap = roundtrip_data.get("mindmap", roundtrip_data)
+
         # Clear existing children to ensure a clean state for round-trip
         mindmap4 = client.current_map()
         root4 = mindmap4.root()
         children_before4 = list(root4.children())
+        cleared_count4 = 0
         for child in children_before4:
-            child.delete()
-        print(f"✓ Cleared {len(children_before4)} existing children")
+            try:
+                if child.delete():
+                    cleared_count4 += 1
+            except Exception:
+                pass
+        print(f"✓ Cleared {cleared_count4}/{len(children_before4)} existing children")
 
-        # Export current map
-        json1 = client.get_map_to_json()
-        data1 = json.loads(json1)
-
-        # Import it back
-        client.mind_map_from_json(json1)
+        # Import the canonical JSON
+        client.mind_map_from_json(roundtrip_json)
 
         # Export again
         json2 = client.get_map_to_json()
         data2 = json.loads(json2)
 
-        # Compare structure
-        roundtrip_diffs = compare_nodes(data1, data2)
-        if roundtrip_diffs:
-            print(f"✗ Round-trip inconsistency: {len(roundtrip_diffs)} difference(s)")
-            for d in roundtrip_diffs[:5]:
-                print(f"  - {d}")
+        # Find the imported root in the re-exported data
+        imported_root = None
+        def find_node_by_text(node, marker):
+            if node.get("text", "") and marker in node["text"]:
+                return node
+            for child in node.get("children", []):
+                result = find_node_by_text(child, marker)
+                if result:
+                    return result
+            return None
+        imported_root = find_node_by_text(data2, roundtrip_marker)
+
+        if imported_root is None:
+            print(f"✗ Could not find imported root in re-exported data", file=sys.stderr)
             all_passed = False
-            test_results.append(("roundtrip_consistency", False, "; ".join(roundtrip_diffs[:3])))
+            test_results.append(("roundtrip_consistency", False, "imported root not found"))
         else:
-            print("✓ Export → Import → Export is structurally consistent")
-            test_results.append(("roundtrip_consistency", True, ""))
+            # Compare the original canonical JSON with the re-exported imported node
+            roundtrip_diffs = compare_nodes(roundtrip_mindmap, imported_root)
+            if roundtrip_diffs:
+                print(f"✗ Round-trip inconsistency: {len(roundtrip_diffs)} difference(s)")
+                for d in roundtrip_diffs[:5]:
+                    print(f"  - {d}")
+                all_passed = False
+                test_results.append(("roundtrip_consistency", False, "; ".join(roundtrip_diffs[:3])))
+            else:
+                print("✓ Export → Import → Export is structurally consistent")
+                test_results.append(("roundtrip_consistency", True, ""))
 
         # =====================================================================
         # Summary

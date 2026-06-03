@@ -262,6 +262,21 @@ public final class JsonHelper {
     JSONObject mindMapFromJSON(String jsonInput, NodeModel parentNode) {
         JSONObject obj = new JSONObject(jsonInput);
 
+        // Strip _fp_import_root_node wrapper if present (handled by gRPC service for mode)
+        // but the JSON still contains it, so we need to extract the inner object.
+        if (obj.has(LEGACY_FP_IMPORT_ROOT)) {
+            // Find the actual mindmap object (the non-_fp_import_root_node key)
+            for (String key : obj.keySet()) {
+                if (!key.equals(LEGACY_FP_IMPORT_ROOT)) {
+                    Object val = obj.get(key);
+                    if (val instanceof JSONObject) {
+                        obj = (JSONObject) val;
+                        break;
+                    }
+                }
+            }
+        }
+
         // Detect legacy format and migrate if needed
         if (isLegacyFormat(obj)) {
             obj = migrateLegacyToCanonical(obj);
@@ -426,6 +441,8 @@ public final class JsonHelper {
         final NodeModel newNodeModel = mmapController.newNode(nodeText, parentNode.getMap());
         newNodeModel.setSide(mapController.suggestNewChildSide(parentNode, NodeModel.Side.DEFAULT));
         newNodeModel.createID();
+        // Insert at position 0; children are processed in order, so position 0
+        // means the first child ends up at index 0 after all insertions.
         mmapController.insertNode(newNodeModel, parentNode, 0);
 
         // Store ID mapping for connector resolution
@@ -443,12 +460,12 @@ public final class JsonHelper {
             }
         }
 
-        // ---------- children ----------
+        // ---------- children (insert in reverse order so first child ends up at index 0) ----------
         if (jsonObject.has(FIELD_CHILDREN)) {
             Object childrenObj = jsonObject.get(FIELD_CHILDREN);
             if (childrenObj instanceof JSONArray) {
                 JSONArray childrenArray = (JSONArray) childrenObj;
-                for (int i = 0; i < childrenArray.length(); i++) {
+                for (int i = childrenArray.length() - 1; i >= 0; i--) {
                     Object childObj = childrenArray.get(i);
                     if (childObj instanceof JSONObject) {
                         JSONObject childJson = (JSONObject) childObj;

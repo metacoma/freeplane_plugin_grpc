@@ -600,8 +600,55 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
 
         LOG.info("GRPC Freeplane::MindMapFromJSON()");
 
-        final IMapSelection selection = Controller.getCurrentController().getSelection();
-        NodeModel rootNode = selection.getSelected();
+        // Resolve _fp_import_root_node insert mode to determine the target node FIRST.
+        // This must happen before accessing selection or map, which may be null.
+        final JSONObject importJson = new JSONObject(req.getJson());
+        final String insertMode;
+        if (importJson.has(JsonHelper.LEGACY_FP_IMPORT_ROOT)) {
+            insertMode = importJson.getString(JsonHelper.LEGACY_FP_IMPORT_ROOT);
+        } else {
+            insertMode = null;
+        }
+
+        NodeModel rootNode = null;
+        if ("root".equals(insertMode)) {
+            try {
+                rootNode = mapController.getRootNode();
+            } catch (final NullPointerException e) {
+                LOG.log(java.util.logging.Level.WARNING, "Could not get root node: map not loaded");
+            }
+        } else if (insertMode != null && insertMode.startsWith("ID_")) {
+            try {
+                final NodeModel pickNode = map.getNodeForID(insertMode);
+                rootNode = (pickNode != null) ? pickNode : mapController.getRootNode();
+            } catch (final NullPointerException e) {
+                LOG.log(java.util.logging.Level.WARNING, "Could not resolve insert mode ID: " + insertMode);
+            }
+        } else {
+            // Default: use selected node or fall back to root
+            final IMapSelection selection = Controller.getCurrentController().getSelection();
+            if (selection != null) {
+                final NodeModel selected = selection.getSelected();
+                rootNode = (selected != null) ? selected : mapController.getRootNode();
+            }
+        }
+
+        // Final fallback: if still no rootNode, try to get the root
+        if (rootNode == null) {
+            try {
+                rootNode = mapController.getRootNode();
+            } catch (final NullPointerException e) {
+                LOG.log(java.util.logging.Level.WARNING, "Could not get root node: map not loaded");
+            }
+        }
+
+        if (rootNode == null) {
+            LOG.log(java.util.logging.Level.WARNING, "MindMapFromJSON: no target node available (no selection and no insert mode), returning failure");
+            final MindMapFromJSONResponse failReply = MindMapFromJSONResponse.newBuilder().setSuccess(false).build();
+            responseObserver.onNext(failReply);
+            responseObserver.onCompleted();
+            return;
+        }
 
         // Clear existing attributes on the target node
         final AttributeUtilities atrUtil = new AttributeUtilities();
@@ -610,21 +657,6 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
             final int rowCount = natm.getRowCount();
             for (int i = 0; i < rowCount; i++) {
                 AttributeController.getController().performRemoveRow(rootNode, natm, 0);
-            }
-        }
-
-        // Resolve _fp_import_root_node insert mode to determine the target node.
-        // This restores the legacy behavior that was lost in the refactor.
-        final JSONObject importJson = new JSONObject(req.getJson());
-        if (importJson.has(JsonHelper.LEGACY_FP_IMPORT_ROOT)) {
-            final String mode = importJson.getString(JsonHelper.LEGACY_FP_IMPORT_ROOT);
-            if ("root".equals(mode)) {
-                rootNode = mapController.getRootNode();
-            } else if (mode.startsWith("ID_")) {
-                final NodeModel pickNode = map.getNodeForID(mode);
-                if (pickNode != null) {
-                    rootNode = pickNode;
-                }
             }
         }
 
