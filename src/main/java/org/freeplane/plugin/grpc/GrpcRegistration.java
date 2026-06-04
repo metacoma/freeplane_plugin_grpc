@@ -22,8 +22,16 @@ public class GrpcRegistration {
     private String listenAddress;
     private Integer bindPort;
     private final Integer defaultPort = 50051;
+    private ModeController modeController;
 
+    /**
+     * Creates and starts the gRPC server.
+     *
+     * @param modeController the Freeplane mode controller (may be null if the server
+     *                       is started independently of mode controller lifecycle)
+     */
     public GrpcRegistration(ModeController modeController) {
+        this.modeController = modeController;
         listenAddress = System.getenv("GRPC_LISTEN_ADDR");
         String portStr = System.getenv("GRPC_LISTEN_PORT");
 
@@ -35,12 +43,22 @@ public class GrpcRegistration {
 
         try {
             server = NettyServerBuilder.forAddress(new InetSocketAddress(listenAddress, bindPort))
-                .addService(new FreeplaneGrpcService())
+                .addService(new FreeplaneGrpcService(modeController))
                 .build()
                 .start();
         } catch (IOException e) {
             LOG.warning("Failed to start gRPC server: " + e.getMessage());
         }
         LOG.info("Freeplane grpc plugin loaded and listen on " + listenAddress + ":" + bindPort);
+    }
+
+    /**
+     * Shuts down the gRPC server.
+     */
+    public void shutdown() {
+        if (server != null && !server.isShutdown()) {
+            server.shutdown();
+            LOG.info("gRPC server shut down");
+        }
     }
 }

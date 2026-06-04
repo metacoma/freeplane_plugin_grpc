@@ -132,7 +132,7 @@ public final class JsonHelper {
         // Use LinkedHashMap for deterministic field ordering
         final Map<String, Object> result = new LinkedHashMap<>();
 
-        result.put(FIELD_TEXT, node.getUserObject().toString());
+        result.put(FIELD_TEXT, node.getText());
         result.put(FIELD_ID, node.getID());
 
         // ---------- children ----------
@@ -429,8 +429,7 @@ public final class JsonHelper {
         final MIconController mIconController = (MIconController) IconController.getController();
         final MNodeStyleController mNodeStyleController = (MNodeStyleController) NodeStyleController.getController();
         final MNoteController mNoteController = MNoteController.getController();
-        final org.freeplane.features.attribute.mindmapmode.MAttributeController mAttributeController =
-                org.freeplane.features.attribute.mindmapmode.MAttributeController.getController();
+        final MAttributeController mAttributeController = MAttributeController.getController();
         final MapController mapController = Controller.getCurrentModeController().getMapController();
 
         // Extract text
@@ -447,7 +446,7 @@ public final class JsonHelper {
         mmapController.insertNode(newNodeModel, parentNode, 0);
 
         // Extract and set ID hint (for reference; actual ID is already set)
-        if (jsonObject.has(FIELD_ID)) {
+        if (jsonObject.has(FIELD_ID) && mAttributeController != null) {
             // The ID in the JSON is informational; Freeplane generates its own IDs.
             // We store it as an attribute for reference.
             try {
@@ -474,16 +473,19 @@ public final class JsonHelper {
         }
 
         // ---------- attributes ----------
-        if (jsonObject.has(FIELD_ATTRIBUTES)) {
+        if (jsonObject.has(FIELD_ATTRIBUTES) && mAttributeController != null) {
             Object attrsObj = jsonObject.get(FIELD_ATTRIBUTES);
             if (attrsObj instanceof JSONObject) {
                 JSONObject attrsJson = (JSONObject) attrsObj;
                 for (String attrKey : attrsJson.keySet()) {
                     try {
-                        Attribute attr = new Attribute(attrKey, attrsJson.get(attrKey));
+                        Object rawValue = attrsJson.get(attrKey);
+                        // Ensure the value is a String for the Attribute constructor
+                        String attrValue = (rawValue != null) ? rawValue.toString() : "";
+                        Attribute attr = new Attribute(attrKey, attrValue);
                         mAttributeController.addAttribute(newNodeModel, attr);
                     } catch (Exception e) {
-                        LOG.warning("addAttribute failed for key " + attrKey + ": " + e.getMessage());
+                        LOG.warning("addAttribute failed for key " + attrKey + ": " + (e.getMessage() != null ? e.getMessage() : "null"));
                     }
                 }
             }
@@ -610,9 +612,11 @@ public final class JsonHelper {
                     }
                     try {
                         Attribute relAttr = new Attribute(LEGACY_RELATIONSHIP_ATTR, relValue.toString());
-                        mAttributeController.addAttribute(newNodeModel, relAttr);
+                        if (mAttributeController != null) {
+                            mAttributeController.addAttribute(newNodeModel, relAttr);
+                        }
                     } catch (Exception e) {
-                        LOG.warning("Could not store relationship attribute: " + e.getMessage());
+                        LOG.warning("Could not store relationship attribute: " + (e.getMessage() != null ? e.getMessage() : "null"));
                     }
                 }
             }

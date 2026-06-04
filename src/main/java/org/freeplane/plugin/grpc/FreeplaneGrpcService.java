@@ -54,6 +54,15 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
     private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(FreeplaneGrpcService.class.getName());
 
     private final JsonHelper jsonHelper = new JsonHelper();
+    private final ModeController modeController;
+
+    FreeplaneGrpcService() {
+        this(null);
+    }
+
+    FreeplaneGrpcService(final ModeController modeController) {
+        this.modeController = modeController;
+    }
 
     @Override
     public void createChild(final CreateChildRequest req, final StreamObserver<CreateChildResponse> responseObserver) {
@@ -465,22 +474,37 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
     @Override
     public void getCurrentNode(final GetCurrentNodeRequest req,
                                final StreamObserver<GetCurrentNodeResponse> responseObserver) {
-        final IMapSelection selection = Controller.getCurrentController().getSelection();
-        final MapModel map = Controller.getCurrentController().getMap();
-        final NodeModel currentNode = selection.getSelected();
-        final GetCurrentNodeResponse reply;
-        if (currentNode != null) {
-            reply = GetCurrentNodeResponse.newBuilder()
-                .setNodeId(currentNode.getID())
-                .setMapId(map.getTitle())
-                .setSuccess(true)
-                .build();
-        } else {
-            reply = GetCurrentNodeResponse.newBuilder()
-                .setNodeId("-1")
-                .setMapId("-1")
-                .setSuccess(false)
-                .build();
+        GetCurrentNodeResponse reply = GetCurrentNodeResponse.newBuilder()
+            .setNodeId("-1")
+            .setMapId("-1")
+            .setSuccess(false)
+            .build();
+
+        // Wait for Freeplane controller to become ready (up to 5 seconds)
+        Controller controller = null;
+        for (int i = 0; i < 10; i++) {
+            controller = Controller.getCurrentController();
+            if (controller != null) break;
+            try { Thread.sleep(500); } catch (final InterruptedException ie) { Thread.currentThread().interrupt(); break; }
+        }
+
+        if (controller != null) {
+            try {
+                final IMapSelection selection = controller.getSelection();
+                if (selection != null) {
+                    final MapModel map = controller.getMap();
+                    final NodeModel currentNode = selection.getSelected();
+                    if (currentNode != null) {
+                        reply = GetCurrentNodeResponse.newBuilder()
+                            .setNodeId(currentNode.getID())
+                            .setMapId(map.getTitle())
+                            .setSuccess(true)
+                            .build();
+                    }
+                }
+            } catch (final Exception e) {
+                // Controller may not be fully ready, return failure response
+            }
         }
 
         responseObserver.onNext(reply);
@@ -592,13 +616,36 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
     @Override
     public void mindMapFromJSON(final MindMapFromJSONRequest req,
                                 final StreamObserver<MindMapFromJSONResponse> responseObserver) {
-        final MapController mapController = Controller.getCurrentModeController().getMapController();
-        final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
-        final MLinkController mLinkController = (MLinkController) LinkController.getController();
-        final MapModel map = Controller.getCurrentController().getMap();
-        boolean success = false;
-
         LOG.info("GRPC Freeplane::MindMapFromJSON()");
+
+        // Wait for Freeplane controller to become ready (up to 10 seconds)
+        Controller controller = null;
+        MapController mapController = null;
+        for (int i = 0; i < 20; i++) {
+            controller = Controller.getCurrentController();
+            if (controller != null) {
+                try {
+                    mapController = controller.getModeController(MModeController.MODENAME).getMapController();
+                    if (mapController != null) break;
+                } catch (final Exception e) {
+                    // mode controller not ready yet
+                }
+            }
+            try { Thread.sleep(500); } catch (final InterruptedException ie) { Thread.currentThread().interrupt(); break; }
+        }
+
+        if (controller == null || mapController == null) {
+            LOG.warning("GRPC Freeplane::MindMapFromJSON controller not ready after timeout");
+            final MindMapFromJSONResponse failReply = MindMapFromJSONResponse.newBuilder().setSuccess(false).build();
+            responseObserver.onNext(failReply);
+            responseObserver.onCompleted();
+            return;
+        }
+
+        final MMapController mmapController = (MMapController) mapController;
+        final MLinkController mLinkController = (MLinkController) LinkController.getController();
+        final MapModel map = controller.getMap();
+        boolean success = false;
 
         // Resolve _fp_import_root_node insert mode to determine the target node FIRST.
         // This must happen before accessing selection or map, which may be null.
@@ -626,7 +673,7 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
             }
         } else {
             // Default: use selected node or fall back to root
-            final IMapSelection selection = Controller.getCurrentController().getSelection();
+            final IMapSelection selection = controller.getSelection();
             if (selection != null) {
                 final NodeModel selected = selection.getSelected();
                 rootNode = (selected != null) ? selected : mapController.getRootNode();
@@ -722,13 +769,64 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
     @Override
     public void mindMapToJSON(final MindMapToJSONRequest req,
                               final StreamObserver<MindMapToJSONResponse> responseObserver) {
-        final MapController mapController = Controller.getCurrentModeController().getMapController();
-        final NodeModel rootNode = mapController.getRootNode();
+        LOG.info("GRPC Freeplane::MindMapToJSON()");
+
+        // Wait for Freeplane controller and map to become ready (up to 10 seconds)
+        Controller controller = null;
+        MapController mapController = null;
+        MapModel map = null;
+        NodeModel rootNode = null;
+        for (int i = 0; i < 20; i++) {
+            try {
+                controller = Controller.getCurrentController();
+                if (controller != null) {
+                    try {
+                        mapController = controller.getModeController(MModeController.MODENAME).getMapController();
+                        if (mapController != null) {
+                            map = controller.getMap();
+                            if (map != null) {
+                                rootNode = map.getRootNode();
+                                if (rootNode != null) {
+                                    LOG.info("GRPC Freeplane::MindMapToJSON controller and map ready after " + (i+1) + " tries");
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (final Exception e) {
+                        LOG.log(java.util.logging.Level.FINE, "GRPC Freeplane::MindMapToJSON mode controller not ready: " + e.getMessage());
+                    }
+                }
+            } catch (final Exception e) {
+                LOG.log(java.util.logging.Level.FINE, "GRPC Freeplane::MindMapToJSON getCurrentController failed: " + e.getMessage());
+            }
+            try { Thread.sleep(500); } catch (final InterruptedException ie) { Thread.currentThread().interrupt(); break; }
+        }
+
+        if (controller == null || mapController == null || map == null || rootNode == null) {
+            LOG.warning("GRPC Freeplane::MindMapToJSON controller or map not ready after timeout (controller=" + (controller != null ? "not-null" : "null") + ", mapController=" + (mapController != null ? "not-null" : "null") + ", map=" + (map != null ? "not-null" : "null") + ", rootNode=" + (rootNode != null ? "not-null" : "null") + ")");
+            final MindMapToJSONResponse failReply = MindMapToJSONResponse.newBuilder()
+                .setSuccess(false)
+                .setJson("")
+                .build();
+            responseObserver.onNext(failReply);
+            responseObserver.onCompleted();
+            return;
+        }
+
         // Use LinkedHashMap for deterministic field ordering in canonical JSON
         final Map<String, Object> result = new java.util.LinkedHashMap<>();
-
-        jsonHelper.nodeWalk(result, rootNode);
-        LOG.info("GRPC Freeplane::MindMapToJSON()");
+        try {
+            jsonHelper.nodeWalk(result, rootNode);
+        } catch (final Exception e) {
+            LOG.warning("GRPC Freeplane::MindMapToJSON nodeWalk failed: " + e.getMessage());
+            final MindMapToJSONResponse failReply = MindMapToJSONResponse.newBuilder()
+                .setSuccess(false)
+                .setJson("")
+                .build();
+            responseObserver.onNext(failReply);
+            responseObserver.onCompleted();
+            return;
+        }
         final MindMapToJSONResponse reply = MindMapToJSONResponse.newBuilder()
             .setSuccess(true)
             .setJson(JsonHelper.toJson(result))
