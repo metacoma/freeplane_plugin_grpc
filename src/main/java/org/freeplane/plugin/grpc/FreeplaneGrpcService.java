@@ -712,6 +712,14 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
 
         final List<NodeModel> newNodes = NodeUtils.collectSubtreeNodes(rootNode);
 
+        // Commit the imported nodes to ensure they are visible in subsequent exports.
+        // Freeplane's model changes need to be committed via the map controller.
+        try {
+            mapController.commitChanges(rootNode);
+        } catch (final Exception e) {
+            LOG.fine("Could not commit changes after import: " + e.getMessage());
+        }
+
         LOG.info("childrenCount: " + rootNode.getChildCount() + ", Total nodes: " + newNodes.size());
 
         // Process relationships (connectors) for all nodes in the imported subtree
