@@ -225,6 +225,19 @@ def main() -> int:
         print("TEST 1: Canonical format round-trip")
         print("=" * 60)
 
+        # Clear existing children to ensure a clean state for import
+        mindmap1 = client.current_map()
+        root1 = mindmap1.root()
+        children_before1 = list(root1.children())
+        cleared_count1 = 0
+        for child in children_before1:
+            try:
+                if child.delete():
+                    cleared_count1 += 1
+            except Exception:
+                pass
+        print(f"✓ Cleared {cleared_count1}/{len(children_before1)} existing children")
+
         # Create canonical JSON
         canonical_json = create_canonical_json(marker)
         print(f"\nCreated canonical JSON ({len(canonical_json)} chars):")

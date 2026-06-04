@@ -203,7 +203,11 @@ FREEPLANE_LOG="$RUNTIME_DIR/freeplane.log"
 
 # --- Ensure a mindmap file is available for Freeplane to open ---
 MINDMAP_FILE="$RUNTIME_DIR/smoke_test_map.mm"
-if [[ ! -f "$MINDMAP_FILE" ]]; then
+# Prefer the blank test map fixture from the plugin repo for clean test isolation
+if [[ -f "${PLUGIN_REPO}/grpc/python/examples/test_blank_map.mm" ]]; then
+    cp "${PLUGIN_REPO}/grpc/python/examples/test_blank_map.mm" "$MINDMAP_FILE"
+    log_info "Copied test_blank_map.mm as smoke test map: $MINDMAP_FILE"
+elif [[ ! -f "$MINDMAP_FILE" ]]; then
     cat > "$MINDMAP_FILE" <<'MMEOF'
 <map version="freeplane 1.9.0">
 <node TEXT="Smoke Test Map" FOLDED="false" ID="ID_00000001" CREATED="0000000000000" MODIFIED="0000000000000">
@@ -211,6 +215,8 @@ if [[ ! -f "$MINDMAP_FILE" ]]; then
 </map>
 MMEOF
     log_info "Created temporary mindmap file: $MINDMAP_FILE"
+else
+    log_info "Using existing mindmap file: $MINDMAP_FILE"
 fi
 
 log_info "Starting Freeplane from $FREEPLANE_LAUNCHER ..."
