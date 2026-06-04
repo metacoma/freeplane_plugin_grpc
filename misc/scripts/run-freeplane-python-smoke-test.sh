@@ -23,6 +23,7 @@ RUNTIME_DIR="/tmp/freeplane-xvfb"
 GRPC_HOST="127.0.0.1"
 GRPC_PORT="50051"
 PYTHON_EXAMPLE="${PLUGIN_REPO}/grpc/python/examples/modify_mindmap_example.py"
+PYTHON_ROUNDTRIP_TEST="${PLUGIN_REPO}/grpc/python/examples/test_json_roundtrip.py"
 
 # Colors for output
 RED='\033[0;31m'
@@ -202,7 +203,11 @@ FREEPLANE_LOG="$RUNTIME_DIR/freeplane.log"
 
 # --- Ensure a mindmap file is available for Freeplane to open ---
 MINDMAP_FILE="$RUNTIME_DIR/smoke_test_map.mm"
-if [[ ! -f "$MINDMAP_FILE" ]]; then
+# Prefer the blank test map fixture from the plugin repo for clean test isolation
+if [[ -f "${PLUGIN_REPO}/grpc/python/examples/test_blank_map.mm" ]]; then
+    cp "${PLUGIN_REPO}/grpc/python/examples/test_blank_map.mm" "$MINDMAP_FILE"
+    log_info "Copied test_blank_map.mm as smoke test map: $MINDMAP_FILE"
+elif [[ ! -f "$MINDMAP_FILE" ]]; then
     cat > "$MINDMAP_FILE" <<'MMEOF'
 <map version="freeplane 1.9.0">
 <node TEXT="Smoke Test Map" FOLDED="false" ID="ID_00000001" CREATED="0000000000000" MODIFIED="0000000000000">
@@ -210,6 +215,8 @@ if [[ ! -f "$MINDMAP_FILE" ]]; then
 </map>
 MMEOF
     log_info "Created temporary mindmap file: $MINDMAP_FILE"
+else
+    log_info "Using existing mindmap file: $MINDMAP_FILE"
 fi
 
 log_info "Starting Freeplane from $FREEPLANE_LAUNCHER ..."
@@ -291,6 +298,24 @@ fi
 PYTHON_EXIT_CODE=0
 python3 "$PYTHON_EXAMPLE" || PYTHON_EXIT_CODE=$?
 
+# --- Step 5b: Run JSON round-trip smoke test ---
+echo ""
+echo "=========================================="
+echo " Step 5b: Run JSON round-trip test"
+echo "=========================================="
+ROUNDTRIP_EXIT_CODE=0
+if [[ -f "$PYTHON_ROUNDTRIP_TEST" ]]; then
+    log_info "Running JSON round-trip smoke test..."
+    python3 "$PYTHON_ROUNDTRIP_TEST" || ROUNDTRIP_EXIT_CODE=$?
+    if [[ $ROUNDTRIP_EXIT_CODE -eq 0 ]]; then
+        log_info "JSON round-trip test PASSED"
+    else
+        log_error "JSON round-trip test FAILED (exit code $ROUNDTRIP_EXIT_CODE)"
+    fi
+else
+    log_warn "JSON round-trip test not found: $PYTHON_ROUNDTRIP_TEST — skipping"
+fi
+
 # --- Step 6: Verify mind map change ---
 echo ""
 echo "=========================================="
@@ -299,10 +324,9 @@ echo "=========================================="
 if [[ $PYTHON_EXIT_CODE -ne 0 ]]; then
     log_error "Python example failed with exit code $PYTHON_EXIT_CODE"
     log_error "The mind map change could not be verified"
-else
-    log_info "SMOKE TEST PASSED"
-    log_info "Python example completed successfully"
-    log_info "Mind map was modified and verified through read-back"
+fi
+if [[ $ROUNDTRIP_EXIT_CODE -ne 0 ]]; then
+    log_error "JSON round-trip test failed with exit code $ROUNDTRIP_EXIT_CODE"
 fi
 
 # --- Step 7: Shutdown ---
@@ -369,11 +393,17 @@ fi
 # --- Final result ---
 echo ""
 echo "=========================================="
-if [[ $PYTHON_EXIT_CODE -eq 0 ]]; then
+if [[ $PYTHON_EXIT_CODE -eq 0 && $ROUNDTRIP_EXIT_CODE -eq 0 ]]; then
     log_info "SMOKE TEST: PASSED"
 else
-    log_error "SMOKE TEST: FAILED (exit code $PYTHON_EXIT_CODE)"
+    log_error "SMOKE TEST: FAILED (python=$PYTHON_EXIT_CODE, roundtrip=$ROUNDTRIP_EXIT_CODE)"
 fi
 echo "=========================================="
 
-exit $PYTHON_EXIT_CODE
+if [[ $PYTHON_EXIT_CODE -ne 0 ]]; then
+    exit $PYTHON_EXIT_CODE
+fi
+if [[ $ROUNDTRIP_EXIT_CODE -ne 0 ]]; then
+    exit $ROUNDTRIP_EXIT_CODE
+fi
+exit 0

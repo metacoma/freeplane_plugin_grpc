@@ -1,6 +1,5 @@
 package org.freeplane.plugin.grpc;
 
-import com.google.gson.Gson;
 import io.grpc.stub.StreamObserver;
 import org.freeplane.core.util.Hyperlink;
 import org.freeplane.features.attribute.Attribute;
@@ -55,6 +54,15 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
     private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(FreeplaneGrpcService.class.getName());
 
     private final JsonHelper jsonHelper = new JsonHelper();
+    private final ModeController modeController;
+
+    FreeplaneGrpcService() {
+        this(null);
+    }
+
+    FreeplaneGrpcService(final ModeController modeController) {
+        this.modeController = modeController;
+    }
 
     @Override
     public void createChild(final CreateChildRequest req, final StreamObserver<CreateChildResponse> responseObserver) {
@@ -466,22 +474,37 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
     @Override
     public void getCurrentNode(final GetCurrentNodeRequest req,
                                final StreamObserver<GetCurrentNodeResponse> responseObserver) {
-        final IMapSelection selection = Controller.getCurrentController().getSelection();
-        final MapModel map = Controller.getCurrentController().getMap();
-        final NodeModel currentNode = selection.getSelected();
-        final GetCurrentNodeResponse reply;
-        if (currentNode != null) {
-            reply = GetCurrentNodeResponse.newBuilder()
-                .setNodeId(currentNode.getID())
-                .setMapId(map.getTitle())
-                .setSuccess(true)
-                .build();
-        } else {
-            reply = GetCurrentNodeResponse.newBuilder()
-                .setNodeId("-1")
-                .setMapId("-1")
-                .setSuccess(false)
-                .build();
+        GetCurrentNodeResponse reply = GetCurrentNodeResponse.newBuilder()
+            .setNodeId("-1")
+            .setMapId("-1")
+            .setSuccess(false)
+            .build();
+
+        // Wait for Freeplane controller to become ready (up to 5 seconds)
+        Controller controller = null;
+        for (int i = 0; i < 10; i++) {
+            controller = Controller.getCurrentController();
+            if (controller != null) break;
+            try { Thread.sleep(500); } catch (final InterruptedException ie) { Thread.currentThread().interrupt(); break; }
+        }
+
+        if (controller != null) {
+            try {
+                final IMapSelection selection = controller.getSelection();
+                if (selection != null) {
+                    final MapModel map = controller.getMap();
+                    final NodeModel currentNode = selection.getSelected();
+                    if (currentNode != null) {
+                        reply = GetCurrentNodeResponse.newBuilder()
+                            .setNodeId(currentNode.getID())
+                            .setMapId(map.getTitle())
+                            .setSuccess(true)
+                            .build();
+                    }
+                }
+            } catch (final Exception e) {
+                // Controller may not be fully ready, return failure response
+            }
         }
 
         responseObserver.onNext(reply);
@@ -593,22 +616,88 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
     @Override
     public void mindMapFromJSON(final MindMapFromJSONRequest req,
                                 final StreamObserver<MindMapFromJSONResponse> responseObserver) {
-        final MapController mapController = Controller.getCurrentModeController().getMapController();
-        final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
-        final MLinkController mLinkController = (MLinkController) LinkController.getController();
-        final MapModel map = Controller.getCurrentController().getMap();
-        boolean success = false;
-        final AttributeController attributeController = AttributeController.getController();
-
         LOG.info("GRPC Freeplane::MindMapFromJSON()");
-        final String insert_mode_key = "_fp_import_root_node";
 
-        final IMapSelection selection = Controller.getCurrentController().getSelection();
-        NodeModel rootNode = selection.getSelected();
+        // Wait for Freeplane controller to become ready (up to 10 seconds)
+        Controller controller = null;
+        MapController mapController = null;
+        for (int i = 0; i < 20; i++) {
+            controller = Controller.getCurrentController();
+            if (controller != null) {
+                try {
+                    mapController = controller.getModeController(MModeController.MODENAME).getMapController();
+                    if (mapController != null) break;
+                } catch (final Exception e) {
+                    // mode controller not ready yet
+                }
+            }
+            try { Thread.sleep(500); } catch (final InterruptedException ie) { Thread.currentThread().interrupt(); break; }
+        }
 
-        // "Refresh" json canvas
-        // mmapController.deleteNodes(rootNode.getChildren());
+        if (controller == null || mapController == null) {
+            LOG.warning("GRPC Freeplane::MindMapFromJSON controller not ready after timeout");
+            final MindMapFromJSONResponse failReply = MindMapFromJSONResponse.newBuilder().setSuccess(false).build();
+            responseObserver.onNext(failReply);
+            responseObserver.onCompleted();
+            return;
+        }
 
+        final MMapController mmapController = (MMapController) mapController;
+        final MLinkController mLinkController = (MLinkController) LinkController.getController();
+        final MapModel map = controller.getMap();
+        boolean success = false;
+
+        // Resolve _fp_import_root_node insert mode to determine the target node FIRST.
+        // This must happen before accessing selection or map, which may be null.
+        final JSONObject importJson = new JSONObject(req.getJson());
+        final String insertMode;
+        if (importJson.has(JsonHelper.LEGACY_FP_IMPORT_ROOT)) {
+            insertMode = importJson.getString(JsonHelper.LEGACY_FP_IMPORT_ROOT);
+        } else {
+            insertMode = null;
+        }
+
+        NodeModel rootNode = null;
+        if ("root".equals(insertMode)) {
+            try {
+                rootNode = mapController.getRootNode();
+            } catch (final NullPointerException e) {
+                LOG.log(java.util.logging.Level.WARNING, "Could not get root node: map not loaded");
+            }
+        } else if (insertMode != null && insertMode.startsWith("ID_")) {
+            try {
+                final NodeModel pickNode = map.getNodeForID(insertMode);
+                rootNode = (pickNode != null) ? pickNode : mapController.getRootNode();
+            } catch (final NullPointerException e) {
+                LOG.log(java.util.logging.Level.WARNING, "Could not resolve insert mode ID: " + insertMode);
+            }
+        } else {
+            // Default: use selected node or fall back to root
+            final IMapSelection selection = controller.getSelection();
+            if (selection != null) {
+                final NodeModel selected = selection.getSelected();
+                rootNode = (selected != null) ? selected : mapController.getRootNode();
+            }
+        }
+
+        // Final fallback: if still no rootNode, try to get the root
+        if (rootNode == null) {
+            try {
+                rootNode = mapController.getRootNode();
+            } catch (final NullPointerException e) {
+                LOG.log(java.util.logging.Level.WARNING, "Could not get root node: map not loaded");
+            }
+        }
+
+        if (rootNode == null) {
+            LOG.log(java.util.logging.Level.WARNING, "MindMapFromJSON: no target node available (no selection and no insert mode), returning failure");
+            final MindMapFromJSONResponse failReply = MindMapFromJSONResponse.newBuilder().setSuccess(false).build();
+            responseObserver.onNext(failReply);
+            responseObserver.onCompleted();
+            return;
+        }
+
+        // Clear existing attributes on the target node
         final AttributeUtilities atrUtil = new AttributeUtilities();
         if (atrUtil.hasAttributes(rootNode)) {
             final NodeAttributeTableModel natm = NodeAttributeTableModel.getModel(rootNode);
@@ -618,52 +707,66 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
             }
         }
 
-        final JSONObject obj = new JSONObject(req.getJson());
-        if (obj.has(insert_mode_key)) {
-            final String mode = obj.getString(insert_mode_key);
-
-            if ("root".equals(mode)) {
-                rootNode = mapController.getRootNode();
-            }
-
-            if (mode.startsWith("ID_")) {
-                final NodeModel pickNode = map.getNodeForID(mode);
-                if (pickNode != null) {
-                    rootNode = pickNode;
-                }
-            }
-
-            obj.remove(insert_mode_key);
-        }
-
-        jsonHelper.recursiveJSONLoop(obj, rootNode);
+        // Import using canonical format with legacy migration.
+        jsonHelper.mindMapFromJSON(req.getJson(), rootNode);
 
         final List<NodeModel> newNodes = NodeUtils.collectSubtreeNodes(rootNode);
 
+        // Notify Freeplane's model that imported nodes have changed so they are visible in subsequent exports.
+        // Freeplane's MapController uses nodeChanged() to fire NodeChangeEvent to listeners.
+        // commitChanges() does not exist on MapController in Freeplane 1.13.x.
+        try {
+            mapController.nodeChanged(rootNode);
+            for (final NodeModel node : newNodes) {
+                mapController.nodeChanged(node);
+            }
+        } catch (final Exception e) {
+            LOG.fine("Could not notify model changes after import: " + e.getMessage());
+        }
+
         LOG.info("childrenCount: " + rootNode.getChildCount() + ", Total nodes: " + newNodes.size());
 
+        // Process relationships (connectors) for all nodes in the imported subtree
         for (final NodeModel node : newNodes) {
             if (atrUtil.hasAttributes(node)) {
                 final NodeAttributeTableModel natm = NodeAttributeTableModel.getModel(node);
                 for (int i = 0; i < natm.getRowCount(); i++) {
                     final Attribute attr = natm.getAttribute(i);
-                    if (attr.getName().equals("_relationship")) {
+                    if (attr.getName().equals(JsonHelper.LEGACY_RELATIONSHIP_ATTR)) {
                         final NodeModel sourceNode = node;
                         final String relValue = attr.getValue().toString();
                         final List<Map.Entry<String, String>> pairs = NodeUtils.parseRelationships(relValue);
 
                         for (final Map.Entry<String, String> pair : pairs) {
-                            final String uuid = pair.getKey();
+                            final String targetId = pair.getKey();
                             final String relType = pair.getValue();
-                            final NodeModel targetNode = NodeUtils.findNodeByAttributeUUID(newNodes, uuid);
+                            // Use target_id directly (canonical format) or fall back to UUID lookup (legacy)
+                            NodeModel targetNode = map.getNodeForID(targetId);
+                            if (targetNode == null) {
+                                // Legacy fallback: try UUID lookup
+                                targetNode = NodeUtils.findNodeByAttributeUUID(newNodes, targetId);
+                            }
                             if (targetNode != null) {
-                                LOG.info("Relationship: " + node + " --[" + relType + "]--> " + targetNode);
+                                LOG.info("Relationship: " + sourceNode + " --[" + relType + "]--> " + targetNode);
                                 final ConnectorModel conn = mLinkController.addConnector(sourceNode, targetNode);
                                 conn.setMiddleLabel(relType);
                             } else {
-                                LOG.warning("UUID not found: " + uuid);
+                                LOG.warning("Target node not found for: " + targetId);
                             }
                         }
+                    }
+                }
+            }
+        }
+
+        // Clean up _relationship attributes after connector creation to prevent leakage into export
+        for (final NodeModel node : newNodes) {
+            if (atrUtil.hasAttributes(node)) {
+                final NodeAttributeTableModel natm = NodeAttributeTableModel.getModel(node);
+                for (int i = natm.getRowCount() - 1; i >= 0; i--) {
+                    final Attribute attr = natm.getAttribute(i);
+                    if (attr.getName().equals(JsonHelper.LEGACY_RELATIONSHIP_ATTR)) {
+                        AttributeController.getController().performRemoveRow(node, natm, i);
                     }
                 }
             }
@@ -678,17 +781,67 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
     @Override
     public void mindMapToJSON(final MindMapToJSONRequest req,
                               final StreamObserver<MindMapToJSONResponse> responseObserver) {
-        final MapController mapController = Controller.getCurrentModeController().getMapController();
-        final NodeModel rootNode = mapController.getRootNode();
-        final Map<String, Object> result = new java.util.HashMap<>();
-
-        final Gson gson = new Gson();
-
-        jsonHelper.nodeWalk(result, rootNode);
         LOG.info("GRPC Freeplane::MindMapToJSON()");
+
+        // Wait for Freeplane controller and map to become ready (up to 10 seconds)
+        Controller controller = null;
+        MapController mapController = null;
+        MapModel map = null;
+        NodeModel rootNode = null;
+        for (int i = 0; i < 20; i++) {
+            try {
+                controller = Controller.getCurrentController();
+                if (controller != null) {
+                    try {
+                        mapController = controller.getModeController(MModeController.MODENAME).getMapController();
+                        if (mapController != null) {
+                            map = controller.getMap();
+                            if (map != null) {
+                                rootNode = map.getRootNode();
+                                if (rootNode != null) {
+                                    LOG.info("GRPC Freeplane::MindMapToJSON controller and map ready after " + (i+1) + " tries");
+                                    break;
+                                }
+                            }
+                        }
+                    } catch (final Exception e) {
+                        LOG.log(java.util.logging.Level.FINE, "GRPC Freeplane::MindMapToJSON mode controller not ready: " + e.getMessage());
+                    }
+                }
+            } catch (final Exception e) {
+                LOG.log(java.util.logging.Level.FINE, "GRPC Freeplane::MindMapToJSON getCurrentController failed: " + e.getMessage());
+            }
+            try { Thread.sleep(500); } catch (final InterruptedException ie) { Thread.currentThread().interrupt(); break; }
+        }
+
+        if (controller == null || mapController == null || map == null || rootNode == null) {
+            LOG.warning("GRPC Freeplane::MindMapToJSON controller or map not ready after timeout (controller=" + (controller != null ? "not-null" : "null") + ", mapController=" + (mapController != null ? "not-null" : "null") + ", map=" + (map != null ? "not-null" : "null") + ", rootNode=" + (rootNode != null ? "not-null" : "null") + ")");
+            final MindMapToJSONResponse failReply = MindMapToJSONResponse.newBuilder()
+                .setSuccess(false)
+                .setJson("")
+                .build();
+            responseObserver.onNext(failReply);
+            responseObserver.onCompleted();
+            return;
+        }
+
+        // Use LinkedHashMap for deterministic field ordering in canonical JSON
+        final Map<String, Object> result = new java.util.LinkedHashMap<>();
+        try {
+            jsonHelper.nodeWalk(result, rootNode);
+        } catch (final Exception e) {
+            LOG.warning("GRPC Freeplane::MindMapToJSON nodeWalk failed: " + e.getMessage());
+            final MindMapToJSONResponse failReply = MindMapToJSONResponse.newBuilder()
+                .setSuccess(false)
+                .setJson("")
+                .build();
+            responseObserver.onNext(failReply);
+            responseObserver.onCompleted();
+            return;
+        }
         final MindMapToJSONResponse reply = MindMapToJSONResponse.newBuilder()
             .setSuccess(true)
-            .setJson(gson.toJson(result))
+            .setJson(JsonHelper.toJson(result))
             .build();
         responseObserver.onNext(reply);
         responseObserver.onCompleted();
