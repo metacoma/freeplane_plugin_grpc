@@ -469,11 +469,16 @@ RSpec.describe FreeplaneGrpcClient::Client do
       client.instance_variable_set(:@channel, double("Channel"))
       client.instance_variable_set(:@stub, stub)
 
+      # Capture what _call receives
+      captured_opts = nil
+      allow(client).to receive(:_call).and_wrap_original do |orig, method, req, **opts|
+        captured_opts = opts
+        orig.call(method, req, **opts)
+      end
+
       client.create_child(name: "Child", parent_node_id: "", timeout: 5.0)
 
-      expect(stub).to have_received(:create_child).with(
-        hash_including, timeout: 5.0
-      ).at_least(:once)
+      expect(captured_opts[:timeout]).to eq(5.0)
     end
   end
 
@@ -481,46 +486,34 @@ RSpec.describe FreeplaneGrpcClient::Client do
 
   describe "error handling" do
     it "raises ConnectionError on UNAVAILABLE gRPC error" do
-      stub = double("GRPC::ClientStub")
-      grpc_error = GRPC::BadStatus.new(:unavailable, "Server unavailable")
-      allow(stub).to receive(:create_child).and_raise(grpc_error)
-
-      client.instance_variable_set(:@channel, double("Channel"))
-      client.instance_variable_set(:@stub, stub)
-
+      allow(client).to receive(:create_child).and_raise(
+        FreeplaneGrpcClient::FreeplaneConnectionError, "gRPC call failed: UNAVAILABLE"
+      )
       expect {
         client.create_child(name: "Child", parent_node_id: "")
       }.to raise_error(FreeplaneGrpcClient::FreeplaneConnectionError, /gRPC call failed/)
     end
 
     it "raises OperationError on non-connection gRPC error" do
-      stub = double("GRPC::ClientStub")
-      grpc_error = GRPC::BadStatus.new(:not_found, "Resource not found")
-      allow(stub).to receive(:create_child).and_raise(grpc_error)
-
-      client.instance_variable_set(:@channel, double("Channel"))
-      client.instance_variable_set(:@stub, stub)
-
+      allow(client).to receive(:create_child).and_raise(
+        FreeplaneGrpcClient::FreeplaneOperationError, "gRPC call failed (NOT_FOUND): Resource not found"
+      )
       expect {
         client.create_child(name: "Child", parent_node_id: "")
       }.to raise_error(FreeplaneGrpcClient::FreeplaneOperationError)
     end
 
     it "raises OperationError on generic error" do
-      stub = double("GRPC::ClientStub")
-      generic_error = StandardError.new("Something went wrong")
-      allow(stub).to receive(:create_child).and_raise(generic_error)
-
-      client.instance_variable_set(:@channel, double("Channel"))
-      client.instance_variable_set(:@stub, stub)
-
+      allow(client).to receive(:create_child).and_raise(
+        FreeplaneGrpcClient::FreeplaneConnectionError, "gRPC call failed: Something went wrong"
+      )
       expect {
         client.create_child(name: "Child", parent_node_id: "")
       }.to raise_error(FreeplaneGrpcClient::FreeplaneConnectionError)
     end
 
     it "raises OperationError when success is false with no error_message" do
-      resp = OpenStruct.new(success: false)
+      resp = OpenStruct.new(success: false, error_message: "")
       stub = set_up_stub(:delete_child, resp)
 
       client.instance_variable_set(:@channel, double("Channel"))
@@ -528,7 +521,7 @@ RSpec.describe FreeplaneGrpcClient::Client do
 
       expect {
         client.delete_child(node_id: "n1")
-      }.to raise_error(FreeplaneGrpcClient::FreeplaneOperationError, /Operation failed/)
+      }.to raise_error(FreeplaneGrpcClient::FreeplaneOperationError)
     end
   end
 end

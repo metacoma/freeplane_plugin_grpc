@@ -18,6 +18,7 @@ RSpec.describe FreeplaneGrpcClient::MindMap do
 
   describe "#root" do
     it "traverses up to find the root node" do
+      initial_node = double(FreeplaneGrpcClient::Node, node_id: "n1")
       child_node = double(FreeplaneGrpcClient::Node, node_id: "n1")
       parent_node = double(FreeplaneGrpcClient::Node, node_id: "p1", parent_node_id: "root")
       root_node = double(FreeplaneGrpcClient::Node, node_id: "root", parent_node_id: "root")
@@ -27,10 +28,18 @@ RSpec.describe FreeplaneGrpcClient::MindMap do
       allow(client).to receive(:get_parent_node).with(node_id: "p1").and_return(OpenStruct.new(parent_node_id: "root"))
       allow(client).to receive(:get_parent_node).with(node_id: "root").and_return(OpenStruct.new(parent_node_id: "root"))
 
-      # Build the chain
+      # Stub all Node.new calls to return the right node in the chain
+      # The root method starts with Node.new(@client, @map_id, @map_id)
+      allow(FreeplaneGrpcClient::Node).to receive(:new).with(client, map_id, map_id).and_return(initial_node)
       allow(FreeplaneGrpcClient::Node).to receive(:new).with(client, map_id, "n1").and_return(child_node)
       allow(FreeplaneGrpcClient::Node).to receive(:new).with(client, map_id, "p1").and_return(parent_node)
       allow(FreeplaneGrpcClient::Node).to receive(:new).with(client, map_id, "root").and_return(root_node)
+
+      # Stub parent method on each node in the traversal chain
+      allow(initial_node).to receive(:parent).and_return(parent_node)
+      allow(parent_node).to receive(:parent).and_return(root_node)
+      # root_node's parent is itself (break condition)
+      allow(root_node).to receive(:parent).and_return(root_node)
 
       result = mindmap.root
       expect(result).to eq(root_node)
@@ -40,7 +49,9 @@ RSpec.describe FreeplaneGrpcClient::MindMap do
   describe "#selected_node" do
     it "calls get_current_node and returns a Node" do
       allow(client).to receive(:get_current_node).and_return(OpenStruct.new(node_id: "sel"))
-      allow(FreeplaneGrpcClient::Node).to receive(:new).with(client, map_id, "sel")
+      # Create a real Node instance to pass be_a check
+      sel_node = FreeplaneGrpcClient::Node.new(client, map_id, "sel")
+      allow(FreeplaneGrpcClient::Node).to receive(:new).with(client, map_id, "sel").and_return(sel_node)
 
       result = mindmap.selected_node
       expect(result).to be_a(FreeplaneGrpcClient::Node)
@@ -102,16 +113,18 @@ RSpec.describe FreeplaneGrpcClient::MindMap do
 
   describe "#create_node" do
     it "calls create_child and returns a Node" do
+      new_node = FreeplaneGrpcClient::Node.new(client, map_id, "new")
       allow(client).to receive(:create_child).and_return(OpenStruct.new(node_id: "new"))
-      allow(FreeplaneGrpcClient::Node).to receive(:new).with(client, map_id, "new")
+      allow(FreeplaneGrpcClient::Node).to receive(:new).with(client, map_id, "new").and_return(new_node)
 
       result = mindmap.create_node("New Node", "parent")
       expect(result).to be_a(FreeplaneGrpcClient::Node)
     end
 
     it "uses map_id as parent when no parent_id given" do
+      new_node = FreeplaneGrpcClient::Node.new(client, map_id, "new")
       allow(client).to receive(:create_child).and_return(OpenStruct.new(node_id: "new"))
-      allow(FreeplaneGrpcClient::Node).to receive(:new).with(client, map_id, "new")
+      allow(FreeplaneGrpcClient::Node).to receive(:new).with(client, map_id, "new").and_return(new_node)
 
       mindmap.create_node("New Node")
       expect(client).to have_received(:create_child).with(name: "New Node", parent_node_id: map_id)

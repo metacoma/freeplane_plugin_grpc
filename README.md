@@ -104,6 +104,36 @@ $ cat pomodori_example_data.json | ruby ./pomodoro.rb
 ```
 ![ruby_example](https://user-images.githubusercontent.com/5146707/215350355-4e98b3db-fff1-4506-bb89-b3337e056ff8.gif)
 
+**<a id="example_ruby_gem">3.1.1 Ruby gem (freeplane_grpc_client)</a>**
+
+A reusable Ruby gem is provided under `grpc/ruby/`. It wraps all 27 RPC methods with snake_case methods,
+automatic error mapping, and optional timeout support.
+
+```bash
+$ cd grpc/ruby
+$ bundle install
+$ bundle exec rspec   # run tests (stubbed, no Freeplane required)
+```
+
+Usage:
+
+```ruby
+require "freeplane_grpc_client"
+
+client = FreeplaneGrpcClient::Client.new("127.0.0.1", 50051)
+client.connect
+
+resp = client.create_child(name: "My Node", parent_node_id: "")
+puts resp.node_id
+
+resp = client.get_current_node
+puts resp.map_id
+
+client.close
+```
+
+See [grpc/ruby/README.md](grpc/ruby/README.md) for the full API reference.
+
 **<a id="example_python">3.2 Python example</a>**
 
 This example demonstrates how you can visualize and create a mind map for a list of Amazon EC2 virtual machines.

@@ -2,6 +2,7 @@ PATH
   remote: .
   specs:
     freeplane_grpc_client (0.1.0)
+      google-protobuf (>= 3.25, < 5.0)
       grpc
 
 GEM
