@@ -90,7 +90,7 @@ RSpec.describe FreeplaneGrpcClient::Client do
 
       expect {
         client.create_child(name: "Child", parent_node_id: "bad")
-      }.to raise_error(FreeplaneGrpcClient::OperationError, /Parent not found/)
+      }.to raise_error(FreeplaneGrpcClient::FreeplaneOperationError, /Parent not found/)
     end
   end
 
@@ -490,7 +490,7 @@ RSpec.describe FreeplaneGrpcClient::Client do
 
       expect {
         client.create_child(name: "Child", parent_node_id: "")
-      }.to raise_error(FreeplaneGrpcClient::ConnectionError, /gRPC call failed/)
+      }.to raise_error(FreeplaneGrpcClient::FreeplaneConnectionError, /gRPC call failed/)
     end
 
     it "raises OperationError on non-connection gRPC error" do
@@ -503,7 +503,7 @@ RSpec.describe FreeplaneGrpcClient::Client do
 
       expect {
         client.create_child(name: "Child", parent_node_id: "")
-      }.to raise_error(FreeplaneGrpcClient::OperationError)
+      }.to raise_error(FreeplaneGrpcClient::FreeplaneOperationError)
     end
 
     it "raises OperationError on generic error" do
@@ -516,7 +516,7 @@ RSpec.describe FreeplaneGrpcClient::Client do
 
       expect {
         client.create_child(name: "Child", parent_node_id: "")
-      }.to raise_error(FreeplaneGrpcClient::ConnectionError)
+      }.to raise_error(FreeplaneGrpcClient::FreeplaneConnectionError)
     end
 
     it "raises OperationError when success is false with no error_message" do
@@ -528,7 +528,7 @@ RSpec.describe FreeplaneGrpcClient::Client do
 
       expect {
         client.delete_child(node_id: "n1")
-      }.to raise_error(FreeplaneGrpcClient::OperationError, /Operation failed/)
+      }.to raise_error(FreeplaneGrpcClient::FreeplaneOperationError, /Operation failed/)
     end
   end
 end

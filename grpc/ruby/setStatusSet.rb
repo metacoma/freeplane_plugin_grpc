@@ -1,11 +1,29 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
-this_dir = File.expand_path(File.dirname(__FILE__))
-lib_dir = File.join(this_dir, 'lib')
-$LOAD_PATH.unshift(lib_dir) unless $LOAD_PATH.include?(lib_dir)
+# Minimal example — sets the Freeplane status bar text via gRPC.
+#
+# Usage:
+#   ruby setStatusSet.rb
+#
+# Requires a running Freeplane instance with the gRPC plugin on port 50051.
+# Override host/port via environment variables:
+#   FREEPLANE_HOST=127.0.0.1 FREEPLANE_PORT=50051 ruby setStatusSet.rb
 
-require 'grpc'
-require 'freeplane_services_pb'
+require "freeplane_grpc_client"
 
-stub = Freeplane::Freeplane::Stub.new('localhost:50051', :this_channel_is_insecure)
-stub.status_info_set(Freeplane::StatusInfoSetRequest.new(statusInfo: "hello from ruby"));
+host = ENV.fetch("FREEPLANE_HOST", "127.0.0.1")
+port = ENV.fetch("FREEPLANE_PORT", "50051").to_i
+
+client = FreeplaneGrpcClient::Client.new(host, port)
+
+begin
+  client.connect
+  client.status_info_set(status_info: "hello from ruby")
+  puts "Status bar set on #{host}:#{port}"
+rescue FreeplaneGrpcClient::FreeplaneConnectionError => e
+  $stderr.puts "Connection error: #{e.message}"
+  exit 1
+ensure
+  client.close
+end

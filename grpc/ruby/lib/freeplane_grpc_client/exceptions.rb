@@ -1,25 +1,30 @@
 module FreeplaneGrpcClient
-  class Error < StandardError; end
+  # Base exception for all Freeplane gRPC client errors.
+  class FreeplaneGrpcError < StandardError; end
 
-  class ConnectionError < Error
+  # Connection/gRPC-level failure (network errors, unavailable server, etc.).
+  class FreeplaneConnectionError < FreeplaneGrpcError
     def initialize(message = "Connection to Freeplane gRPC server failed")
       super(message)
     end
   end
 
-  class OperationError < Error
+  # Server-reported operation failure (success: false in response).
+  class FreeplaneOperationError < FreeplaneGrpcError
     def initialize(message = "Freeplane operation failed")
       super(message)
     end
   end
 
-  class NodeNotFoundError < OperationError
+  # Requested node was not found.
+  class NodeNotFoundError < FreeplaneOperationError
     def initialize(message = "Node not found")
       super(message)
     end
   end
 
-  class MindMapError < OperationError
+  # Mind map-level operation failure.
+  class MindMapError < FreeplaneOperationError
     def initialize(message = "Mind map operation failed")
       super(message)
     end

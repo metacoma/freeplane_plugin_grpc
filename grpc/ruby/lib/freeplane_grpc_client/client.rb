@@ -55,6 +55,32 @@ module FreeplaneGrpcClient
       !!(@channel && !@channel.finished? && !@channel.closed?)
     end
 
+    # -- context manager ----------------------------------------------------
+
+    # Yields self as a context manager; ensures close in ensure block.
+    #
+    # Example:
+    #   FreeplaneGrpcClient::Client.new("127.0.0.1", 50051).in_context do |client|
+    #     map = client.current_map
+    #     puts map.root.get_text
+    #   end
+    def in_context
+      connect
+      begin
+        yield self
+      ensure
+        close
+      end
+    end
+
+    # -- convenience --------------------------------------------------------
+
+    # Returns a MindMap for the currently open map.
+    def current_map
+      resp = get_current_node
+      MindMap.new(self, resp.map_id)
+    end
+
     # -- internal helper ----------------------------------------------------
 
     # Look up a proto message class by name, falling back to the DescriptorPool
@@ -73,16 +99,16 @@ module FreeplaneGrpcClient
       rescue GRPC::BadStatus => e
         status_code = e.status.to_s
         if ["UNAVAILABLE", "DEADLINE_EXCEEDED", "INTERNAL"].include?(status_code.upcase)
-          raise ConnectionError, "gRPC call failed: #{e.message}"
+          raise FreeplaneConnectionError, "gRPC call failed: #{e.message}"
         end
-        raise OperationError, "gRPC call failed (#{e.status}): #{e.message}"
+        raise FreeplaneOperationError, "gRPC call failed (#{e.status}): #{e.message}"
       rescue => e
-        raise ConnectionError, "gRPC call failed: #{e.message}"
+        raise FreeplaneConnectionError, "gRPC call failed: #{e.message}"
       end
 
       if response.respond_to?(:success) && !response.success
         error_msg = response.respond_to?(:error_message) ? response.error_message : ""
-        raise OperationError, error_msg || "Operation failed"
+        raise FreeplaneOperationError, error_msg || "Operation failed"
       end
 
       response

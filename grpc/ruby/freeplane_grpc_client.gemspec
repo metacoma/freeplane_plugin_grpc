@@ -11,12 +11,13 @@ Gem::Specification.new do |spec|
   spec.homepage      = ""
   spec.license       = "MIT"
 
-  spec.required_ruby_version = ">= 2.6.0"
+  spec.required_ruby_version = ">= 3.2"
 
   spec.files         = Dir["lib/**/*.rb"]
   spec.require_paths = ["lib"]
 
   spec.add_dependency "grpc"
+  spec.add_dependency "google-protobuf", ">= 3.25", "< 5.0"
 
   spec.add_development_dependency "rake"
   spec.add_development_dependency "rspec", ">= 3.0"

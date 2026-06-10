@@ -155,9 +155,9 @@ All 27 RPC methods are available as snake_case instance methods. Each accepts ke
 
 | Exception | Description |
 |-----------|-------------|
-| `FreeplaneGrpcClient::Error` | Base exception class |
-| `FreeplaneGrpcClient::ConnectionError` | Connection/gRPC-level failure |
-| `FreeplaneGrpcClient::OperationError` | Server-reported operation failure |
+| `FreeplaneGrpcClient::FreeplaneGrpcError` | Base exception class |
+| `FreeplaneGrpcClient::FreeplaneConnectionError` | Connection/gRPC-level failure |
+| `FreeplaneGrpcClient::FreeplaneOperationError` | Server-reported operation failure |
 | `FreeplaneGrpcClient::NodeNotFoundError` | Requested node not found |
 | `FreeplaneGrpcClient::MindMapError` | Map-level operation failure |
 
