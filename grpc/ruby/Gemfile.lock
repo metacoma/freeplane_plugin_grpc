@@ -1,0 +1,108 @@
+PATH
+  remote: .
+  specs:
+    freeplane_grpc_client (0.1.0)
+      grpc
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    diff-lcs (1.6.2)
+    google-protobuf (3.25.8)
+    google-protobuf (3.25.8-aarch64-linux)
+    google-protobuf (3.25.8-arm64-darwin)
+    google-protobuf (3.25.8-x86-linux)
+    google-protobuf (3.25.8-x86_64-darwin)
+    google-protobuf (3.25.8-x86_64-linux)
+    googleapis-common-protos-types (1.20.0)
+      google-protobuf (>= 3.18, < 5.a)
+    grpc (1.81.0)
+      google-protobuf (>= 3.25, < 5.0)
+      googleapis-common-protos-types (~> 1.0)
+    grpc (1.81.0-aarch64-linux-gnu)
+      google-protobuf (>= 3.25, < 5.0)
+      googleapis-common-protos-types (~> 1.0)
+    grpc (1.81.0-aarch64-linux-musl)
+      google-protobuf (>= 3.25, < 5.0)
+      googleapis-common-protos-types (~> 1.0)
+    grpc (1.81.0-arm64-darwin)
+      google-protobuf (>= 3.25, < 5.0)
+      googleapis-common-protos-types (~> 1.0)
+    grpc (1.81.0-x86-linux-gnu)
+      google-protobuf (>= 3.25, < 5.0)
+      googleapis-common-protos-types (~> 1.0)
+    grpc (1.81.0-x86-linux-musl)
+      google-protobuf (>= 3.25, < 5.0)
+      googleapis-common-protos-types (~> 1.0)
+    grpc (1.81.0-x86_64-darwin)
+      google-protobuf (>= 3.25, < 5.0)
+      googleapis-common-protos-types (~> 1.0)
+    grpc (1.81.0-x86_64-linux-gnu)
+      google-protobuf (>= 3.25, < 5.0)
+      googleapis-common-protos-types (~> 1.0)
+    grpc (1.81.0-x86_64-linux-musl)
+      google-protobuf (>= 3.25, < 5.0)
+      googleapis-common-protos-types (~> 1.0)
+    rake (13.4.2)
+    rspec (3.13.2)
+      rspec-core (~> 3.13.0)
+      rspec-expectations (~> 3.13.0)
+      rspec-mocks (~> 3.13.0)
+    rspec-core (3.13.6)
+      rspec-support (~> 3.13.0)
+    rspec-expectations (3.13.5)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.13.0)
+    rspec-mocks (3.13.8)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.13.0)
+    rspec-support (3.13.7)
+
+PLATFORMS
+  aarch64-linux
+  aarch64-linux-gnu
+  aarch64-linux-musl
+  arm64-darwin
+  ruby
+  x86-linux
+  x86-linux-gnu
+  x86-linux-musl
+  x86_64-darwin
+  x86_64-linux
+  x86_64-linux-musl
+
+DEPENDENCIES
+  freeplane_grpc_client!
+  google-protobuf (< 4.0)
+  rake
+  rspec (>= 3.0)
+
+CHECKSUMS
+  bundler (4.0.13) sha256=19f08be7f27022cf0b89f27da0b044ae075e8270a9ef44ad248a932614e1ca3b
+  diff-lcs (1.6.2) sha256=9ae0d2cba7d4df3075fe8cd8602a8604993efc0dfa934cff568969efb1909962
+  freeplane_grpc_client (0.1.0)
+  google-protobuf (3.25.8) sha256=102c8500502e224a5daa7447bdd2c458a25a6c7b0bf5d8496a559ada131952b7
+  google-protobuf (3.25.8-aarch64-linux) sha256=5869d1a31f39ee3361e85f3ef3db0512c19f0e0c75cd69d7303c177e17590044
+  google-protobuf (3.25.8-arm64-darwin) sha256=e294affc4fb25c8bc7edd264f0ba490d42dce3afff08db1e08fb7bb44cc57488
+  google-protobuf (3.25.8-x86-linux) sha256=288ffaaec53c9f666582cd0a5d42395fea6b7c15458c1f9d64a295ca174c0233
+  google-protobuf (3.25.8-x86_64-darwin) sha256=9c9e8c1c760eeb314fd6bcba1b0fb1e64c473fc9e2040c8992df61874974c108
+  google-protobuf (3.25.8-x86_64-linux) sha256=07783d910635e2a60eaf929fe3e45ea4d657d023be3816bda99a21c14f7be959
+  googleapis-common-protos-types (1.20.0) sha256=5e374b06bcfc7e13556e7c0d87b99f1fa3d42de6396a1de3d8fc13aefb4dd07f
+  grpc (1.81.0) sha256=892c57e5accb0da0a8ec0210528e87a168674117d79fa480cf827469d2d342f1
+  grpc (1.81.0-aarch64-linux-gnu) sha256=456708adccce93793508397020e7c15c52cbbc609a2a66a8467202da8e72f8f2
+  grpc (1.81.0-aarch64-linux-musl) sha256=b6046227451bcf9252954842223175c6b96009259da4bfbc4a82ac849ed22f31
+  grpc (1.81.0-arm64-darwin) sha256=c12a41463d410320ce5f846ee1c96e8761b5c211afd3b7fbc6ca50e6ae3a7e50
+  grpc (1.81.0-x86-linux-gnu) sha256=da12ca5f0670bd88dc93a9ffac56cf78ce7eb91a1c80b3e89c272f32431eb4e1
+  grpc (1.81.0-x86-linux-musl) sha256=09cc57f2e76853eee04a2338ab93611fde2914561e5594c0f36d904894df02a0
+  grpc (1.81.0-x86_64-darwin) sha256=0db040e7cb5ce3eba72257bd7cdb12e3123d6cb2f1193f6f8d022b4ee56b0ec1
+  grpc (1.81.0-x86_64-linux-gnu) sha256=9676501f1abd2305ca9bdc1247d4014f59547bef56800064c05a359023331a2c
+  grpc (1.81.0-x86_64-linux-musl) sha256=380eaff6420972bc9916e514650ba7dd85251719b0038a98e832372e17f5a902
+  rake (13.4.2) sha256=cb825b2bd5f1f8e91ca37bddb4b9aaf345551b4731da62949be002fa89283701
+  rspec (3.13.2) sha256=206284a08ad798e61f86d7ca3e376718d52c0bc944626b2349266f239f820587
+  rspec-core (3.13.6) sha256=a8823c6411667b60a8bca135364351dda34cd55e44ff94c4be4633b37d828b2d
+  rspec-expectations (3.13.5) sha256=33a4d3a1d95060aea4c94e9f237030a8f9eae5615e9bd85718fe3a09e4b58836
+  rspec-mocks (3.13.8) sha256=086ad3d3d17533f4237643de0b5c42f04b66348c28bf6b9c2d3f4a3b01af1d47
+  rspec-support (3.13.7) sha256=0640e5570872aafefd79867901deeeeb40b0c9875a36b983d85f54fb7381c47c
+
+BUNDLED WITH
+  4.0.13
