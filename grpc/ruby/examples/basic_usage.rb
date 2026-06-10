@@ -81,7 +81,7 @@ begin
   puts "Found #{found.length} node(s) matching 'Modified'"
 
   # Set status info
-  client.set_status_info("Ruby client example complete")
+  client.status_info_set(status_info: "Ruby client example complete")
   puts "Status bar updated"
 
   puts "\nExample completed successfully!"
