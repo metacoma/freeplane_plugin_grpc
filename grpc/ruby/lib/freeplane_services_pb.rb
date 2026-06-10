@@ -19,6 +19,11 @@ module Freeplane
       rpc :NodeAttributeAdd, NodeAttributeAddRequest, NodeAttributeAddResponse
       rpc :NodeLinkSet, NodeLinkSetRequest, NodeLinkSetResponse
       rpc :NodeDetailsSet, NodeDetailsSetRequest, NodeDetailsSetResponse
+      rpc :NodeNoteSet, NodeNoteSetRequest, NodeNoteSetResponse
+      rpc :NodeTagSet, NodeTagSetRequest, NodeTagSetResponse
+      rpc :NodeTagAdd, NodeTagAddRequest, NodeTagAddResponse
+      rpc :NodeConnect, NodeConnectRequest, NodeConnectResponse
+      rpc :NodeAddIcon, NodeAddIconRequest, NodeAddIconResponse
       rpc :Groovy, GroovyRequest, GroovyResponse
       rpc :NodeColorSet, NodeColorSetRequest, NodeColorSetResponse
       rpc :NodeBackgroundColorSet, NodeBackgroundColorSetRequest, NodeBackgroundColorSetResponse
@@ -26,6 +31,16 @@ module Freeplane
       rpc :TextFSM, TextFSMRequest, TextFSMResponse
       rpc :MindMapFromJSON, MindMapFromJSONRequest, MindMapFromJSONResponse
       rpc :MindMapToJSON, MindMapToJSONRequest, MindMapToJSONResponse
+      rpc :GetCurrentNode, GetCurrentNodeRequest, GetCurrentNodeResponse
+      rpc :OpenMap, OpenMapRequest, OpenMapResponse
+      rpc :FocusNode, FocusNodeRequest, FocusNodeResponse
+      rpc :GetNodeText, GetNodeTextRequest, GetNodeTextResponse
+      rpc :GetParentNode, GetParentNodeRequest, GetParentNodeResponse
+      rpc :ListChildNodes, ListChildNodesRequest, ListChildNodesResponse
+      rpc :GetNodeNote, GetNodeNoteRequest, GetNodeNoteResponse
+      rpc :GetNodeLink, GetNodeLinkRequest, GetNodeLinkResponse
+      rpc :SetNodeText, SetNodeTextRequest, SetNodeTextResponse
+      rpc :MoveNode, MoveNodeRequest, MoveNodeResponse
     end
 
     Stub = Service.rpc_stub_class
