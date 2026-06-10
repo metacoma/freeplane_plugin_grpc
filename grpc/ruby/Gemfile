@@ -1,0 +1,9 @@
+source "https://rubygems.org"
+
+gemspec
+
+gem "rspec", ">= 3.0"
+
+# Pin google-protobuf to < 4.0 because the committed generated
+# proto stubs (freeplane_pb.rb) use the old DescriptorPool API.
+gem "google-protobuf", "< 4.0"

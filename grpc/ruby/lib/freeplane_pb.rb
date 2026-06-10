@@ -40,11 +40,49 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "freeplane.NodeDetailsSetResponse" do
     optional :success, :bool, 1
   end
+  add_message "freeplane.NodeNoteSetRequest" do
+    optional :node_id, :string, 1
+    optional :note, :string, 2
+  end
+  add_message "freeplane.NodeNoteSetResponse" do
+    optional :success, :bool, 1
+  end
+  add_message "freeplane.NodeTagSetRequest" do
+    optional :node_id, :string, 1
+    repeated :tags, :string, 2
+  end
+  add_message "freeplane.NodeTagSetResponse" do
+    optional :success, :bool, 1
+  end
+  add_message "freeplane.NodeTagAddRequest" do
+    optional :node_id, :string, 1
+    repeated :tags, :string, 2
+  end
+  add_message "freeplane.NodeTagAddResponse" do
+    optional :success, :bool, 1
+  end
+  add_message "freeplane.NodeConnectRequest" do
+    optional :source_node_id, :string, 1
+    optional :target_node_id, :string, 2
+    optional :relationship, :string, 3
+  end
+  add_message "freeplane.NodeConnectResponse" do
+    optional :success, :bool, 1
+  end
+  add_message "freeplane.NodeAddIconRequest" do
+    optional :node_id, :string, 1
+    optional :icon_name, :string, 2
+  end
+  add_message "freeplane.NodeAddIconResponse" do
+    optional :success, :bool, 1
+  end
   add_message "freeplane.GroovyRequest" do
     optional :groovy_code, :string, 1
   end
   add_message "freeplane.GroovyResponse" do
     optional :success, :bool, 1
+    optional :result, :string, 2
+    optional :error_message, :string, 3
   end
   add_message "freeplane.NodeColorSetRequest" do
     optional :node_id, :string, 1
@@ -90,6 +128,93 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :success, :bool, 1
     optional :json, :string, 2
   end
+  add_message "freeplane.GetCurrentNodeRequest" do
+  end
+  add_message "freeplane.GetCurrentNodeResponse" do
+    optional :map_id, :string, 1
+    optional :node_id, :string, 2
+    optional :success, :bool, 3
+  end
+  add_message "freeplane.OpenMapRequest" do
+    optional :file_path, :string, 1
+  end
+  add_message "freeplane.OpenMapResponse" do
+    optional :success, :bool, 1
+  end
+  add_message "freeplane.FocusNodeRequest" do
+    optional :node_id, :string, 1
+  end
+  add_message "freeplane.FocusNodeResponse" do
+    optional :success, :bool, 1
+  end
+  add_message "freeplane.GetNodeTextRequest" do
+    optional :node_id, :string, 1
+  end
+  add_message "freeplane.GetNodeTextResponse" do
+    optional :success, :bool, 1
+    optional :node_id, :string, 2
+    optional :text, :string, 3
+    optional :error_message, :string, 4
+  end
+  add_message "freeplane.GetParentNodeRequest" do
+    optional :node_id, :string, 1
+  end
+  add_message "freeplane.GetParentNodeResponse" do
+    optional :success, :bool, 1
+    optional :node_id, :string, 2
+    optional :parent_node_id, :string, 3
+    optional :parent_node_text, :string, 4
+    optional :error_message, :string, 5
+  end
+  add_message "freeplane.ListChildNodesRequest" do
+    optional :node_id, :string, 1
+  end
+  add_message "freeplane.ListChildNodesResponse" do
+    optional :success, :bool, 1
+    repeated :children, :message, 2, "freeplane.ChildNodeInfo"
+    optional :error_message, :string, 3
+  end
+  add_message "freeplane.ChildNodeInfo" do
+    optional :node_id, :string, 1
+    optional :text, :string, 2
+  end
+  add_message "freeplane.GetNodeNoteRequest" do
+    optional :node_id, :string, 1
+  end
+  add_message "freeplane.GetNodeNoteResponse" do
+    optional :success, :bool, 1
+    optional :node_id, :string, 2
+    optional :note, :string, 3
+    optional :has_note, :bool, 4
+    optional :error_message, :string, 5
+  end
+  add_message "freeplane.GetNodeLinkRequest" do
+    optional :node_id, :string, 1
+  end
+  add_message "freeplane.GetNodeLinkResponse" do
+    optional :success, :bool, 1
+    optional :node_id, :string, 2
+    optional :link, :string, 3
+    optional :has_link, :bool, 4
+    optional :error_message, :string, 5
+  end
+  add_message "freeplane.SetNodeTextRequest" do
+    optional :node_id, :string, 1
+    optional :text, :string, 2
+  end
+  add_message "freeplane.SetNodeTextResponse" do
+    optional :success, :bool, 1
+    optional :node_id, :string, 2
+    optional :error_message, :string, 3
+  end
+  add_message "freeplane.MoveNodeRequest" do
+    optional :node_id, :string, 1
+    optional :new_parent_node_id, :string, 2
+  end
+  add_message "freeplane.MoveNodeResponse" do
+    optional :success, :bool, 1
+    optional :error_message, :string, 2
+  end
 end
 
 module Freeplane
@@ -103,6 +228,16 @@ module Freeplane
   NodeLinkSetResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.NodeLinkSetResponse").msgclass
   NodeDetailsSetRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.NodeDetailsSetRequest").msgclass
   NodeDetailsSetResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.NodeDetailsSetResponse").msgclass
+  NodeNoteSetRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.NodeNoteSetRequest").msgclass
+  NodeNoteSetResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.NodeNoteSetResponse").msgclass
+  NodeTagSetRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.NodeTagSetRequest").msgclass
+  NodeTagSetResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.NodeTagSetResponse").msgclass
+  NodeTagAddRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.NodeTagAddRequest").msgclass
+  NodeTagAddResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.NodeTagAddResponse").msgclass
+  NodeConnectRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.NodeConnectRequest").msgclass
+  NodeConnectResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.NodeConnectResponse").msgclass
+  NodeAddIconRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.NodeAddIconRequest").msgclass
+  NodeAddIconResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.NodeAddIconResponse").msgclass
   GroovyRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.GroovyRequest").msgclass
   GroovyResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.GroovyResponse").msgclass
   NodeColorSetRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.NodeColorSetRequest").msgclass
@@ -117,4 +252,25 @@ module Freeplane
   MindMapFromJSONResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.MindMapFromJSONResponse").msgclass
   MindMapToJSONRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.MindMapToJSONRequest").msgclass
   MindMapToJSONResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.MindMapToJSONResponse").msgclass
+  GetCurrentNodeRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.GetCurrentNodeRequest").msgclass
+  GetCurrentNodeResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.GetCurrentNodeResponse").msgclass
+  OpenMapRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.OpenMapRequest").msgclass
+  OpenMapResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.OpenMapResponse").msgclass
+  FocusNodeRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.FocusNodeRequest").msgclass
+  FocusNodeResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.FocusNodeResponse").msgclass
+  GetNodeTextRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.GetNodeTextRequest").msgclass
+  GetNodeTextResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.GetNodeTextResponse").msgclass
+  GetParentNodeRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.GetParentNodeRequest").msgclass
+  GetParentNodeResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.GetParentNodeResponse").msgclass
+  ListChildNodesRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.ListChildNodesRequest").msgclass
+  ListChildNodesResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.ListChildNodesResponse").msgclass
+  ChildNodeInfo = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.ChildNodeInfo").msgclass
+  GetNodeNoteRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.GetNodeNoteRequest").msgclass
+  GetNodeNoteResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.GetNodeNoteResponse").msgclass
+  GetNodeLinkRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.GetNodeLinkRequest").msgclass
+  GetNodeLinkResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.GetNodeLinkResponse").msgclass
+  SetNodeTextRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.SetNodeTextRequest").msgclass
+  SetNodeTextResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.SetNodeTextResponse").msgclass
+  MoveNodeRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.MoveNodeRequest").msgclass
+  MoveNodeResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("freeplane.MoveNodeResponse").msgclass
 end
