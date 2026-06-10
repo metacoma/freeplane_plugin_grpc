@@ -29,9 +29,9 @@ module FreeplaneGrpcClient
     DEFAULT_HOST = "127.0.0.1"
     DEFAULT_PORT = 50051
 
-    def initialize(host = DEFAULT_HOST, port = DEFAULT_PORT)
-      @host = host
-      @port = port
+    def initialize(host = nil, port = nil)
+      @host = host || ENV.fetch("FREEPLANE_HOST", DEFAULT_HOST)
+      @port = (port || ENV.fetch("FREEPLANE_PORT", DEFAULT_PORT.to_s)).to_i
       @channel = nil
       @stub = nil
     end

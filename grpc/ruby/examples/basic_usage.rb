@@ -86,10 +86,10 @@ begin
 
   puts "\nExample completed successfully!"
 
-rescue FreeplaneGrpcClient::ConnectionError => e
+rescue FreeplaneGrpcClient::FreeplaneConnectionError => e
   $stderr.puts "Connection error: #{e.message}"
   exit 1
-rescue FreeplaneGrpcClient::OperationError => e
+rescue FreeplaneGrpcClient::FreeplaneOperationError => e
   $stderr.puts "Operation error: #{e.message}"
   exit 1
 ensure
