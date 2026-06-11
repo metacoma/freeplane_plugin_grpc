@@ -349,11 +349,71 @@ stub = Freeplane::Freeplane::Stub.new('localhost:50051', :this_channel_is_insecu
 stub.status_info_set(Freeplane::StatusInfoSetRequest.new(statusInfo: "hello from ruby"));
 ```
 
+**<a id="e2e-testing">5.4 End-to-end testing</a>**
+
+This repository provides a unified E2E test suite that clones the Freeplane monorepo, builds the gRPC plugin, starts Freeplane in a headless Xvfb environment, and runs smoke tests for both Python and Ruby clients against the real gRPC server.
+
+**Prerequisites (local runs):**
+- Java 17+
+- Gradle 8.x
+- Python 3.10+ with `grpcio` + `protobuf`
+- Ruby 3.2+ with `grpc` gem
+- Xvfb, openbox/fluxbox/twm
+- netcat (`nc`)
+
+**Run E2E tests via Docker (recommended for CI):**
+
+```bash
+make e2e-test
+```
+
+**Run E2E tests locally:**
+
+```bash
+make e2e-test-local
+```
+
+**Run unit tests only (no Freeplane required):**
+
+```bash
+make unit-test-python   # Python pytest (stubbed)
+make unit-test-ruby     # Ruby rspec (stubbed)
+```
+
+**Available Makefile targets:**
+
+```bash
+make help                # Print available targets
+make e2e-test            # Run E2E tests via Docker
+make e2e-test-local      # Run E2E tests locally
+make unit-test-python    # Run Python unit tests
+make unit-test-ruby      # Run Ruby unit tests
+make clean               # Clean up build artifacts
+```
+
+**Test success criteria:**
+
+| Test | Pass Condition |
+|------|---------------|
+| Python smoke test (`modify_mindmap_example.py`) | Exit code 0; unique marker found via GetNodeText + find_nodes |
+| Python JSON round-trip (`test_json_roundtrip.py`) | Exit code 0; all sub-tests pass |
+| Ruby integration smoke test | Exit code 0; unique marker found via GetNodeText + find_nodes |
+| gRPC readiness | Server responds to `GetCurrentNode` within 120 seconds |
+| MindMap mode activation | Server reports `success: true` on `GetCurrentNode` within 120 seconds |
+
+**GitHub Actions:**
+
+Unit tests run automatically on every push and pull request to `main` and `develop` branches. The E2E test suite is also triggered on push/PR and runs with a 60-minute timeout.
+
+**Proto configuration reference:**
+
+See [grpc/PROTO_REFERENCE.md](grpc/PROTO_REFERENCE.md) for a complete listing of all 27 RPC methods, message types, and stub regeneration commands.
+
 **<a id="limitations">6.0. Limitations of the current implementation</a>**
 
   * This plugin is under active development, and the gRPC API may change.
 
-  * gRPC TCP server port 50051 is hardcoded https://github.com/metacoma/freeplane_plugin_grpc/blob/ca8f667a0f373506c579762c92ffd954ca1827c7/src/main/java/org/freeplane/plugin/grpc/GrpcRegistration.java#L59-L65
+  * gRPC TCP server port 50051 is configurable via `GRPC_LISTEN_PORT` environment variable (not hardcoded)
 
   * Sometimes Freeplane throws a [Java exception](https://github.com/metacoma/freeplane_plugin_grpc/issues/1), possibly due to race conditions or other factors.
 

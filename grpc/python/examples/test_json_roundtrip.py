@@ -180,7 +180,7 @@ def get_node_text_by_text(mindmap: MindMap, target_text: str) -> str | None:
         text = node.get_text()
         if target_text in text:
             return text
-        queue.extend(node.get_children())
+        queue.extend(node.children())
     return None
 
 
