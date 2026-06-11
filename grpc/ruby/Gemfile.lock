@@ -74,7 +74,7 @@ PLATFORMS
 
 DEPENDENCIES
   freeplane_grpc_client!
-  google-protobuf (< 4.0)
+  google-protobuf (>= 3.25)
   grpc (>= 1.52)
   rake
   rspec (>= 3.0)
