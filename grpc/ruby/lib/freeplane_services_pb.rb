@@ -8,39 +8,43 @@ module Freeplane
   module Freeplane
     class Service
 
-      include GRPC::GenericService
+      include ::GRPC::GenericService
 
       self.marshal_class_method = :encode
       self.unmarshal_class_method = :decode
       self.service_name = 'freeplane.Freeplane'
 
-      rpc :CreateChild, CreateChildRequest, CreateChildResponse
-      rpc :DeleteChild, DeleteChildRequest, DeleteChildResponse
-      rpc :NodeAttributeAdd, NodeAttributeAddRequest, NodeAttributeAddResponse
-      rpc :NodeLinkSet, NodeLinkSetRequest, NodeLinkSetResponse
-      rpc :NodeDetailsSet, NodeDetailsSetRequest, NodeDetailsSetResponse
-      rpc :NodeNoteSet, NodeNoteSetRequest, NodeNoteSetResponse
-      rpc :NodeTagSet, NodeTagSetRequest, NodeTagSetResponse
-      rpc :NodeTagAdd, NodeTagAddRequest, NodeTagAddResponse
-      rpc :NodeConnect, NodeConnectRequest, NodeConnectResponse
-      rpc :NodeAddIcon, NodeAddIconRequest, NodeAddIconResponse
-      rpc :Groovy, GroovyRequest, GroovyResponse
-      rpc :NodeColorSet, NodeColorSetRequest, NodeColorSetResponse
-      rpc :NodeBackgroundColorSet, NodeBackgroundColorSetRequest, NodeBackgroundColorSetResponse
-      rpc :StatusInfoSet, StatusInfoSetRequest, StatusInfoSetResponse
-      rpc :TextFSM, TextFSMRequest, TextFSMResponse
-      rpc :MindMapFromJSON, MindMapFromJSONRequest, MindMapFromJSONResponse
-      rpc :MindMapToJSON, MindMapToJSONRequest, MindMapToJSONResponse
-      rpc :GetCurrentNode, GetCurrentNodeRequest, GetCurrentNodeResponse
-      rpc :OpenMap, OpenMapRequest, OpenMapResponse
-      rpc :FocusNode, FocusNodeRequest, FocusNodeResponse
-      rpc :GetNodeText, GetNodeTextRequest, GetNodeTextResponse
-      rpc :GetParentNode, GetParentNodeRequest, GetParentNodeResponse
-      rpc :ListChildNodes, ListChildNodesRequest, ListChildNodesResponse
-      rpc :GetNodeNote, GetNodeNoteRequest, GetNodeNoteResponse
-      rpc :GetNodeLink, GetNodeLinkRequest, GetNodeLinkResponse
-      rpc :SetNodeText, SetNodeTextRequest, SetNodeTextResponse
-      rpc :MoveNode, MoveNodeRequest, MoveNodeResponse
+      rpc :CreateChild, ::Freeplane::CreateChildRequest, ::Freeplane::CreateChildResponse
+      rpc :DeleteChild, ::Freeplane::DeleteChildRequest, ::Freeplane::DeleteChildResponse
+      rpc :NodeAttributeAdd, ::Freeplane::NodeAttributeAddRequest, ::Freeplane::NodeAttributeAddResponse
+      rpc :NodeLinkSet, ::Freeplane::NodeLinkSetRequest, ::Freeplane::NodeLinkSetResponse
+      rpc :NodeDetailsSet, ::Freeplane::NodeDetailsSetRequest, ::Freeplane::NodeDetailsSetResponse
+      rpc :NodeNoteSet, ::Freeplane::NodeNoteSetRequest, ::Freeplane::NodeNoteSetResponse
+      rpc :NodeTagSet, ::Freeplane::NodeTagSetRequest, ::Freeplane::NodeTagSetResponse
+      rpc :NodeTagAdd, ::Freeplane::NodeTagAddRequest, ::Freeplane::NodeTagAddResponse
+      rpc :NodeConnect, ::Freeplane::NodeConnectRequest, ::Freeplane::NodeConnectResponse
+      rpc :NodeAddIcon, ::Freeplane::NodeAddIconRequest, ::Freeplane::NodeAddIconResponse
+      rpc :Groovy, ::Freeplane::GroovyRequest, ::Freeplane::GroovyResponse
+      rpc :NodeColorSet, ::Freeplane::NodeColorSetRequest, ::Freeplane::NodeColorSetResponse
+      rpc :NodeBackgroundColorSet, ::Freeplane::NodeBackgroundColorSetRequest, ::Freeplane::NodeBackgroundColorSetResponse
+      rpc :StatusInfoSet, ::Freeplane::StatusInfoSetRequest, ::Freeplane::StatusInfoSetResponse
+      rpc :TextFSM, ::Freeplane::TextFSMRequest, ::Freeplane::TextFSMResponse
+      rpc :MindMapFromJSON, ::Freeplane::MindMapFromJSONRequest, ::Freeplane::MindMapFromJSONResponse
+      rpc :MindMapToJSON, ::Freeplane::MindMapToJSONRequest, ::Freeplane::MindMapToJSONResponse
+      rpc :GetCurrentNode, ::Freeplane::GetCurrentNodeRequest, ::Freeplane::GetCurrentNodeResponse
+      rpc :OpenMap, ::Freeplane::OpenMapRequest, ::Freeplane::OpenMapResponse
+      rpc :FocusNode, ::Freeplane::FocusNodeRequest, ::Freeplane::FocusNodeResponse
+      # --- Group A: Node Inspection ---
+      #
+      rpc :GetNodeText, ::Freeplane::GetNodeTextRequest, ::Freeplane::GetNodeTextResponse
+      rpc :GetParentNode, ::Freeplane::GetParentNodeRequest, ::Freeplane::GetParentNodeResponse
+      rpc :ListChildNodes, ::Freeplane::ListChildNodesRequest, ::Freeplane::ListChildNodesResponse
+      rpc :GetNodeNote, ::Freeplane::GetNodeNoteRequest, ::Freeplane::GetNodeNoteResponse
+      rpc :GetNodeLink, ::Freeplane::GetNodeLinkRequest, ::Freeplane::GetNodeLinkResponse
+      # --- Group B: Node Manipulation ---
+      #
+      rpc :SetNodeText, ::Freeplane::SetNodeTextRequest, ::Freeplane::SetNodeTextResponse
+      rpc :MoveNode, ::Freeplane::MoveNodeRequest, ::Freeplane::MoveNodeResponse
     end
 
     Stub = Service.rpc_stub_class

@@ -41,8 +41,8 @@ module FreeplaneGrpcClient
     # -- lifecycle ----------------------------------------------------------
 
     def connect
-      @channel = GRPC::InsecureChannel.new("#{@host}:#{@port}")
-      @stub = Freeplane::Freeplane::Stub.new(@channel)
+      @channel = nil
+      @stub = Freeplane::Freeplane::Stub.new("#{@host}:#{@port}", :this_channel_is_insecure)
     end
 
     def close

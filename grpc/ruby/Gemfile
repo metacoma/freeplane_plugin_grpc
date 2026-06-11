@@ -4,6 +4,10 @@ gemspec
 
 gem "rspec", ">= 3.0"
 
-# Pin google-protobuf to < 4.0 because the committed generated
-# proto stubs (freeplane_pb.rb) use the old DescriptorPool API.
-gem "google-protobuf", "< 4.0"
+# google-protobuf >= 4.0 is now supported with regenerated proto stubs
+# that use the serialized-file descriptor format (pool.add_serialized_file).
+gem "google-protobuf", ">= 3.25"
+
+# Pin grpc to >= 1.32 because the client uses the modern :this_channel_is_insecure
+# API for creating insecure channels (GRPC::InsecureChannel was removed in 1.32+)
+gem "grpc", ">= 1.52"
