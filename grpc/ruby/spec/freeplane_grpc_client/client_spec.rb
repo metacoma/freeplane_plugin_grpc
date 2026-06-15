@@ -134,7 +134,7 @@ RSpec.describe FreeplaneGrpcClient::Client do
 
   def set_up_stub(method_name, response)
     stub = double("GRPC::ClientStub")
-    allow(stub).to receive(method_name).and_return(->(*_args, **_kwargs) { response })
+    allow(stub).to receive(method_name).with(any_args).and_return(response)
     stub
   end
 

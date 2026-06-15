@@ -18,8 +18,8 @@
 
 set -euo pipefail
 
-PLUGIN_REPO="/workspace/freeplane_plugin_grpc"
-FREEPLANE_SRC="/workspace/freeplane"
+PLUGIN_REPO="${PLUGIN_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+FREEPLANE_SRC="${FREEPLANE_SRC:-/workspace/freeplane}"
 RUNTIME_DIR="/tmp/freeplane-xvfb"
 GRPC_HOST="127.0.0.1"
 GRPC_PORT="50051"
