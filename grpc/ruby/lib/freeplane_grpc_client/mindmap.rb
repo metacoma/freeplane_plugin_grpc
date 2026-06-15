@@ -21,13 +21,15 @@ module FreeplaneGrpcClient
     # -- Navigation ---------------------------------------------------------
 
     def root
-      node = Node.new(@client, @map_id, @map_id)
-      while true
-        parent = node.parent
-        break if parent.node_id == node.node_id || parent.node_id == ""
-        node = parent
+      # Start from the current node and walk up to find the root
+      resp = @client.get_current_node
+      current_id = resp.node_id
+      loop do
+        parent_resp = @client.get_parent_node(node_id: current_id)
+        break if parent_resp.parent_node_id.empty? || parent_resp.parent_node_id == current_id
+        current_id = parent_resp.parent_node_id
       end
-      node
+      Node.new(@client, @map_id, current_id)
     end
 
     def selected_node

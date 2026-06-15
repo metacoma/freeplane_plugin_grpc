@@ -42,7 +42,12 @@ module FreeplaneGrpcClient
 
     def connect
       @channel = GRPC::InsecureChannel.new("#{@host}:#{@port}")
-      @stub = Freeplane::Freeplane::Stub.new(@channel)
+      # grpc >= 1.66 changed Stub constructor from (channel) to (host, creds)
+      if Freeplane::Freeplane::Stub.instance_method(:initialize).parameters.length == 1
+        @stub = Freeplane::Freeplane::Stub.new(@channel)
+      else
+        @stub = Freeplane::Freeplane::Stub.new("#{@host}:#{@port}", :this_channel_is_insecure)
+      end
     end
 
     def close
@@ -91,17 +96,19 @@ module FreeplaneGrpcClient
 
     # -- internal helper ----------------------------------------------------
 
-    def _call(method, request, timeout: nil)
-      opts = {}
-      opts[:timeout] = timeout if timeout
+    def _call(method_sym, request, timeout: nil)
+      metadata = {}
+      metadata[:timeout] = timeout if timeout
       begin
-        response = method.call(request, **opts)
+        # grpc >= 1.66 changed stub method signatures from (request, **opts)
+        # to (request, metadata = {}). We pass metadata as a positional hash.
+        response = @stub.send(method_sym, request, metadata)
       rescue GRPC::BadStatus => e
-        status_code = e.status.to_s
-        if ["UNAVAILABLE", "DEADLINE_EXCEEDED", "INTERNAL"].include?(status_code.upcase)
+        status_code = e.respond_to?(:status) ? e.status.to_s : e.class.name.split("::").last
+        if ["UNAVAILABLE", "DEADLINE_EXCEEDED", "INTERNAL", "UNKNOWN"].include?(status_code.upcase)
           raise FreeplaneConnectionError, "gRPC call failed: #{e.message}"
         end
-        raise FreeplaneOperationError, "gRPC call failed (#{e.status}): #{e.message}"
+        raise FreeplaneOperationError, "gRPC call failed (#{status_code}): #{e.message}"
       rescue => e
         raise FreeplaneConnectionError, "gRPC call failed: #{e.message}"
       end
@@ -119,13 +126,13 @@ module FreeplaneGrpcClient
     # rpc CreateChild
     def create_child(name:, parent_node_id:, timeout: nil)
       req = proto_class("CreateChildRequest").new(name: name, parent_node_id: parent_node_id)
-      _call(@stub.create_child, req, timeout: timeout)
+      _call(:create_child, req, timeout: timeout)
     end
 
     # rpc DeleteChild
     def delete_child(node_id:, timeout: nil)
       req = proto_class("DeleteChildRequest").new(node_id: node_id)
-      _call(@stub.delete_child, req, timeout: timeout)
+      _call(:delete_child, req, timeout: timeout)
     end
 
     # rpc NodeAttributeAdd
@@ -135,37 +142,37 @@ module FreeplaneGrpcClient
         attribute_name: attribute_name,
         attribute_value: attribute_value,
       )
-      _call(@stub.node_attribute_add, req, timeout: timeout)
+      _call(:node_attribute_add, req, timeout: timeout)
     end
 
     # rpc NodeLinkSet
     def node_link_set(node_id:, link:, timeout: nil)
       req = proto_class("NodeLinkSetRequest").new(node_id: node_id, link: link)
-      _call(@stub.node_link_set, req, timeout: timeout)
+      _call(:node_link_set, req, timeout: timeout)
     end
 
     # rpc NodeDetailsSet
     def node_details_set(node_id:, details:, timeout: nil)
       req = proto_class("NodeDetailsSetRequest").new(node_id: node_id, details: details)
-      _call(@stub.node_details_set, req, timeout: timeout)
+      _call(:node_details_set, req, timeout: timeout)
     end
 
     # rpc NodeNoteSet
     def node_note_set(node_id:, note:, timeout: nil)
       req = proto_class("NodeNoteSetRequest").new(node_id: node_id, note: note)
-      _call(@stub.node_note_set, req, timeout: timeout)
+      _call(:node_note_set, req, timeout: timeout)
     end
 
     # rpc NodeTagSet
     def node_tag_set(node_id:, tags:, timeout: nil)
       req = proto_class("NodeTagSetRequest").new(node_id: node_id, tags: tags)
-      _call(@stub.node_tag_set, req, timeout: timeout)
+      _call(:node_tag_set, req, timeout: timeout)
     end
 
     # rpc NodeTagAdd
     def node_tag_add(node_id:, tags:, timeout: nil)
       req = proto_class("NodeTagAddRequest").new(node_id: node_id, tags: tags)
-      _call(@stub.node_tag_add, req, timeout: timeout)
+      _call(:node_tag_add, req, timeout: timeout)
     end
 
     # rpc NodeConnect
@@ -175,19 +182,19 @@ module FreeplaneGrpcClient
         target_node_id: target_node_id,
         relationship: relationship,
       )
-      _call(@stub.node_connect, req, timeout: timeout)
+      _call(:node_connect, req, timeout: timeout)
     end
 
     # rpc NodeAddIcon
     def node_add_icon(node_id:, icon_name:, timeout: nil)
       req = proto_class("NodeAddIconRequest").new(node_id: node_id, icon_name: icon_name)
-      _call(@stub.node_add_icon, req, timeout: timeout)
+      _call(:node_add_icon, req, timeout: timeout)
     end
 
     # rpc Groovy
     def groovy(groovy_code:, timeout: nil)
       req = proto_class("GroovyRequest").new(groovy_code: groovy_code)
-      _call(@stub.groovy, req, timeout: timeout)
+      _call(:groovy, req, timeout: timeout)
     end
 
     # rpc NodeColorSet
@@ -199,7 +206,7 @@ module FreeplaneGrpcClient
         blue: blue,
         alpha: alpha,
       )
-      _call(@stub.node_color_set, req, timeout: timeout)
+      _call(:node_color_set, req, timeout: timeout)
     end
 
     # rpc NodeBackgroundColorSet
@@ -211,85 +218,85 @@ module FreeplaneGrpcClient
         blue: blue,
         alpha: alpha,
       )
-      _call(@stub.node_background_color_set, req, timeout: timeout)
+      _call(:node_background_color_set, req, timeout: timeout)
     end
 
     # rpc StatusInfoSet
     def status_info_set(status_info:, timeout: nil)
       req = proto_class("StatusInfoSetRequest").new(statusInfo: status_info)
-      _call(@stub.status_info_set, req, timeout: timeout)
+      _call(:status_info_set, req, timeout: timeout)
     end
 
     # rpc TextFSM
     def text_fsm(json:, timeout: nil)
       req = proto_class("TextFSMRequest").new(json: json)
-      _call(@stub.text_fsm, req, timeout: timeout)
+      _call(:text_fsm, req, timeout: timeout)
     end
 
     # rpc MindMapFromJSON
     def mind_map_from_json(json:, timeout: nil)
       req = proto_class("MindMapFromJSONRequest").new(json: json)
-      _call(@stub.mind_map_from_json, req, timeout: timeout)
+      _call(:mind_map_from_json, req, timeout: timeout)
     end
 
     # rpc MindMapToJSON
     def mind_map_to_json(timeout: nil)
       req = proto_class("MindMapToJSONRequest").new
-      _call(@stub.mind_map_to_json, req, timeout: timeout)
+      _call(:mind_map_to_json, req, timeout: timeout)
     end
 
     # rpc GetCurrentNode
     def get_current_node(timeout: nil)
       req = proto_class("GetCurrentNodeRequest").new
-      _call(@stub.get_current_node, req, timeout: timeout)
+      _call(:get_current_node, req, timeout: timeout)
     end
 
     # rpc OpenMap
     def open_map(file_path:, timeout: nil)
       req = proto_class("OpenMapRequest").new(file_path: file_path)
-      _call(@stub.open_map, req, timeout: timeout)
+      _call(:open_map, req, timeout: timeout)
     end
 
     # rpc FocusNode
     def focus_node(node_id:, timeout: nil)
       req = proto_class("FocusNodeRequest").new(node_id: node_id)
-      _call(@stub.focus_node, req, timeout: timeout)
+      _call(:focus_node, req, timeout: timeout)
     end
 
     # rpc GetNodeText
     def get_node_text(node_id:, timeout: nil)
       req = proto_class("GetNodeTextRequest").new(node_id: node_id)
-      _call(@stub.get_node_text, req, timeout: timeout)
+      _call(:get_node_text, req, timeout: timeout)
     end
 
     # rpc GetParentNode
     def get_parent_node(node_id:, timeout: nil)
       req = proto_class("GetParentNodeRequest").new(node_id: node_id)
-      _call(@stub.get_parent_node, req, timeout: timeout)
+      _call(:get_parent_node, req, timeout: timeout)
     end
 
     # rpc ListChildNodes
     def list_child_nodes(node_id:, timeout: nil)
       req = proto_class("ListChildNodesRequest").new(node_id: node_id)
-      _call(@stub.list_child_nodes, req, timeout: timeout)
+      _call(:list_child_nodes, req, timeout: timeout)
     end
 
     # rpc GetNodeNote
     def get_node_note(node_id:, timeout: nil)
       req = proto_class("GetNodeNoteRequest").new(node_id: node_id)
-      _call(@stub.get_node_note, req, timeout: timeout)
+      _call(:get_node_note, req, timeout: timeout)
     end
 
     # rpc GetNodeLink
     def get_node_link(node_id:, timeout: nil)
       req = proto_class("GetNodeLinkRequest").new(node_id: node_id)
-      _call(@stub.get_node_link, req, timeout: timeout)
+      _call(:get_node_link, req, timeout: timeout)
     end
 
     # rpc SetNodeText
     def set_node_text(node_id:, text:, timeout: nil)
       req = proto_class("SetNodeTextRequest").new(node_id: node_id, text: text)
-      _call(@stub.set_node_text, req, timeout: timeout)
+      _call(:set_node_text, req, timeout: timeout)
     end
 
     # rpc MoveNode
@@ -298,7 +305,7 @@ module FreeplaneGrpcClient
         node_id: node_id,
         new_parent_node_id: new_parent_node_id,
       )
-      _call(@stub.move_node, req, timeout: timeout)
+      _call(:move_node, req, timeout: timeout)
     end
 
     private

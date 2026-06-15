@@ -8,4 +8,7 @@ RSpec.configure do |config|
   config.mock_with :rspec do |mocks|
     mocks.verify_partial_doubles = true
   end
+
+  # Skip integration tests unless FREEPLANE_HOST is set
+  config.filter_run_excluding :integration unless ENV["FREEPLANE_HOST"]
 end
