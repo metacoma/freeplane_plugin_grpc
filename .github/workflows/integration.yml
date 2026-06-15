@@ -48,24 +48,32 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y xvfb xauth openbox procps netcat-openbsd
 
+      - name: Set Freeplane paths
+        run: |
+          echo "FREEPLANE_SRC=${{ runner.temp }}/freeplane" >> "$GITHUB_ENV"
+
       - name: Clone Freeplane source
         run: |
           git clone --depth 1 --branch release-1.12.18 \
-            https://github.com/freeplane/freeplane.git /workspace/freeplane
+            https://github.com/freeplane/freeplane.git "$FREEPLANE_SRC"
+
+      - name: Mark Freeplane as safe directory
+        run: |
+          git config --global --add safe.directory "$FREEPLANE_SRC"
 
       - name: Integrate plugin into Freeplane
         run: |
-          PLUGIN_DIR="/workspace/freeplane/freeplane_plugin_grpc"
+          PLUGIN_DIR="$FREEPLANE_SRC/freeplane_plugin_grpc"
           mkdir -p "$PLUGIN_DIR"
           tar cf - --exclude='.git' --exclude='__pycache__' --exclude='*.egg-info' \
             --exclude='*.egg' --exclude='.gradle' --exclude='build' \
             --exclude='.pytest_cache' --exclude='.venv' --exclude='*.pyc' \
             --exclude='node_modules' --exclude='Gemfile.lock' --exclude='.bundle' \
             --exclude='vendor' . | (cd "$PLUGIN_DIR" && tar xf -)
-          echo "include 'freeplane_plugin_grpc'" >> /workspace/freeplane/settings.gradle
+          echo "include 'freeplane_plugin_grpc'" >> "$FREEPLANE_SRC/settings.gradle"
 
       - name: Build Freeplane
-        working-directory: /workspace/freeplane
+        working-directory: $FREEPLANE_SRC
         run: |
           ./gradlew dist -x test -x check_translation --no-daemon
           echo "--- Verifying build artifacts ---"
@@ -93,7 +101,7 @@ jobs:
           </map>
           MMEOF
           fi
-          /workspace/freeplane/BIN/freeplane.sh "$MINDMAP_FILE" > /tmp/freeplane-xvfb/freeplane.log 2>&1 &
+          "$FREEPLANE_SRC/BIN/freeplane.sh" "$MINDMAP_FILE" > /tmp/freeplane-xvfb/freeplane.log 2>&1 &
           FREEPLANE_PID=$!
           echo "$FREEPLANE_PID" > /tmp/freeplane-xvfb/freeplane.pid
           echo "FREEPLANE_PID=$FREEPLANE_PID" >> "$GITHUB_ENV"
