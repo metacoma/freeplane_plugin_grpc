@@ -325,49 +325,52 @@ def main() -> int:
                 print(f"  {t}", file=sys.stderr)
             all_passed = False
             test_results.append(("find_imported_root", False, ""))
-            return 1
-        print(f"✓ Found imported root in exported data")
-        test_results.append(("find_imported_root", True, ""))
-
-        # Compare original vs imported (not vs full exported which includes wrapper root)
-        # json_data is the wrapped JSON; extract the actual mindmap
-        orig_mindmap = json_data.get("mindmap", json_data)
-        print("\n--- Comparing original vs imported ---")
-        root_text_orig = orig_mindmap.get("text", "")
-        root_text_imported = imported_root.get("text", "")
-
-        if marker in root_text_orig and marker in root_text_imported:
-            print(f"✓ Root text preserved: '{root_text_orig}'")
-            test_results.append(("root_text", True, ""))
+            test_results.append(("root_text", False, "skipped - imported_root not found"))
+            test_results.append(("children_count", False, "skipped - imported_root not found"))
+            test_results.append(("deep_compare", False, "skipped - imported_root not found"))
         else:
-            print(f"✗ Root text mismatch: '{root_text_orig}' != '{root_text_imported}'", file=sys.stderr)
-            all_passed = False
-            test_results.append(("root_text", False, f"{root_text_orig} != {root_text_imported}"))
+            print(f"✓ Found imported root in exported data")
+            test_results.append(("find_imported_root", True, ""))
 
-        # Compare children count
-        children_orig = orig_mindmap.get("children", [])
-        children_imported = imported_root.get("children", [])
+            # Compare original vs imported (not vs full exported which includes wrapper root)
+            # json_data is the wrapped JSON; extract the actual mindmap
+            orig_mindmap = json_data.get("mindmap", json_data)
+            print("\n--- Comparing original vs imported ---")
+            root_text_orig = orig_mindmap.get("text", "")
+            root_text_imported = imported_root.get("text", "")
 
-        if len(children_orig) == len(children_imported):
-            print(f"✓ Children count preserved: {len(children_orig)}")
-            test_results.append(("children_count", True, ""))
-        else:
-            print(f"✗ Children count mismatch: {len(children_orig)} != {len(children_imported)}", file=sys.stderr)
-            all_passed = False
-            test_results.append(("children_count", False, f"{len(children_orig)} != {len(children_imported)}"))
+            if marker in root_text_orig and marker in root_text_imported:
+                print(f"✓ Root text preserved: '{root_text_orig}'")
+                test_results.append(("root_text", True, ""))
+            else:
+                print(f"✗ Root text mismatch: '{root_text_orig}' != '{root_text_imported}'", file=sys.stderr)
+                all_passed = False
+                test_results.append(("root_text", False, f"{root_text_orig} != {root_text_imported}"))
 
-        # Deep compare nodes
-        print("\n--- Deep node comparison ---")
-        diffs = compare_nodes(orig_mindmap, imported_root)
-        if diffs:
-            print(f"✗ Found {len(diffs)} difference(s):")
-            for d in diffs[:10]:  # Show first 10
-                print(f"  - {d}")
-            all_passed = False
-            test_results.append(("deep_compare", False, "; ".join(diffs[:5])))
-        else:
-            print("✓ All node properties match")
-            test_results.append(("deep_compare", True, ""))
+            # Compare children count
+            children_orig = orig_mindmap.get("children", [])
+            children_imported = imported_root.get("children", [])
+
+            if len(children_orig) == len(children_imported):
+                print(f"✓ Children count preserved: {len(children_orig)}")
+                test_results.append(("children_count", True, ""))
+            else:
+                print(f"✗ Children count mismatch: {len(children_orig)} != {len(children_imported)}", file=sys.stderr)
+                all_passed = False
+                test_results.append(("children_count", False, f"{len(children_orig)} != {len(children_imported)}"))
+
+            # Deep compare nodes
+            print("\n--- Deep node comparison ---")
+            diffs = compare_nodes(orig_mindmap, imported_root)
+            if diffs:
+                print(f"✗ Found {len(diffs)} difference(s):")
+                for d in diffs[:10]:  # Show first 10
+                    print(f"  - {d}")
+                all_passed = False
+                test_results.append(("deep_compare", False, "; ".join(diffs[:5])))
+            else:
+                print("✓ All node properties match")
+                test_results.append(("deep_compare", True, ""))
 
         # =====================================================================
         # TEST 2: Legacy format import
