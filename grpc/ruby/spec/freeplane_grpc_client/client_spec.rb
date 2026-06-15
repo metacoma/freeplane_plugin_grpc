@@ -45,6 +45,87 @@ RSpec.describe FreeplaneGrpcClient::Client do
     end
   end
 
+  describe "#connect" do
+    it "creates a channel and stub" do
+      mock_channel = double("Channel")
+      mock_stub = double("Stub")
+      mock_channel_class = Class.new do
+        define_singleton_method(:new) { |*_args| mock_channel }
+      end
+      mock_stub_class = Class.new do
+        define_singleton_method(:new) { |*_args| mock_stub }
+      end
+
+      stub_const("GRPC::InsecureChannel", mock_channel_class)
+      stub_const("Freeplane::Freeplane::Stub", mock_stub_class)
+
+      client.connect
+
+      expect(client.instance_variable_get(:@channel)).to eq(mock_channel)
+      expect(client.instance_variable_get(:@stub)).to eq(mock_stub)
+    end
+  end
+
+  describe "#in_context" do
+    it "connects, yields self, and closes" do
+      mock_channel = double("Channel", close: nil)
+      mock_stub = double("Stub")
+      mock_channel_class = Class.new do
+        define_singleton_method(:new) { |*_args| mock_channel }
+      end
+      mock_stub_class = Class.new do
+        define_singleton_method(:new) { |*_args| mock_stub }
+      end
+
+      stub_const("GRPC::InsecureChannel", mock_channel_class)
+      stub_const("Freeplane::Freeplane::Stub", mock_stub_class)
+
+      yielded = nil
+      client.in_context do |c|
+        yielded = c
+      end
+
+      expect(yielded).to eq(client)
+      expect(client.instance_variable_get(:@channel)).to be_nil
+      expect(client.instance_variable_get(:@stub)).to be_nil
+    end
+
+    it "closes even if the block raises" do
+      mock_channel = double("Channel", close: nil)
+      mock_stub = double("Stub")
+      mock_channel_class = Class.new do
+        define_singleton_method(:new) { |*_args| mock_channel }
+      end
+      mock_stub_class = Class.new do
+        define_singleton_method(:new) { |*_args| mock_stub }
+      end
+
+      stub_const("GRPC::InsecureChannel", mock_channel_class)
+      stub_const("Freeplane::Freeplane::Stub", mock_stub_class)
+
+      expect {
+        client.in_context { raise RuntimeError, "boom" }
+      }.to raise_error(RuntimeError, "boom")
+
+      expect(client.instance_variable_get(:@channel)).to be_nil
+      expect(client.instance_variable_get(:@stub)).to be_nil
+    end
+  end
+
+  describe "#current_map" do
+    it "returns a MindMap with the correct map_id" do
+      resp = OpenStruct.new(success: true, map_id: "m1", node_id: "n1")
+      stub = set_up_stub(:get_current_node, resp)
+
+      client.instance_variable_set(:@channel, double("Channel"))
+      client.instance_variable_set(:@stub, stub)
+
+      map = client.current_map
+      expect(map).to be_a(FreeplaneGrpcClient::MindMap)
+      expect(map.map_id).to eq("m1")
+    end
+  end
+
   # -- helper to build a mock stub ----------------------------------------
 
   def mock_stub(response_hash = {})
@@ -503,7 +584,7 @@ RSpec.describe FreeplaneGrpcClient::Client do
       }.to raise_error(FreeplaneGrpcClient::FreeplaneOperationError)
     end
 
-    it "raises OperationError on generic error" do
+    it "raises ConnectionError on generic error" do
       allow(client).to receive(:create_child).and_raise(
         FreeplaneGrpcClient::FreeplaneConnectionError, "gRPC call failed: Something went wrong"
       )
