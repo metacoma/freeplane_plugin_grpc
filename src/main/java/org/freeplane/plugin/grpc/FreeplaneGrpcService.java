@@ -36,6 +36,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.awt.Color;
+import java.awt.EventQueue;
+import javax.swing.SwingUtilities;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -828,9 +830,29 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
         // Use LinkedHashMap for deterministic field ordering in canonical JSON
         final Map<String, Object> result = new java.util.LinkedHashMap<>();
         try {
-            jsonHelper.nodeWalk(result, rootNode);
-        } catch (final Exception e) {
-            LOG.warning("GRPC Freeplane::MindMapToJSON nodeWalk failed: " + e.getMessage());
+            if (EventQueue.isDispatchThread()) {
+                jsonHelper.nodeWalk(result, rootNode);
+            } else {
+                SwingUtilities.invokeAndWait(() -> {
+                    try {
+                        jsonHelper.nodeWalk(result, rootNode);
+                    } catch (final Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.warning("GRPC Freeplane::MindMapToJSON interrupted: " + e.getMessage());
+            final MindMapToJSONResponse failReply = MindMapToJSONResponse.newBuilder()
+                .setSuccess(false)
+                .setJson("")
+                .build();
+            responseObserver.onNext(failReply);
+            responseObserver.onCompleted();
+            return;
+        } catch (final java.lang.reflect.InvocationTargetException e) {
+            LOG.warning("GRPC Freeplane::MindMapToJSON nodeWalk failed: " + e.getCause().getMessage());
             final MindMapToJSONResponse failReply = MindMapToJSONResponse.newBuilder()
                 .setSuccess(false)
                 .setJson("")
