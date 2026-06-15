@@ -829,13 +829,14 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
 
         // Use LinkedHashMap for deterministic field ordering in canonical JSON
         final Map<String, Object> result = new java.util.LinkedHashMap<>();
+        final NodeModel finalRootNode = rootNode;
         try {
             if (EventQueue.isDispatchThread()) {
-                jsonHelper.nodeWalk(result, rootNode);
+                jsonHelper.nodeWalk(result, finalRootNode);
             } else {
                 SwingUtilities.invokeAndWait(() -> {
                     try {
-                        jsonHelper.nodeWalk(result, rootNode);
+                        jsonHelper.nodeWalk(result, finalRootNode);
                     } catch (final Exception e) {
                         throw new RuntimeException(e);
                     }
