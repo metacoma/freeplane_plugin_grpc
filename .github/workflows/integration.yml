@@ -73,7 +73,7 @@ jobs:
           echo "include 'freeplane_plugin_grpc'" >> "$FREEPLANE_SRC/settings.gradle"
 
       - name: Build Freeplane
-        working-directory: $FREEPLANE_SRC
+        working-directory: ${{ env.FREEPLANE_SRC }}
         run: |
           ./gradlew dist -x test -x check_translation --no-daemon
           echo "--- Verifying build artifacts ---"
