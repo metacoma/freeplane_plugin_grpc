@@ -170,7 +170,7 @@ jobs:
           from freeplane_pb2 import OpenMapRequest
           import freeplane_pb2_grpc, grpc
           stub = freeplane_pb2_grpc.FreeplaneStub(grpc.insecure_channel('127.0.0.1:50051'))
-          resp = stub.OpenMap(OpenMapRequest(file_path='/tmp/freeplane-xvfb/smoke_test_map.mm'))
+          resp = stub.OpenMap(OpenMapRequest(file_path='/tmp/freeplane-xvfb/smoke_test_map.mm'), timeout=10)
           assert resp.success, 'OpenMap failed'
           print('OpenMap OK')
           "
@@ -187,7 +187,7 @@ jobs:
           from freeplane_pb2 import OpenMapRequest
           import freeplane_pb2_grpc, grpc
           stub = freeplane_pb2_grpc.FreeplaneStub(grpc.insecure_channel('127.0.0.1:50051'))
-          resp = stub.OpenMap(OpenMapRequest(file_path='/tmp/freeplane-xvfb/smoke_test_map.mm'))
+          resp = stub.OpenMap(OpenMapRequest(file_path='/tmp/freeplane-xvfb/smoke_test_map.mm'), timeout=10)
           assert resp.success, 'OpenMap failed'
           print('OpenMap OK')
           "
@@ -199,7 +199,7 @@ jobs:
           python3 grpc/python/examples/test_json_roundtrip.py
 
       - name: Upload Freeplane log on failure
-        if: failure()
+        if: failure() || cancelled()
         uses: actions/upload-artifact@v4
         with:
           name: freeplane-log
