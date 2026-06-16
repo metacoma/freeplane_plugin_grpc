@@ -80,17 +80,14 @@ class FreeplaneClient {
    */
   async connect() {
     try {
-      this._channel = new grpc.Channel(
-        `${this._host}:${this._port}`,
-        grpc.credentials.createInsecure()
-      );
+      const target = `${this._host}:${this._port}`;
+      const credentials = grpc.credentials.createInsecure();
+
+      this._channel = new grpc.Channel(target, credentials, {});
 
       // Load proto and create stub
       const freeplanePkg = loadProto();
-      this._stub = new freeplanePkg.freeplane.Freeplane(
-        this._channel,
-        grpc.credentials.createInsecure()
-      );
+      this._stub = new freeplanePkg.freeplane.Freeplane(target, credentials);
       this._protoLoaded = true;
 
       // Verify connectivity with a timeout
