@@ -105,25 +105,61 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
     @Override
     public void deleteChild(final DeleteChildRequest req, final StreamObserver<DeleteChildResponse> responseObserver) {
         LOG.info("GRPC Freeplane::deleteChild(" + req.getNodeId() + ")");
-        final MapController mapController = Controller.getCurrentModeController().getMapController();
         final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
         final MapModel map = Controller.getCurrentController().getMap();
-        boolean success = false;
 
-        final NodeModel nodeToDelete = map.getNodeForID(req.getNodeId());
-        if (nodeToDelete != null) {
-            if (nodeToDelete.getParentNode() == null) {
-                LOG.info("GRPC Freeplane::deleteChild node already detached (parent is null): " + req.getNodeId());
-                success = true;
+        // MapModel operations (getNodeForID, getParentNode, deleteNode) must execute on the EDT.
+        final String nodeId = req.getNodeId();
+        final boolean[] successHolder = {false};
+
+        try {
+            if (EventQueue.isDispatchThread()) {
+                doDeleteChild(nodeId, mmapController, map, successHolder);
             } else {
-                mmapController.deleteNode(nodeToDelete);
-                success = true;
+                SwingUtilities.invokeAndWait(() -> {
+                    try {
+                        doDeleteChild(nodeId, mmapController, map, successHolder);
+                    } catch (final Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
             }
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.warning("GRPC Freeplane::deleteChild interrupted: " + e.getMessage());
+            final DeleteChildResponse reply = DeleteChildResponse.newBuilder().setSuccess(false).build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+            return;
+        } catch (final java.lang.reflect.InvocationTargetException e) {
+            LOG.warning("GRPC Freeplane::deleteChild failed: " + e.getCause().getMessage());
+            final DeleteChildResponse reply = DeleteChildResponse.newBuilder().setSuccess(false).build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+            return;
         }
 
-        final DeleteChildResponse reply = DeleteChildResponse.newBuilder().setSuccess(success).build();
+        final DeleteChildResponse reply = DeleteChildResponse.newBuilder().setSuccess(successHolder[0]).build();
         responseObserver.onNext(reply);
         responseObserver.onCompleted();
+    }
+
+    /**
+     * Performs the actual node deletion on the EDT.
+     * Must be called from the EDT to ensure consistent model state.
+     */
+    private void doDeleteChild(final String nodeId, final MMapController mmapController,
+                                final MapModel map, final boolean[] successHolder) {
+        final NodeModel nodeToDelete = map.getNodeForID(nodeId);
+        if (nodeToDelete != null) {
+            if (nodeToDelete.getParentNode() == null) {
+                LOG.info("GRPC Freeplane::deleteChild node already detached (parent is null): " + nodeId);
+                successHolder[0] = true;
+            } else {
+                mmapController.deleteNode(nodeToDelete);
+                successHolder[0] = true;
+            }
+        }
     }
 
     @Override
