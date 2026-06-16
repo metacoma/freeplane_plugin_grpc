@@ -606,7 +606,13 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
         LOG.info("GRPC Freeplane::openMap(mapFilePath: " + mapFilePath + ")");
 
         if (mapFilePath != null) {
-            String path = System.getProperty("user.home") + "/mindmaps/" + mapFilePath;
+            final File requestedFile = new File(mapFilePath);
+            String path;
+            if (requestedFile.isAbsolute()) {
+                path = mapFilePath;
+            } else {
+                path = System.getProperty("user.home") + "/mindmaps/" + mapFilePath;
+            }
             final File file = new File(path);
 
             try {

@@ -163,10 +163,34 @@ jobs:
             exit 1
           fi
 
+      - name: Open blank map via gRPC
+        run: |
+          python3 -c "
+          import sys; sys.path.insert(0, 'grpc/python')
+          from freeplane_pb2 import OpenMapRequest
+          import freeplane_pb2_grpc, grpc
+          stub = freeplane_pb2_grpc.FreeplaneStub(grpc.insecure_channel('127.0.0.1:50051'))
+          resp = stub.OpenMap(OpenMapRequest(file_path='/tmp/freeplane-xvfb/smoke_test_map.mm'))
+          assert resp.success, 'OpenMap failed'
+          print('OpenMap OK')
+          "
+
       - name: Run Ruby integration tests
         run: |
           cd grpc/ruby
           FREEPLANE_HOST=127.0.0.1 FREEPLANE_PORT=50051 bundle exec rspec spec/integration/
+
+      - name: Re-open blank map for Python tests
+        run: |
+          python3 -c "
+          import sys; sys.path.insert(0, 'grpc/python')
+          from freeplane_pb2 import OpenMapRequest
+          import freeplane_pb2_grpc, grpc
+          stub = freeplane_pb2_grpc.FreeplaneStub(grpc.insecure_channel('127.0.0.1:50051'))
+          resp = stub.OpenMap(OpenMapRequest(file_path='/tmp/freeplane-xvfb/smoke_test_map.mm'))
+          assert resp.success, 'OpenMap failed'
+          print('OpenMap OK')
+          "
 
       - name: Run Python smoke tests
         run: |

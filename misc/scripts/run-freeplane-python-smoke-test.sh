@@ -279,6 +279,28 @@ if ! $MAP_READY; then
     exit 1
 fi
 
+# --- Step 4b: Open blank map via gRPC to override demo map ---
+echo ""
+echo "=========================================="
+echo " Step 4b: Open blank map via gRPC"
+echo "=========================================="
+log_info "Opening blank map via gRPC to override Freeplane demo map..."
+OPEN_MAP_RESULT=$(python3 -c "
+import sys, os
+sys.path.insert(0, os.path.join('${PLUGIN_REPO}', 'grpc/python'))
+from freeplane_pb2 import OpenMapRequest
+import freeplane_pb2_grpc, grpc
+stub = freeplane_pb2_grpc.FreeplaneStub(grpc.insecure_channel('${GRPC_HOST}:${GRPC_PORT}'))
+resp = stub.OpenMap(OpenMapRequest(file_path='${MINDMAP_FILE}'))
+print('success' if resp.success else 'failed')
+" 2>&1)
+if [[ "$OPEN_MAP_RESULT" == *"success"* ]]; then
+    log_info "Blank map opened successfully via gRPC"
+else
+    log_warn "OpenMap call returned: $OPEN_MAP_RESULT"
+    log_warn "Tests may run on the demo map instead of the blank map"
+fi
+
 # --- Step 5: Run Python example ---
 echo ""
 echo "=========================================="
