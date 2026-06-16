@@ -27,5 +27,10 @@ jobs:
           bundler-cache: true
           working-directory: grpc/ruby
 
+      - name: Ruby smoke test
+        working-directory: grpc/ruby
+        run: |
+          bundle exec ruby -e 'require "freeplane_grpc_client"; puts FreeplaneGrpcClient::VERSION'
+
       - name: Run tests
         run: bash scripts/run-tests.sh
