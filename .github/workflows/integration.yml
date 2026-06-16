@@ -40,66 +40,52 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ hashFiles('**/build.gradle') }}
-          restore-keys: |
-            gradle-
-
       - name: Install system dependencies
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y xvfb xauth openbox procps netcat-openbsd
 
-      - name: Set Freeplane paths
+      - name: Set Freeplane version
         run: |
-          echo "FREEPLANE_SRC=${{ runner.temp }}/freeplane" >> "$GITHUB_ENV"
+          echo "FREEPLANE_VERSION=1.12.18" >> "$GITHUB_ENV"
+          echo "PLUGIN_VERSION=0.0.9" >> "$GITHUB_ENV"
 
-      - name: Clone Freeplane source
-        run: |
-          git clone --depth 1 --branch release-1.12.18 \
-            https://github.com/freeplane/freeplane.git "$FREEPLANE_SRC"
+      - name: Cache Freeplane binary
+        id: cache-freeplane
+        uses: actions/cache@v4
+        with:
+          path: ~/.freeplane-cache
+          key: freeplane-bin-${{ env.FREEPLANE_VERSION }}
+          restore-keys: |
+            freeplane-bin-
 
-      - name: Mark Freeplane as safe directory
+      - name: Download and extract Freeplane
         run: |
-          git config --global --add safe.directory "$FREEPLANE_SRC"
+          FREEPLANE_DIR="$HOME/.freeplane-cache/freeplane-${FREEPLANE_VERSION}"
+          if [ ! -d "$FREEPLANE_DIR" ]; then
+            echo "Downloading Freeplane ${FREEPLANE_VERSION} binary..."
+            curl -sL "https://github.com/freeplane/freeplane/releases/download/release-${FREEPLANE_VERSION}/freeplane_bin-${FREEPLANE_VERSION}.zip" -o /tmp/freeplane.zip
+            mkdir -p "$HOME/.freeplane-cache"
+            unzip -q /tmp/freeplane.zip -d "$HOME/.freeplane-cache"
+            rm /tmp/freeplane.zip
+          fi
+          echo "FREEPLANE_DIR=$FREEPLANE_DIR" >> "$GITHUB_ENV"
+          echo "--- Verifying Freeplane binary ---"
+          test -f "$FREEPLANE_DIR/freeplane.sh" && echo "freeplane.sh: OK" || { echo "freeplane.sh: MISSING"; exit 1; }
+          test -d "$FREEPLANE_DIR/plugins" && echo "plugins/ dir: OK" || { echo "plugins/ dir: MISSING"; exit 1; }
 
-      - name: Integrate plugin into Freeplane
+      - name: Install gRPC plugin
         run: |
-          PLUGIN_DIR="$FREEPLANE_SRC/freeplane_plugin_grpc"
-          mkdir -p "$PLUGIN_DIR"
-          tar cf - --exclude='.git' --exclude='__pycache__' --exclude='*.egg-info' \
-            --exclude='*.egg' --exclude='.gradle' --exclude='build' \
-            --exclude='.pytest_cache' --exclude='.venv' --exclude='*.pyc' \
-            --exclude='node_modules' --exclude='Gemfile.lock' --exclude='.bundle' \
-            --exclude='vendor' . | (cd "$PLUGIN_DIR" && tar xf -)
-          echo "include 'freeplane_plugin_grpc'" >> "$FREEPLANE_SRC/settings.gradle"
-
-      - name: Patch Freeplane for Gradle 9.x compatibility
-        run: |
-          # In Gradle 9.x, project(':freeplane') inside dependencies{} returns
-          # DefaultProjectDependency (no sourceSets property). Hoist the reference
-          # outside dependencies{} to get the actual Project object.
-          # This replicates the fix from Freeplane master branch.
-          # See: https://github.com/metacoma/freeplane_plugin_grpc/actions/runs/27568073447
-          FILE="$FREEPLANE_SRC/freeplane_debughelper/build.gradle"
-          sed -i "s/project(':freeplane')/freeplaneProject/g" "$FILE"
-          sed -i '7a\def freeplaneProject = project('"'"':freeplane'"'"')\n' "$FILE"
-          # Verify patch applied
-          grep -q 'def freeplaneProject' "$FILE" || { echo "PATCH FAILED: freeplaneProject variable not found"; exit 1; }
-          grep -c 'freeplaneProject' "$FILE" | xargs -I{} echo "Patch applied: {} occurrences of freeplaneProject"
-
-      - name: Build Freeplane
-        working-directory: ${{ env.FREEPLANE_SRC }}
-        run: |
-          gradle dist -x test -x check_translation --no-daemon
-          echo "--- Verifying build artifacts ---"
-          test -f BIN/freeplane.sh && echo "freeplane.sh: OK" || { echo "freeplane.sh: MISSING"; exit 1; }
-          test -d BIN/plugins/org.freeplane.plugin.grpc && echo "grpc plugin: OK" || { echo "grpc plugin: MISSING"; exit 1; }
+          PLUGIN_TAR="/tmp/org.freplane.plugin.grpc.tar.gz"
+          if [ ! -f "$PLUGIN_TAR" ]; then
+            echo "Downloading gRPC plugin ${PLUGIN_VERSION}..."
+            curl -sL "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PLUGIN_VERSION}/org.freplane.plugin.grpc.tar.gz" -o "$PLUGIN_TAR"
+          fi
+          echo "Installing plugin into Freeplane..."
+          tar xzf "$PLUGIN_TAR" -C "$FREEPLANE_DIR/plugins/"
+          echo "--- Verifying plugin installation ---"
+          test -d "$FREEPLANE_DIR/plugins/org.freeplane.plugin.grpc/lib" && echo "plugin lib/: OK" || { echo "plugin lib/: MISSING"; exit 1; }
+          test -f "$FREEPLANE_DIR/plugins/org.freeplane.plugin.grpc/META-INF/MANIFEST.MF" && echo "plugin MANIFEST.MF: OK" || { echo "plugin MANIFEST.MF: MISSING"; exit 1; }
 
       - name: Start Xvfb and window manager
         run: |
@@ -122,7 +108,7 @@ jobs:
           </map>
           MMEOF
           fi
-          "$FREEPLANE_SRC/BIN/freeplane.sh" "$MINDMAP_FILE" > /tmp/freeplane-xvfb/freeplane.log 2>&1 &
+          "$FREEPLANE_DIR/freeplane.sh" "$MINDMAP_FILE" > /tmp/freeplane-xvfb/freeplane.log 2>&1 &
           FREEPLANE_PID=$!
           echo "$FREEPLANE_PID" > /tmp/freeplane-xvfb/freeplane.pid
           echo "FREEPLANE_PID=$FREEPLANE_PID" >> "$GITHUB_ENV"
