@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.freeplane.core.util.Hyperlink;
 import org.freeplane.features.attribute.Attribute;
+import org.freeplane.features.attribute.AttributeController;
 import org.freeplane.features.attribute.NodeAttributeTableModel;
 import org.freeplane.features.attribute.mindmapmode.AttributeUtilities;
 import org.freeplane.features.attribute.mindmapmode.MAttributeController;
@@ -429,7 +430,6 @@ public final class JsonHelper {
         final MIconController mIconController = (MIconController) IconController.getController();
         final MNodeStyleController mNodeStyleController = (MNodeStyleController) NodeStyleController.getController();
         final MNoteController mNoteController = MNoteController.getController();
-        final MAttributeController mAttributeController = MAttributeController.getController();
         final MapController mapController = Controller.getCurrentModeController().getMapController();
 
         // Extract text
@@ -444,14 +444,17 @@ public final class JsonHelper {
         // Insert at position 0; children are processed in order, so position 0
         // means the first child ends up at index 0 after all insertions.
         mmapController.insertNode(newNodeModel, parentNode, 0);
+        // Initialize attribute model for the new node so attributes can be added
+        AttributeController.getController().createAttributeTableModel(newNodeModel);
+        final NodeAttributeTableModel natm = NodeAttributeTableModel.getModel(newNodeModel);
 
         // Extract and set ID hint (for reference; actual ID is already set)
-        if (jsonObject.has(FIELD_ID) && mAttributeController != null) {
+        if (jsonObject.has(FIELD_ID) && natm != null) {
             // The ID in the JSON is informational; Freeplane generates its own IDs.
             // We store it as an attribute for reference.
             try {
                 Attribute idAttr = new Attribute(LEGACY_UUID_ATTR, jsonObject.getString(FIELD_ID));
-                mAttributeController.addAttribute(newNodeModel, idAttr);
+                natm.addRowNoUndo(newNodeModel, idAttr);
             } catch (Exception e) {
                 LOG.fine("Could not store ID hint: " + e.getMessage());
             }
@@ -473,7 +476,7 @@ public final class JsonHelper {
         }
 
         // ---------- attributes ----------
-        if (jsonObject.has(FIELD_ATTRIBUTES) && mAttributeController != null) {
+        if (jsonObject.has(FIELD_ATTRIBUTES) && natm != null) {
             Object attrsObj = jsonObject.get(FIELD_ATTRIBUTES);
             if (attrsObj instanceof JSONObject) {
                 JSONObject attrsJson = (JSONObject) attrsObj;
@@ -483,7 +486,7 @@ public final class JsonHelper {
                         // Ensure the value is a String for the Attribute constructor
                         String attrValue = (rawValue != null) ? rawValue.toString() : "";
                         Attribute attr = new Attribute(attrKey, attrValue);
-                        mAttributeController.addAttribute(newNodeModel, attr);
+                        natm.addRowNoUndo(newNodeModel, attr);
                     } catch (Exception e) {
                         LOG.warning("addAttribute failed for key " + attrKey + ": " + (e.getMessage() != null ? e.getMessage() : "null"));
                     }
@@ -603,7 +606,7 @@ public final class JsonHelper {
                         }
                     }
                 }
-                if (!rels.isEmpty()) {
+                if (!rels.isEmpty() && natm != null) {
                     // Store as attribute for post-processing
                     StringBuilder relValue = new StringBuilder();
                     for (int i = 0; i < rels.size(); i++) {
@@ -612,9 +615,7 @@ public final class JsonHelper {
                     }
                     try {
                         Attribute relAttr = new Attribute(LEGACY_RELATIONSHIP_ATTR, relValue.toString());
-                        if (mAttributeController != null) {
-                            mAttributeController.addAttribute(newNodeModel, relAttr);
-                        }
+                        natm.addRowNoUndo(newNodeModel, relAttr);
                     } catch (Exception e) {
                         LOG.warning("Could not store relationship attribute: " + (e.getMessage() != null ? e.getMessage() : "null"));
                     }
