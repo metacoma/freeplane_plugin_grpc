@@ -112,8 +112,13 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
 
         final NodeModel nodeToDelete = map.getNodeForID(req.getNodeId());
         if (nodeToDelete != null) {
-            success = true;
-            mmapController.deleteNode(nodeToDelete);
+            if (nodeToDelete.getParentNode() == null) {
+                LOG.info("GRPC Freeplane::deleteChild node already detached (parent is null): " + req.getNodeId());
+                success = true;
+            } else {
+                mmapController.deleteNode(nodeToDelete);
+                success = true;
+            }
         }
 
         final DeleteChildResponse reply = DeleteChildResponse.newBuilder().setSuccess(success).build();
