@@ -595,56 +595,97 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
 
     @Override
     public void openMap(final OpenMapRequest req, final StreamObserver<OpenMapResponse> responseObserver) {
+        LOG.info("GRPC Freeplane::openMap(mapFilePath: " + req.getFilePath() + ")");
+
         final Controller controller = Controller.getCurrentController();
         final ModeController modeController = controller.getModeController(MModeController.MODENAME);
         final MapController mapController = Controller.getCurrentModeController().getMapController();
         final MFileManager fileManager = MFileManager.getController(modeController);
-        boolean success = false;
         final String mapFilePath = req.getFilePath();
-        URL mindmapURL = null;
 
-        LOG.info("GRPC Freeplane::openMap(mapFilePath: " + mapFilePath + ")");
+        // MapController.openMap(), newMap(), FileManager.save() must execute on the EDT.
+        final boolean[] successHolder = {false};
+        final String[] errorMessageHolder = {null};
 
-        if (mapFilePath != null) {
-            final File requestedFile = new File(mapFilePath);
-            String path;
-            if (requestedFile.isAbsolute()) {
-                path = mapFilePath;
+        try {
+            if (EventQueue.isDispatchThread()) {
+                doOpenMap(mapFilePath, mapController, fileManager, successHolder, errorMessageHolder);
             } else {
-                path = System.getProperty("user.home") + "/mindmaps/" + mapFilePath;
+                SwingUtilities.invokeAndWait(() -> {
+                    try {
+                        doOpenMap(mapFilePath, mapController, fileManager, successHolder, errorMessageHolder);
+                    } catch (final Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
             }
-            final File file = new File(path);
-
-            try {
-                mindmapURL = file.toURI().toURL();
-                mapController.openMap(mindmapURL);
-                LOG.info("GRPC Freeplane::openMap(URI: " + path + ")");
-                success = true;
-
-            } catch (final Exception e) {
-                LOG.warning("File not found, creating new map: " + mapFilePath);
-                final Path dirPath = file.getParentFile().toPath();
-
-                try {
-                    Files.createDirectories(dirPath);
-
-                    final MapModel newMapModel = mapController.newMap();
-                    newMapModel.setURL(mindmapURL);
-                    final NodeModel rootNode = newMapModel.getRootNode();
-
-                    rootNode.setText(mapFilePath);
-                    fileManager.save(newMapModel);
-                    success = true;
-                } catch (final IOException e2) {
-                    LOG.warning("Failed to create new map: " + e2.getMessage());
-                    success = false;
-                }
-
-            }
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.warning("GRPC Freeplane::openMap interrupted: " + e.getMessage());
+            final OpenMapResponse reply = OpenMapResponse.newBuilder().setSuccess(false).build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+            return;
+        } catch (final java.lang.reflect.InvocationTargetException e) {
+            LOG.warning("GRPC Freeplane::openMap failed: " + e.getCause().getMessage());
+            final OpenMapResponse reply = OpenMapResponse.newBuilder().setSuccess(false).build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+            return;
         }
 
-        responseObserver.onNext(OpenMapResponse.newBuilder().setSuccess(success).build());
+        responseObserver.onNext(OpenMapResponse.newBuilder().setSuccess(successHolder[0]).build());
         responseObserver.onCompleted();
+    }
+
+    /**
+     * Performs the actual map open/create on the EDT.
+     * Must be called from the EDT to ensure consistent model state.
+     */
+    private void doOpenMap(final String mapFilePath, final MapController mapController,
+                            final MFileManager fileManager,
+                            final boolean[] successHolder, final String[] errorMessageHolder) {
+        if (mapFilePath == null) {
+            return;
+        }
+
+        final File requestedFile = new File(mapFilePath);
+        String path;
+        if (requestedFile.isAbsolute()) {
+            path = mapFilePath;
+        } else {
+            path = System.getProperty("user.home") + "/mindmaps/" + mapFilePath;
+        }
+        final File file = new File(path);
+
+        try {
+            final URL mindmapURL = file.toURI().toURL();
+            mapController.openMap(mindmapURL);
+            LOG.info("GRPC Freeplane::openMap(URI: " + path + ")");
+            successHolder[0] = true;
+
+        } catch (final Exception e) {
+            LOG.warning("File not found, creating new map: " + mapFilePath);
+            final Path dirPath = file.getParentFile().toPath();
+
+            try {
+                Files.createDirectories(dirPath);
+
+                final URL mindmapURL = file.toURI().toURL();
+                final MapModel newMapModel = mapController.newMap();
+                newMapModel.setURL(mindmapURL);
+                final NodeModel rootNode = newMapModel.getRootNode();
+
+                rootNode.setText(mapFilePath);
+                fileManager.save(newMapModel);
+                successHolder[0] = true;
+            } catch (final IOException e2) {
+                LOG.warning("Failed to create new map: " + e2.getMessage());
+                errorMessageHolder[0] = e2.getMessage();
+                successHolder[0] = false;
+            }
+
+        }
     }
 
     @Override
@@ -1046,28 +1087,59 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
 
     @Override
     public void focusNode(final FocusNodeRequest req, final StreamObserver<FocusNodeResponse> responseObserver) {
-        final Controller controller = Controller.getCurrentController();
-        final MapModel map = Controller.getCurrentController().getMap();
-        final MapController mapController = Controller.getCurrentModeController().getMapController();
-        final IMapSelection selection = Controller.getCurrentController().getSelection();
-        final NodeModel targetNode = map.getNodeForID(req.getNodeId());
-        boolean success = false;
-
         LOG.info("GRPC Freeplane::focusNode(node_id: " + req.getNodeId() + ")");
 
-        if (targetNode != null) {
-            selection.selectAsTheOnlyOneSelected(targetNode);
-            // targetNode.setChildNodeSidesAsNow();
-            // controller.getSelection().scrollNodeToCenter(targetNode, false);
-            controller.getMapViewManager().setViewRoot(targetNode);
-            success = true;
-        } else {
-            LOG.warning("GRPC Freeplane::focusNode failed, targetNode == null for node_id: " + req.getNodeId());
+        final Controller controller = Controller.getCurrentController();
+        final MapModel map = Controller.getCurrentController().getMap();
+        final IMapSelection selection = Controller.getCurrentController().getSelection();
+        final String nodeId = req.getNodeId();
+
+        // IMapSelection.selectAsTheOnlyOneSelected() and MapViewManager.setViewRoot() must execute on the EDT.
+        final boolean[] successHolder = {false};
+
+        try {
+            if (EventQueue.isDispatchThread()) {
+                doFocusNode(nodeId, controller, map, selection, successHolder);
+            } else {
+                SwingUtilities.invokeAndWait(() -> {
+                    doFocusNode(nodeId, controller, map, selection, successHolder);
+                });
+            }
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.warning("GRPC Freeplane::focusNode interrupted: " + e.getMessage());
+            final FocusNodeResponse reply = FocusNodeResponse.newBuilder().setSuccess(false).build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+            return;
+        } catch (final java.lang.reflect.InvocationTargetException e) {
+            LOG.warning("GRPC Freeplane::focusNode failed: " + e.getCause().getMessage());
+            final FocusNodeResponse reply = FocusNodeResponse.newBuilder().setSuccess(false).build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+            return;
         }
 
-        final FocusNodeResponse reply = FocusNodeResponse.newBuilder().setSuccess(success).build();
+        final FocusNodeResponse reply = FocusNodeResponse.newBuilder().setSuccess(successHolder[0]).build();
         responseObserver.onNext(reply);
         responseObserver.onCompleted();
+    }
+
+    /**
+     * Performs the actual node focus on the EDT.
+     * Must be called from the EDT to ensure consistent model state.
+     */
+    private void doFocusNode(final String nodeId, final Controller controller,
+                              final MapModel map, final IMapSelection selection,
+                              final boolean[] successHolder) {
+        final NodeModel targetNode = map.getNodeForID(nodeId);
+        if (targetNode != null) {
+            selection.selectAsTheOnlyOneSelected(targetNode);
+            controller.getMapViewManager().setViewRoot(targetNode);
+            successHolder[0] = true;
+        } else {
+            LOG.warning("GRPC Freeplane::focusNode failed, targetNode == null for node_id: " + nodeId);
+        }
     }
 
     // --- Group A: Node Inspection ---
