@@ -105,25 +105,61 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
     @Override
     public void deleteChild(final DeleteChildRequest req, final StreamObserver<DeleteChildResponse> responseObserver) {
         LOG.info("GRPC Freeplane::deleteChild(" + req.getNodeId() + ")");
-        final MapController mapController = Controller.getCurrentModeController().getMapController();
         final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
         final MapModel map = Controller.getCurrentController().getMap();
-        boolean success = false;
 
-        final NodeModel nodeToDelete = map.getNodeForID(req.getNodeId());
-        if (nodeToDelete != null) {
-            if (nodeToDelete.getParentNode() == null) {
-                LOG.info("GRPC Freeplane::deleteChild node already detached (parent is null): " + req.getNodeId());
-                success = true;
+        // MapModel operations (getNodeForID, getParentNode, deleteNode) must execute on the EDT.
+        final String nodeId = req.getNodeId();
+        final boolean[] successHolder = {false};
+
+        try {
+            if (EventQueue.isDispatchThread()) {
+                doDeleteChild(nodeId, mmapController, map, successHolder);
             } else {
-                mmapController.deleteNode(nodeToDelete);
-                success = true;
+                SwingUtilities.invokeAndWait(() -> {
+                    try {
+                        doDeleteChild(nodeId, mmapController, map, successHolder);
+                    } catch (final Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
             }
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.warning("GRPC Freeplane::deleteChild interrupted: " + e.getMessage());
+            final DeleteChildResponse reply = DeleteChildResponse.newBuilder().setSuccess(false).build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+            return;
+        } catch (final java.lang.reflect.InvocationTargetException e) {
+            LOG.warning("GRPC Freeplane::deleteChild failed: " + e.getCause().getMessage());
+            final DeleteChildResponse reply = DeleteChildResponse.newBuilder().setSuccess(false).build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+            return;
         }
 
-        final DeleteChildResponse reply = DeleteChildResponse.newBuilder().setSuccess(success).build();
+        final DeleteChildResponse reply = DeleteChildResponse.newBuilder().setSuccess(successHolder[0]).build();
         responseObserver.onNext(reply);
         responseObserver.onCompleted();
+    }
+
+    /**
+     * Performs the actual node deletion on the EDT.
+     * Must be called from the EDT to ensure consistent model state.
+     */
+    private void doDeleteChild(final String nodeId, final MMapController mmapController,
+                                final MapModel map, final boolean[] successHolder) {
+        final NodeModel nodeToDelete = map.getNodeForID(nodeId);
+        if (nodeToDelete != null) {
+            if (nodeToDelete.getParentNode() == null) {
+                LOG.info("GRPC Freeplane::deleteChild node already detached (parent is null): " + nodeId);
+                successHolder[0] = true;
+            } else {
+                mmapController.deleteNode(nodeToDelete);
+                successHolder[0] = true;
+            }
+        }
     }
 
     @Override
@@ -625,7 +661,8 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
                                 final StreamObserver<MindMapFromJSONResponse> responseObserver) {
         LOG.info("GRPC Freeplane::MindMapFromJSON()");
 
-        // Wait for Freeplane controller to become ready (up to 10 seconds)
+        // Wait for Freeplane controller to become ready (up to 10 seconds).
+        // This polling loop uses Thread.sleep and must NOT be on the EDT.
         Controller controller = null;
         MapController mapController = null;
         for (int i = 0; i < 20; i++) {
@@ -649,13 +686,16 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
             return;
         }
 
-        final MMapController mmapController = (MMapController) mapController;
+        // Create final references for lambda capture (controller/mapController were reassigned in the polling loop).
+        final Controller finalController = controller;
+        final MapController finalMapController = mapController;
+        final MMapController mmapController = (MMapController) finalMapController;
         final MLinkController mLinkController = (MLinkController) LinkController.getController();
-        final MapModel map = controller.getMap();
-        boolean success = false;
+        final MapModel map = finalController.getMap();
 
-        // Resolve _fp_import_root_node insert mode to determine the target node FIRST.
-        // This must happen before accessing selection or map, which may be null.
+        // All MapModel operations must execute on the EDT to be visible to other
+        // EDT-dispatched methods (e.g., mindMapToJSON). Dispatch via
+        // SwingUtilities.invokeAndWait when not already on the EDT.
         final JSONObject importJson = new JSONObject(req.getJson());
         final String insertMode;
         if (importJson.has(JsonHelper.LEGACY_FP_IMPORT_ROOT)) {
@@ -664,6 +704,58 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
             insertMode = null;
         }
 
+        final boolean[] successHolder = {false};
+        final StringBuilder errorHolder = new StringBuilder();
+
+        try {
+            if (EventQueue.isDispatchThread()) {
+                doMindMapFromJSON(importJson, insertMode, req.getJson(), finalController, finalMapController,
+                        mmapController, mLinkController, map, successHolder, errorHolder);
+            } else {
+                SwingUtilities.invokeAndWait(() -> {
+                    try {
+                        doMindMapFromJSON(importJson, insertMode, req.getJson(), finalController, finalMapController,
+                                mmapController, mLinkController, map, successHolder, errorHolder);
+                    } catch (final Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.warning("GRPC Freeplane::MindMapFromJSON interrupted: " + e.getMessage());
+            final MindMapFromJSONResponse failReply = MindMapFromJSONResponse.newBuilder().setSuccess(false).build();
+            responseObserver.onNext(failReply);
+            responseObserver.onCompleted();
+            return;
+        } catch (final java.lang.reflect.InvocationTargetException e) {
+            LOG.warning("GRPC Freeplane::MindMapFromJSON failed: " + e.getCause().getMessage());
+            final MindMapFromJSONResponse failReply = MindMapFromJSONResponse.newBuilder().setSuccess(false).build();
+            responseObserver.onNext(failReply);
+            responseObserver.onCompleted();
+            return;
+        }
+
+        final boolean success = successHolder[0];
+        if (!success && errorHolder.length() > 0) {
+            LOG.warning("GRPC Freeplane::MindMapFromJSON: " + errorHolder.toString());
+        }
+        final MindMapFromJSONResponse reply = MindMapFromJSONResponse.newBuilder().setSuccess(success).build();
+        responseObserver.onNext(reply);
+        responseObserver.onCompleted();
+    }
+
+    /**
+     * Performs the actual mind map import on the EDT.
+     * All MapModel operations (root node resolution, attribute clearing, import,
+     * notification, relationship processing, cleanup) must run on the EDT.
+     */
+    private void doMindMapFromJSON(final JSONObject importJson, final String insertMode,
+                                   final String json, final Controller controller,
+                                   final MapController mapController, final MMapController mmapController,
+                                   final MLinkController mLinkController, final MapModel map,
+                                   final boolean[] successHolder, final StringBuilder errorHolder) {
+        // Resolve _fp_import_root_node insert mode to determine the target node.
         NodeModel rootNode = null;
         if ("root".equals(insertMode)) {
             try {
@@ -697,10 +789,7 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
         }
 
         if (rootNode == null) {
-            LOG.log(java.util.logging.Level.WARNING, "MindMapFromJSON: no target node available (no selection and no insert mode), returning failure");
-            final MindMapFromJSONResponse failReply = MindMapFromJSONResponse.newBuilder().setSuccess(false).build();
-            responseObserver.onNext(failReply);
-            responseObserver.onCompleted();
+            errorHolder.append("no target node available (no selection and no insert mode)");
             return;
         }
 
@@ -715,7 +804,7 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
         }
 
         // Import using canonical format with legacy migration.
-        jsonHelper.mindMapFromJSON(req.getJson(), rootNode);
+        jsonHelper.mindMapFromJSON(json, rootNode);
 
         final List<NodeModel> newNodes = NodeUtils.collectSubtreeNodes(rootNode);
 
@@ -779,10 +868,7 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
             }
         }
 
-        success = true;
-        final MindMapFromJSONResponse reply = MindMapFromJSONResponse.newBuilder().setSuccess(success).build();
-        responseObserver.onNext(reply);
-        responseObserver.onCompleted();
+        successHolder[0] = true;
     }
 
     @Override
@@ -979,25 +1065,65 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
         LOG.info("GRPC Freeplane::listChildNodes(node_id: " + req.getNodeId() + ")");
 
         final NodeModel targetNode = map.getNodeForID(req.getNodeId());
-        ListChildNodesResponse.Builder replyBuilder = ListChildNodesResponse.newBuilder().setSuccess(false);
+        final ListChildNodesResponse.Builder replyBuilder = ListChildNodesResponse.newBuilder().setSuccess(false);
 
-        if (targetNode != null) {
-            int childCount = targetNode.getChildCount();
-            LOG.info("GRPC Freeplane::listChildNodes found " + childCount + " children");
-            for (NodeModel child : targetNode.getChildren()) {
-                replyBuilder.addChildren(ChildNodeInfo.newBuilder()
-                    .setNodeId(child.getID())
-                    .setText(child.getText())
-                    .build());
-            }
-            replyBuilder.setSuccess(true);
-        } else {
+        if (targetNode == null) {
             LOG.warning("GRPC Freeplane::listChildNodes node not found: " + req.getNodeId());
             replyBuilder.setErrorMessage("Node not found: " + req.getNodeId());
+            responseObserver.onNext(replyBuilder.build());
+            responseObserver.onCompleted();
+            return;
         }
+
+        // Child enumeration must execute on the EDT to see consistent model state.
+        final NodeModel finalTargetNode = targetNode;
+        final int[] childCountHolder = new int[1];
+        final java.util.List<ChildNodeInfo> childrenList = new java.util.ArrayList<>();
+
+        try {
+            if (EventQueue.isDispatchThread()) {
+                populateChildNodes(finalTargetNode, childCountHolder, childrenList);
+            } else {
+                SwingUtilities.invokeAndWait(() -> {
+                    populateChildNodes(finalTargetNode, childCountHolder, childrenList);
+                });
+            }
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.warning("GRPC Freeplane::listChildNodes interrupted: " + e.getMessage());
+            responseObserver.onNext(replyBuilder.build());
+            responseObserver.onCompleted();
+            return;
+        } catch (final java.lang.reflect.InvocationTargetException e) {
+            LOG.warning("GRPC Freeplane::listChildNodes failed: " + e.getCause().getMessage());
+            responseObserver.onNext(replyBuilder.build());
+            responseObserver.onCompleted();
+            return;
+        }
+
+        LOG.info("GRPC Freeplane::listChildNodes found " + childCountHolder[0] + " children");
+        for (final ChildNodeInfo child : childrenList) {
+            replyBuilder.addChildren(child);
+        }
+        replyBuilder.setSuccess(true);
 
         responseObserver.onNext(replyBuilder.build());
         responseObserver.onCompleted();
+    }
+
+    /**
+     * Populates child node information on the EDT.
+     * Must be called from the EDT to ensure consistent model state.
+     */
+    private void populateChildNodes(final NodeModel targetNode, final int[] childCountHolder,
+                                    final java.util.List<ChildNodeInfo> childrenList) {
+        childCountHolder[0] = targetNode.getChildCount();
+        for (final NodeModel child : targetNode.getChildren()) {
+            childrenList.add(ChildNodeInfo.newBuilder()
+                    .setNodeId(child.getID())
+                    .setText(child.getText())
+                    .build());
+        }
     }
 
     @Override
