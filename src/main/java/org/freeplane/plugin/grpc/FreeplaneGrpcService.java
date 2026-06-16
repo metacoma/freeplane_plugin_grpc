@@ -68,14 +68,59 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
 
     @Override
     public void createChild(final CreateChildRequest req, final StreamObserver<CreateChildResponse> responseObserver) {
+        LOG.info("GRPC Freeplane::createChild(name: " + req.getName() + ", parent_node_id: " + req.getParentNodeId() + ")");
+
         final MapController mapController = Controller.getCurrentModeController().getMapController();
         final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
         final MapModel map = Controller.getCurrentController().getMap();
         final String parentNodeId = req.getParentNodeId();
         final String newNodeName = req.getName();
-        CreateChildResponse reply;
 
-        LOG.info("GRPC Freeplane::createChild(name: " + req.getName() + ", parent_node_id: " + req.getParentNodeId() + ")");
+        // MapModel operations (getNodeForID, newNode, insertNode) must execute on the EDT.
+        final String[] nodeIdHolder = new String[1];
+        final String[] nodeTextHolder = new String[1];
+        nodeIdHolder[0] = "-1";
+        nodeTextHolder[0] = "";
+
+        try {
+            if (EventQueue.isDispatchThread()) {
+                doCreateChild(parentNodeId, newNodeName, mapController, mmapController, map, nodeIdHolder, nodeTextHolder);
+            } else {
+                SwingUtilities.invokeAndWait(() -> {
+                    doCreateChild(parentNodeId, newNodeName, mapController, mmapController, map, nodeIdHolder, nodeTextHolder);
+                });
+            }
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.warning("GRPC Freeplane::createChild interrupted: " + e.getMessage());
+            final CreateChildResponse reply = CreateChildResponse.newBuilder().setNodeId("-1").setNodeText("").build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+            return;
+        } catch (final java.lang.reflect.InvocationTargetException e) {
+            LOG.warning("GRPC Freeplane::createChild failed: " + e.getCause().getMessage());
+            final CreateChildResponse reply = CreateChildResponse.newBuilder().setNodeId("-1").setNodeText("").build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+            return;
+        }
+
+        final CreateChildResponse reply = CreateChildResponse.newBuilder()
+            .setNodeId(nodeIdHolder[0])
+            .setNodeText(nodeTextHolder[0])
+            .build();
+
+        responseObserver.onNext(reply);
+        responseObserver.onCompleted();
+    }
+
+    /**
+     * Performs the actual child node creation on the EDT.
+     * Must be called from the EDT to ensure consistent model state.
+     */
+    private void doCreateChild(final String parentNodeId, final String newNodeName,
+                                final MapController mapController, final MMapController mmapController,
+                                final MapModel map, final String[] nodeIdHolder, final String[] nodeTextHolder) {
         final NodeModel rootNode = (parentNodeId != null && parentNodeId.length() > 0)
             ? map.getNodeForID(parentNodeId)
             : mapController.getRootNode();
@@ -89,17 +134,11 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
             newNodeModel.setSide(mapController.suggestNewChildSide(rootNode, NodeModel.Side.DEFAULT));
             newNodeModel.createID();
             mmapController.insertNode(newNodeModel, rootNode, 0);
-            reply = CreateChildResponse.newBuilder()
-                .setNodeId(newNodeModel.getID())
-                .setNodeText(newNodeModel.getText())
-                .build();
+            nodeIdHolder[0] = newNodeModel.getID();
+            nodeTextHolder[0] = newNodeModel.getText();
         } else {
-            LOG.warning("GRPC Freeplane::createChild root node not found for parent: " + req.getParentNodeId());
-            reply = CreateChildResponse.newBuilder().setNodeId("-1").setNodeText("").build();
+            LOG.warning("GRPC Freeplane::createChild root node not found for parent: " + parentNodeId);
         }
-
-        responseObserver.onNext(reply);
-        responseObserver.onCompleted();
     }
 
     @Override
@@ -604,19 +643,17 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
 
     @Override
     public void textFSM(final TextFSMRequest req, final StreamObserver<TextFSMResponse> responseObserver) {
-        final MapController mapController = Controller.getCurrentModeController().getMapController();
-        final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
-        boolean success = false;
-        int idx = 0;
         LOG.info("GRPC Freeplane::TextFSM()");
 
+        final MapController mapController = Controller.getCurrentModeController().getMapController();
+        final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
+
         final JSONObject obj = new JSONObject(req.getJson());
-
         final String indexName = obj.getString("index");
-
         final JSONArray header = obj.getJSONArray("header");
         LOG.info("Header: " + header.toString());
 
+        int idx = 0;
         for (int i = 0; i < header.length(); i++) {
             final String headerElement = header.getString(i);
             if (headerElement.equals(indexName)) {
@@ -629,6 +666,49 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
         final JSONArray result = obj.getJSONArray("result");
         LOG.info("Result: " + result.toString());
 
+        // Make final copies for lambda capture (idx is reassigned in the loop above).
+        final int finalIdx = idx;
+        final JSONArray finalHeader = header;
+        final JSONArray finalResult = result;
+
+        // MapModel operations (getRootNode, newNode, insertNode, addAttribute) must execute on the EDT.
+        final boolean[] successHolder = {false};
+
+        try {
+            if (EventQueue.isDispatchThread()) {
+                doTextFSM(finalIdx, finalHeader, finalResult, mapController, mmapController, successHolder);
+            } else {
+                SwingUtilities.invokeAndWait(() -> {
+                    doTextFSM(finalIdx, finalHeader, finalResult, mapController, mmapController, successHolder);
+                });
+            }
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.warning("GRPC Freeplane::TextFSM interrupted: " + e.getMessage());
+            final TextFSMResponse reply = TextFSMResponse.newBuilder().setSuccess(false).build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+            return;
+        } catch (final java.lang.reflect.InvocationTargetException e) {
+            LOG.warning("GRPC Freeplane::TextFSM failed: " + e.getCause().getMessage());
+            final TextFSMResponse reply = TextFSMResponse.newBuilder().setSuccess(false).build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+            return;
+        }
+
+        final TextFSMResponse reply = TextFSMResponse.newBuilder().setSuccess(successHolder[0]).build();
+        responseObserver.onNext(reply);
+        responseObserver.onCompleted();
+    }
+
+    /**
+     * Performs the actual TextFSM node creation on the EDT.
+     * Must be called from the EDT to ensure consistent model state.
+     */
+    private void doTextFSM(final int idx, final JSONArray header, final JSONArray result,
+                            final MapController mapController, final MMapController mmapController,
+                            final boolean[] successHolder) {
         final NodeModel rootNode = mapController.getRootNode();
 
         for (int i = 0; i < result.length(); i++) {
@@ -650,10 +730,7 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
             }
         }
 
-        success = true;
-        final TextFSMResponse reply = TextFSMResponse.newBuilder().setSuccess(success).build();
-        responseObserver.onNext(reply);
-        responseObserver.onCompleted();
+        successHolder[0] = true;
     }
 
     @Override
@@ -1241,26 +1318,69 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
     @Override
     public void moveNode(final MoveNodeRequest req,
                          final StreamObserver<MoveNodeResponse> responseObserver) {
-        final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
-        final MapModel map = Controller.getCurrentController().getMap();
         LOG.info("GRPC Freeplane::moveNode(node_id: " + req.getNodeId() + ", new_parent_node_id: " + req.getNewParentNodeId() + ")");
 
-        final NodeModel nodeToMove = map.getNodeForID(req.getNodeId());
-        final NodeModel newParent = map.getNodeForID(req.getNewParentNodeId());
-        String errorMessage = null;
+        final MMapController mmapController = (MMapController) Controller.getCurrentModeController().getMapController();
+        final MapModel map = Controller.getCurrentController().getMap();
+        final String nodeId = req.getNodeId();
+        final String newParentNodeId = req.getNewParentNodeId();
+
+        // MapModel operations (getNodeForID, moveNodeAndItsClones) must execute on the EDT.
+        final String[] errorMessageHolder = new String[1];
+
+        try {
+            if (EventQueue.isDispatchThread()) {
+                doMoveNode(nodeId, newParentNodeId, mmapController, map, errorMessageHolder);
+            } else {
+                SwingUtilities.invokeAndWait(() -> {
+                    doMoveNode(nodeId, newParentNodeId, mmapController, map, errorMessageHolder);
+                });
+            }
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.warning("GRPC Freeplane::moveNode interrupted: " + e.getMessage());
+            final MoveNodeResponse reply = MoveNodeResponse.newBuilder().setSuccess(false).setErrorMessage("Interrupted").build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+            return;
+        } catch (final java.lang.reflect.InvocationTargetException e) {
+            LOG.warning("GRPC Freeplane::moveNode failed: " + e.getCause().getMessage());
+            final MoveNodeResponse reply = MoveNodeResponse.newBuilder().setSuccess(false).setErrorMessage(e.getCause().getMessage()).build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+            return;
+        }
+
+        final MoveNodeResponse reply = errorMessageHolder[0] != null
+            ? MoveNodeResponse.newBuilder().setSuccess(false).setErrorMessage(errorMessageHolder[0]).build()
+            : MoveNodeResponse.newBuilder().setSuccess(true).build();
+
+        responseObserver.onNext(reply);
+        responseObserver.onCompleted();
+    }
+
+    /**
+     * Performs the actual node move on the EDT.
+     * Must be called from the EDT to ensure consistent model state.
+     */
+    private void doMoveNode(final String nodeId, final String newParentNodeId,
+                             final MMapController mmapController, final MapModel map,
+                             final String[] errorMessageHolder) {
+        final NodeModel nodeToMove = map.getNodeForID(nodeId);
+        final NodeModel newParent = map.getNodeForID(newParentNodeId);
 
         if (nodeToMove == null) {
-            LOG.warning("GRPC Freeplane::moveNode node to move not found: " + req.getNodeId());
-            errorMessage = "Node not found: " + req.getNodeId();
+            LOG.warning("GRPC Freeplane::moveNode node to move not found: " + nodeId);
+            errorMessageHolder[0] = "Node not found: " + nodeId;
         } else if (newParent == null) {
-            LOG.warning("GRPC Freeplane::moveNode new parent not found: " + req.getNewParentNodeId());
-            errorMessage = "New parent node not found: " + req.getNewParentNodeId();
+            LOG.warning("GRPC Freeplane::moveNode new parent not found: " + newParentNodeId);
+            errorMessageHolder[0] = "New parent node not found: " + newParentNodeId;
         } else if (nodeToMove == newParent) {
             LOG.warning("GRPC Freeplane::moveNode node cannot be moved under itself");
-            errorMessage = "Node cannot be moved under itself";
-        } else if (req.getNodeId().equals(req.getNewParentNodeId())) {
+            errorMessageHolder[0] = "Node cannot be moved under itself";
+        } else if (nodeId.equals(newParentNodeId)) {
             LOG.warning("GRPC Freeplane::moveNode node ID equals new parent node ID");
-            errorMessage = "Node cannot be moved under itself";
+            errorMessageHolder[0] = "Node cannot be moved under itself";
         } else {
             // Check if newParent is already a descendant of nodeToMove (would create a cycle)
             NodeModel check = newParent;
@@ -1275,18 +1395,11 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
 
             if (isDescendant) {
                 LOG.warning("GRPC Freeplane::moveNode would create a cycle; new parent is a descendant of node");
-                errorMessage = "Cannot move node: new parent is a descendant of the node";
+                errorMessageHolder[0] = "Cannot move node: new parent is a descendant of the node";
             } else {
                 // Use Freeplane's moveNodeAndItsClones to preserve full subtree and metadata
                 mmapController.moveNodeAndItsClones(nodeToMove, newParent, newParent.getChildCount());
             }
         }
-
-        final MoveNodeResponse reply = errorMessage != null
-            ? MoveNodeResponse.newBuilder().setSuccess(false).setErrorMessage(errorMessage).build()
-            : MoveNodeResponse.newBuilder().setSuccess(true).build();
-
-        responseObserver.onNext(reply);
-        responseObserver.onCompleted();
     }
 }
