@@ -32,5 +32,14 @@ jobs:
         run: |
           bundle exec ruby -e 'require "freeplane_grpc_client"; puts FreeplaneGrpcClient::VERSION'
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Node.js dependencies
+        working-directory: grpc/nodejs
+        run: npm ci
+
       - name: Run tests
         run: bash scripts/run-tests.sh
