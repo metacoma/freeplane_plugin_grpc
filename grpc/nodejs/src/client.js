@@ -90,26 +90,48 @@ class FreeplaneClient {
       this._stub = new freeplanePkg.freeplane.Freeplane(target, credentials);
       this._protoLoaded = true;
 
-      // Verify connectivity with a timeout
+      // Verify connectivity with a timeout.
+      // Use getConnectivityState(true) to trigger the connection attempt,
+      // then watch for state transitions until READY or timeout.
       await new Promise((resolve, reject) => {
         const deadline = Date.now() + 5000;
-        const checkConnectivity = () => {
+
+        // Trigger the channel to start connecting
+        this._channel.getConnectivityState(true);
+
+        const checkState = () => {
           const state = this._channel.getConnectivityState();
-          if (state === grpc.connectivityState.READY || state === grpc.connectivityState.IDLE) {
+          if (state === grpc.connectivityState.READY) {
             resolve();
+          } else if (state === grpc.connectivityState.TRANSIENT_FAILURE) {
+            // Server unreachable — retry by triggering another connection attempt
+            this._channel.getConnectivityState(true);
+            watchAndCheck();
           } else if (Date.now() >= deadline) {
             reject(new Error('timeout'));
           } else {
-            setTimeout(checkConnectivity, 100);
+            // CONNECTING or IDLE — keep watching
+            watchAndCheck();
           }
         };
-        this._channel.watchConnectivityState(grpc.connectivityState.IDLE, deadline, (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            checkConnectivity();
-          }
-        });
+
+        const watchAndCheck = () => {
+          const currentState = this._channel.getConnectivityState();
+          this._channel.watchConnectivityState(currentState, deadline, (err) => {
+            if (err) {
+              // watch timeout — re-check in case deadline was extended
+              if (Date.now() >= deadline) {
+                reject(new Error('timeout'));
+              } else {
+                checkState();
+              }
+            } else {
+              checkState();
+            }
+          });
+        };
+
+        checkState();
       });
     } catch (err) {
       if (this._channel) {
