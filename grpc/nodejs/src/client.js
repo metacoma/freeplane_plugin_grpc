@@ -27,7 +27,6 @@ const DEFAULT_PORT = 50051;
 function loadProto() {
   const protoPath = path.join(__dirname, '..', '..', '..', 'src', 'main', 'proto', 'freeplane.proto');
   const packageDefinition = protoLoader.loadSync(protoPath, {
-    keepCase: true,
     longs: String,
     enums: String,
     defaults: true,
@@ -195,7 +194,7 @@ class FreeplaneClient {
         options.deadline = new Date(Date.now() + timeout);
       }
 
-      method(request, options, (err, response) => {
+      method.call(this._stub, request, options, (err, response) => {
         if (err) {
           const code = err.code;
           // Map gRPC status codes to domain exceptions
