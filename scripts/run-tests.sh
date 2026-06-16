@@ -33,6 +33,9 @@ run_suite "Python Tests" bash -c 'cd grpc/python && python3 -m unittest discover
 # Ruby unit tests (integration tests auto-skipped without FREEPLANE_HOST)
 run_suite "Ruby Tests" bash -c 'cd grpc/ruby && bundle exec rake spec'
 
+# Node.js unit tests (all mocked — no server required)
+run_suite "Node.js Tests" bash -c 'cd grpc/nodejs && npm test'
+
 echo "========================================"
 echo "=== Summary ==="
 echo "========================================"
