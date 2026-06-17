@@ -596,20 +596,27 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
     @Override
     public void openMap(final OpenMapRequest req, final StreamObserver<OpenMapResponse> responseObserver) {
         LOG.info("GRPC Freeplane::openMap(mapFilePath: " + req.getFilePath() + ")");
-
-        final Controller controller = Controller.getCurrentController();
-        final ModeController modeController = controller.getModeController(MModeController.MODENAME);
-        final MapController mapController = Controller.getCurrentModeController().getMapController();
-        final MFileManager fileManager = MFileManager.getController(modeController);
         final String mapFilePath = req.getFilePath();
 
         // Use invokeLater() to avoid blocking the gRPC thread when the EDT is busy.
-        // The response is sent asynchronously after the operation completes on the EDT.
+        // All controller lookups happen inside the lambda on the EDT to ensure
+        // Freeplane is fully initialized and to avoid null-pointer issues.
         SwingUtilities.invokeLater(() -> {
             final boolean[] successHolder = {false};
             final String[] errorMessageHolder = {null};
 
             try {
+                final Controller controller = Controller.getCurrentController();
+                if (controller == null) {
+                    throw new IllegalStateException("Freeplane Controller is not initialized");
+                }
+                final ModeController modeController = controller.getModeController(MModeController.MODENAME);
+                if (modeController == null) {
+                    throw new IllegalStateException("MindMap mode controller is not available");
+                }
+                final MapController mapController = Controller.getCurrentModeController().getMapController();
+                final MFileManager fileManager = MFileManager.getController(modeController);
+
                 doOpenMap(mapFilePath, mapController, fileManager, successHolder, errorMessageHolder);
             } catch (final Exception e) {
                 LOG.warning("GRPC Freeplane::openMap failed: " + e.getMessage());
@@ -665,7 +672,7 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
                 rootNode.setText(mapFilePath);
                 fileManager.save(newMapModel);
                 successHolder[0] = true;
-            } catch (final IOException e2) {
+            } catch (final Exception e2) {
                 LOG.warning("Failed to create new map: " + e2.getMessage());
                 errorMessageHolder[0] = e2.getMessage();
                 successHolder[0] = false;

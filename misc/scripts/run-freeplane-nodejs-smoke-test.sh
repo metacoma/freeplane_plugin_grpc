@@ -108,15 +108,35 @@ else
     log_info "Freeplane ${FREEPLANE_VERSION} already available at $FREEPLANE_DIR"
 fi
 
-# Install gRPC plugin
-PLUGIN_TAR="/tmp/org.freplane.plugin.grpc.tar.gz"
-if [[ ! -f "$PLUGIN_TAR" ]]; then
-    log_info "Downloading gRPC plugin ${PLUGIN_VERSION}..."
-    curl -sL "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PLUGIN_VERSION}/org.freplane.plugin.grpc.tar.gz" -o "$PLUGIN_TAR"
+# Install gRPC plugin — build from Freeplane 1.13.x source
+log_info "Building gRPC plugin from Freeplane 1.13.x source..."
+FREEPLANE_SRC="$HOME/.freeplane-cache/freeplane-src-1.13.x"
+if [[ ! -d "$FREEPLANE_SRC/.git" ]]; then
+    git clone --depth 1 --branch 1.13.x https://github.com/freeplane/freeplane.git "$FREEPLANE_SRC"
 fi
 
-log_info "Installing plugin into Freeplane..."
-tar xzf "$PLUGIN_TAR" -C "$FREEPLANE_DIR/plugins/"
+# Add gRPC plugin as Freeplane subproject
+echo "include 'freeplane_plugin_grpc'" >> "$FREEPLANE_SRC/settings.gradle"
+cp -r "${PLUGIN_REPO}" "$FREEPLANE_SRC/freeplane_plugin_grpc"
+
+# Build plugin
+cd "$FREEPLANE_SRC"
+./gradlew :freeplane_plugin_grpc:build --no-daemon 2>&1 | tail -20
+cd -
+
+# Find the built JAR
+PLUGIN_JAR=$(find "$FREEPLANE_SRC/freeplane_plugin_grpc/build/libs/" -name "*.jar" -type f | head -1)
+if [[ -z "$PLUGIN_JAR" ]]; then
+    log_error "Plugin JAR not found after build"
+    exit 1
+fi
+log_info "Built plugin JAR: $PLUGIN_JAR"
+
+# Install into Freeplane
+PLUGIN_DIR="$FREEPLANE_DIR/plugins/org.freeplane.plugin.grpc"
+mkdir -p "$PLUGIN_DIR/lib"
+cp "$PLUGIN_JAR" "$PLUGIN_DIR/lib/"
+log_info "Plugin installed to $PLUGIN_DIR/lib/"
 
 # Verify
 if [[ ! -f "$FREEPLANE_DIR/freeplane.sh" ]]; then
