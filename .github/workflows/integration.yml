@@ -48,7 +48,7 @@ jobs:
       - name: Set Freeplane version
         run: |
           echo "FREEPLANE_VERSION=1.13.2" >> "$GITHUB_ENV"
-          echo "PLUGIN_VERSION=0.0.10" >> "$GITHUB_ENV"
+          echo "PLUGIN_VERSION=0.1.0" >> "$GITHUB_ENV"
 
       - name: Cache Freeplane binary
         id: cache-freeplane
@@ -123,7 +123,7 @@ jobs:
           Bundle-ManifestVersion: 2
           Bundle-Name: gRPC Plugin
           Bundle-SymbolicName: org.freeplane.plugin.grpc
-          Bundle-Version: 0.0.10
+          Bundle-Version: 0.1.0
           Bundle-Activator: org.freeplane.plugin.grpc.Activator
           Import-Package: org.freeplane.plugin.script.*,
            org.osgi.framework,
@@ -138,6 +138,22 @@ jobs:
           echo "--- Verifying plugin installation ---"
           test -d "$FREEPLANE_DIR/plugins/org.freeplane.plugin.grpc/lib" && echo "plugin lib/: OK" || { echo "plugin lib/: MISSING"; exit 1; }
           test -f "$FREEPLANE_DIR/plugins/org.freeplane.plugin.grpc/META-INF/MANIFEST.MF" && echo "plugin MANIFEST.MF: OK" || { echo "plugin MANIFEST.MF: MISSING"; exit 1; }
+
+      - name: Package plugin as tar.gz artifact
+        run: |
+          echo "--- Packaging plugin artifact ---"
+          tar czf org.freplane.plugin.grpc.tar.gz \
+            -C "$FREEPLANE_DIR/plugins/" org.freeplane.plugin.grpc/
+          echo "--- Verifying artifact ---"
+          tar tzf org.freplane.plugin.grpc.tar.gz
+          ls -lh org.freplane.plugin.grpc.tar.gz
+
+      - name: Upload plugin artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-asset
+          path: org.freplane.plugin.grpc.tar.gz
+          retention-days: 1
 
       - name: Start Xvfb and window manager
         run: |
