@@ -19,8 +19,8 @@
 set -euo pipefail
 
 PLUGIN_REPO="${PLUGIN_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
-FREEPLANE_VERSION="${FREEPLANE_VERSION:-1.12.18}"
-PLUGIN_VERSION="${PLUGIN_VERSION:-0.0.9}"
+FREEPLANE_VERSION="${FREEPLANE_VERSION:-1.13.2}"
+PLUGIN_VERSION="${PLUGIN_VERSION:-0.0.10}"
 FREEPLANE_DIR="${FREEPLANE_DIR:-/tmp/freeplane-${FREEPLANE_VERSION}}"
 RUNTIME_DIR="/tmp/freeplane-xvfb"
 GRPC_HOST="127.0.0.1"
@@ -240,7 +240,7 @@ sys.path.insert(0, os.path.join('${PLUGIN_REPO}', 'grpc/python'))
 from freeplane_pb2 import OpenMapRequest
 import freeplane_pb2_grpc, grpc
 stub = freeplane_pb2_grpc.FreeplaneStub(grpc.insecure_channel('${GRPC_HOST}:${GRPC_PORT}'))
-resp = stub.OpenMap(OpenMapRequest(file_path='${MINDMAP_FILE}'))
+resp = stub.OpenMap(OpenMapRequest(file_path='${MINDMAP_FILE}'), timeout=10)
 print('success' if resp.success else 'failed')
 " 2>&1)
 if [[ "$OPEN_MAP_RESULT" == *"success"* ]]; then

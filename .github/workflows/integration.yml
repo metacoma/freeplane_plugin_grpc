@@ -17,11 +17,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -47,8 +47,8 @@ jobs:
 
       - name: Set Freeplane version
         run: |
-          echo "FREEPLANE_VERSION=1.12.18" >> "$GITHUB_ENV"
-          echo "PLUGIN_VERSION=0.0.9" >> "$GITHUB_ENV"
+          echo "FREEPLANE_VERSION=1.13.2" >> "$GITHUB_ENV"
+          echo "PLUGIN_VERSION=0.0.10" >> "$GITHUB_ENV"
 
       - name: Cache Freeplane binary
         id: cache-freeplane
@@ -59,7 +59,7 @@ jobs:
           restore-keys: |
             freeplane-bin-
 
-      - name: Download and extract Freeplane
+      - name: Download and extract Freeplane binary
         run: |
           FREEPLANE_DIR="$HOME/.freeplane-cache/freeplane-${FREEPLANE_VERSION}"
           if [ ! -d "$FREEPLANE_DIR" ]; then
@@ -74,15 +74,67 @@ jobs:
           test -f "$FREEPLANE_DIR/freeplane.sh" && echo "freeplane.sh: OK" || { echo "freeplane.sh: MISSING"; exit 1; }
           test -d "$FREEPLANE_DIR/plugins" && echo "plugins/ dir: OK" || { echo "plugins/ dir: MISSING"; exit 1; }
 
-      - name: Install gRPC plugin
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/build.gradle', '**/settings.gradle') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Clone Freeplane 1.13.x source
         run: |
-          PLUGIN_TAR="/tmp/org.freplane.plugin.grpc.tar.gz"
-          if [ ! -f "$PLUGIN_TAR" ]; then
-            echo "Downloading gRPC plugin ${PLUGIN_VERSION}..."
-            curl -sL "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PLUGIN_VERSION}/org.freplane.plugin.grpc.tar.gz" -o "$PLUGIN_TAR"
+          FREEPLANE_SRC="$HOME/.freeplane-cache/freeplane-src-1.13.x"
+          if [ ! -d "$FREEPLANE_SRC/.git" ]; then
+            git clone --depth 1 --branch 1.13.x https://github.com/freeplane/freeplane.git "$FREEPLANE_SRC"
           fi
-          echo "Installing plugin into Freeplane..."
-          tar xzf "$PLUGIN_TAR" -C "$FREEPLANE_DIR/plugins/"
+          echo "FREEPLANE_SRC=$FREEPLANE_SRC" >> "$GITHUB_ENV"
+
+      - name: Add gRPC plugin as Freeplane subproject
+        run: |
+          echo "include 'freeplane_plugin_grpc'" >> "$FREEPLANE_SRC/settings.gradle"
+          cp -r . "$FREEPLANE_SRC/freeplane_plugin_grpc"
+
+      - name: Build gRPC plugin against Freeplane 1.13.x
+        run: |
+          cd "$FREEPLANE_SRC/freeplane_plugin_grpc"
+          gradle :freeplane_plugin_grpc:build --no-daemon
+          echo "Build output: build/libs/"
+          ls -la build/libs/
+
+      - name: Install built plugin into Freeplane binary
+        run: |
+          # Find the built plugin JAR from Gradle build output
+          PLUGIN_JAR=$(find "$FREEPLANE_SRC/freeplane_plugin_grpc/build/libs/" -name "*.jar" -type f | head -1)
+          echo "Installing plugin from $PLUGIN_JAR"
+
+          # Create plugin directory structure matching OSGi expectations
+          PLUGIN_DIR="$FREEPLANE_DIR/plugins/org.freeplane.plugin.grpc"
+          mkdir -p "$PLUGIN_DIR/lib"
+          mkdir -p "$PLUGIN_DIR/META-INF"
+
+          # Copy the built JAR
+          cp "$PLUGIN_JAR" "$PLUGIN_DIR/lib/"
+
+          # Create MANIFEST.MF for OSGi bundle
+          cat > "$PLUGIN_DIR/META-INF/MANIFEST.MF" <<'MANIFEST'
+          Bundle-ManifestVersion: 2
+          Bundle-Name: gRPC Plugin
+          Bundle-SymbolicName: org.freeplane.plugin.grpc
+          Bundle-Version: 0.0.10
+          Bundle-Activator: org.freeplane.plugin.grpc.Activator
+          Import-Package: org.freeplane.plugin.script.*,
+           org.osgi.framework,
+           io.grpc.*,
+           io.netty.*,
+           com.google.protobuf.*,
+           org.json,
+           org.jsoup,
+           com.google.gson
+          MANIFEST
+
           echo "--- Verifying plugin installation ---"
           test -d "$FREEPLANE_DIR/plugins/org.freeplane.plugin.grpc/lib" && echo "plugin lib/: OK" || { echo "plugin lib/: MISSING"; exit 1; }
           test -f "$FREEPLANE_DIR/plugins/org.freeplane.plugin.grpc/META-INF/MANIFEST.MF" && echo "plugin MANIFEST.MF: OK" || { echo "plugin MANIFEST.MF: MISSING"; exit 1; }

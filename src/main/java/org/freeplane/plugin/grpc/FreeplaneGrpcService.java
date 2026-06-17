@@ -603,39 +603,25 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
         final MFileManager fileManager = MFileManager.getController(modeController);
         final String mapFilePath = req.getFilePath();
 
-        // MapController.openMap(), newMap(), FileManager.save() must execute on the EDT.
-        final boolean[] successHolder = {false};
-        final String[] errorMessageHolder = {null};
+        // Use invokeLater() to avoid blocking the gRPC thread when the EDT is busy.
+        // The response is sent asynchronously after the operation completes on the EDT.
+        SwingUtilities.invokeLater(() -> {
+            final boolean[] successHolder = {false};
+            final String[] errorMessageHolder = {null};
 
-        try {
-            if (EventQueue.isDispatchThread()) {
+            try {
                 doOpenMap(mapFilePath, mapController, fileManager, successHolder, errorMessageHolder);
-            } else {
-                SwingUtilities.invokeAndWait(() -> {
-                    try {
-                        doOpenMap(mapFilePath, mapController, fileManager, successHolder, errorMessageHolder);
-                    } catch (final Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+            } catch (final Exception e) {
+                LOG.warning("GRPC Freeplane::openMap failed: " + e.getMessage());
+                errorMessageHolder[0] = e.getMessage();
             }
-        } catch (final InterruptedException e) {
-            Thread.currentThread().interrupt();
-            LOG.warning("GRPC Freeplane::openMap interrupted: " + e.getMessage());
-            final OpenMapResponse reply = OpenMapResponse.newBuilder().setSuccess(false).build();
-            responseObserver.onNext(reply);
-            responseObserver.onCompleted();
-            return;
-        } catch (final java.lang.reflect.InvocationTargetException e) {
-            LOG.warning("GRPC Freeplane::openMap failed: " + e.getCause().getMessage());
-            final OpenMapResponse reply = OpenMapResponse.newBuilder().setSuccess(false).build();
-            responseObserver.onNext(reply);
-            responseObserver.onCompleted();
-            return;
-        }
 
-        responseObserver.onNext(OpenMapResponse.newBuilder().setSuccess(successHolder[0]).build());
-        responseObserver.onCompleted();
+            final OpenMapResponse reply = OpenMapResponse.newBuilder()
+                .setSuccess(successHolder[0])
+                .build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+        });
     }
 
     /**
