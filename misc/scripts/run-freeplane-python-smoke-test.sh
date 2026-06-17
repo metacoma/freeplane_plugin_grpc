@@ -3,8 +3,8 @@
 #
 # Master orchestration script for full Freeplane runtime validation:
 #   1. Checks for and safely stops previous Freeplane instances
-#   2. Starts Xvfb + lightweight WM
-#   3. Builds Freeplane from source
+#   2. Downloads Freeplane binary and installs plugin
+#   3. Starts Xvfb + lightweight WM
 #   4. Starts Freeplane
 #   5. Waits for gRPC server readiness
 #   6. Runs the Python example
@@ -18,7 +18,9 @@
 set -euo pipefail
 
 PLUGIN_REPO="${PLUGIN_REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
-FREEPLANE_SRC="${FREEPLANE_SRC:-/workspace/freeplane}"
+FREEPLANE_VERSION="${FREEPLANE_VERSION:-1.13.2}"
+PLUGIN_VERSION="${PLUGIN_VERSION:-0.0.10}"
+FREEPLANE_DIR="${FREEPLANE_DIR:-/tmp/freeplane-${FREEPLANE_VERSION}}"
 RUNTIME_DIR="/tmp/freeplane-xvfb"
 GRPC_HOST="127.0.0.1"
 GRPC_PORT="50051"
@@ -95,80 +97,43 @@ else
     log_info "No previous Freeplane instance detected"
 fi
 
-# --- Step 0b: Integrate plugin into Freeplane build ---
+# --- Step 1: Download and setup Freeplane binary ---
 echo ""
 echo "=========================================="
-echo " Step 0b: Integrate plugin into Freeplane build"
+echo " Step 1: Download and setup Freeplane binary"
 echo "=========================================="
-PLUGIN_INTEGRATED=false
-if [[ ! -d "$FREEPLANE_SRC/freeplane_plugin_grpc" ]]; then
-    log_info "Copying plugin to Freeplane source tree..."
-    # Create the target subdirectory so plugin files land in the correct location
-    mkdir -p "$FREEPLANE_SRC/freeplane_plugin_grpc"
-    # Use tar to avoid copying .git, __pycache__, and build artifacts
-    (cd "$PLUGIN_REPO" && tar cf - --exclude='.git' --exclude='__pycache__' --exclude='*.egg-info' --exclude='*.egg' --exclude='.gradle' --exclude='build' --exclude='.pytest_cache' --exclude='.venv' --exclude='*.pyc' .) | (cd "$FREEPLANE_SRC/freeplane_plugin_grpc" && tar xf -)
-    PLUGIN_INTEGRATED=true
+
+if [[ ! -d "$FREEPLANE_DIR" ]]; then
+    log_info "Downloading Freeplane ${FREEPLANE_VERSION} binary..."
+    curl -sL "https://github.com/freeplane/freeplane/releases/download/release-${FREEPLANE_VERSION}/freeplane_bin-${FREEPLANE_VERSION}.zip" -o /tmp/freeplane.zip
+    mkdir -p "$(dirname "$FREEPLANE_DIR")"
+    unzip -q /tmp/freeplane.zip -d "$(dirname "$FREEPLANE_DIR")"
+    rm /tmp/freeplane.zip
+    log_info "Freeplane ${FREEPLANE_VERSION} extracted to $FREEPLANE_DIR"
 else
-    log_info "Plugin directory already exists in Freeplane source tree"
+    log_info "Freeplane ${FREEPLANE_VERSION} already available at $FREEPLANE_DIR"
 fi
 
-# Check if plugin is included in settings.gradle
-SETTINGS_FILE="$FREEPLANE_SRC/settings.gradle"
-if [[ -f "$SETTINGS_FILE" ]]; then
-    if ! grep -q "'freeplane_plugin_grpc'" "$SETTINGS_FILE" 2>/dev/null && \
-       ! grep -q '"freeplane_plugin_grpc"' "$SETTINGS_FILE" 2>/dev/null; then
-        log_info "Adding freeplane_plugin_grpc to settings.gradle..."
-        # Append a standalone include statement (Gradle supports multiple include() calls)
-        echo "include 'freeplane_plugin_grpc'" >> "$SETTINGS_FILE"
-        log_info "Plugin added to settings.gradle"
-    else
-        log_info "freeplane_plugin_grpc already in settings.gradle"
-    fi
-else
-    log_error "settings.gradle not found at $SETTINGS_FILE"
+# Install gRPC plugin
+PLUGIN_TAR="/tmp/org.freplane.plugin.grpc.tar.gz"
+if [[ ! -f "$PLUGIN_TAR" ]]; then
+    log_info "Downloading gRPC plugin ${PLUGIN_VERSION}..."
+    curl -sL "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PLUGIN_VERSION}/org.freplane.plugin.grpc.tar.gz" -o "$PLUGIN_TAR"
+fi
+
+log_info "Installing plugin into Freeplane..."
+tar xzf "$PLUGIN_TAR" -C "$FREEPLANE_DIR/plugins/"
+
+# Verify
+if [[ ! -f "$FREEPLANE_DIR/freeplane.sh" ]]; then
+    log_error "Freeplane launcher not found: $FREEPLANE_DIR/freeplane.sh"
     exit 1
 fi
-
-# --- Step 1: Full Freeplane build ---
-echo ""
-echo "=========================================="
-echo " Step 1: Full Freeplane build"
-echo "=========================================="
-if [[ ! -d "$FREEPLANE_SRC" ]]; then
-    log_error "Freeplane source directory not found: $FREEPLANE_SRC"
+if [[ ! -d "$FREEPLANE_DIR/plugins/org.freeplane.plugin.grpc/lib" ]]; then
+    log_error "Plugin not installed correctly"
     exit 1
 fi
-
-cd "$FREEPLANE_SRC"
-log_info "Building Freeplane from $FREEPLANE_SRC ..."
-BUILD_OK=false
-if gradle build --no-daemon; then
-    BUILD_OK=true
-    log_info "Freeplane build completed successfully"
-else
-    log_warn "gradle build exited non-zero — checking if required artifacts exist..."
-    if [[ -f "$FREEPLANE_SRC/BIN/freeplane.sh" ]] && \
-       [[ -d "$FREEPLANE_SRC/BIN/plugins/org.freeplane.plugin.grpc" ]]; then
-        log_info "Required artifacts found — continuing despite build failures."
-        log_info "(Build failures may be unrelated to the plugin, e.g. AWT tests in headless env.)"
-        BUILD_OK=true
-    else
-        log_warn "Required artifacts not found — running dist task (skipping tests)..."
-        if gradle dist -x test -x check_translation --no-daemon; then
-            if [[ -f "$FREEPLANE_SRC/BIN/freeplane.sh" ]] && \
-               [[ -d "$FREEPLANE_SRC/BIN/plugins/org.freeplane.plugin.grpc" ]]; then
-                log_info "Dist artifacts produced successfully."
-                BUILD_OK=true
-            else
-                log_error "gradle dist -x test completed but artifacts still missing."
-                exit 1
-            fi
-        else
-            log_error "gradle dist -x test also failed."
-            exit 1
-        fi
-    fi
-fi
+log_info "Freeplane binary and plugin ready"
 
 # --- Step 2: Start Xvfb + WM ---
 echo ""
@@ -191,10 +156,10 @@ echo ""
 echo "=========================================="
 echo " Step 3: Start Freeplane"
 echo "=========================================="
-FREEPLANE_LAUNCHER="${FREEPLANE_SRC}/BIN/freeplane.sh"
+FREEPLANE_LAUNCHER="${FREEPLANE_DIR}/freeplane.sh"
 if [[ ! -f "$FREEPLANE_LAUNCHER" ]]; then
     log_error "Freeplane launcher not found: $FREEPLANE_LAUNCHER"
-    log_error "Ensure Freeplane was built successfully"
+    log_error "Ensure Freeplane binary was downloaded and extracted successfully"
     exit 1
 fi
 
@@ -291,7 +256,7 @@ sys.path.insert(0, os.path.join('${PLUGIN_REPO}', 'grpc/python'))
 from freeplane_pb2 import OpenMapRequest
 import freeplane_pb2_grpc, grpc
 stub = freeplane_pb2_grpc.FreeplaneStub(grpc.insecure_channel('${GRPC_HOST}:${GRPC_PORT}'))
-resp = stub.OpenMap(OpenMapRequest(file_path='${MINDMAP_FILE}'))
+resp = stub.OpenMap(OpenMapRequest(file_path='${MINDMAP_FILE}'), timeout=10)
 print('success' if resp.success else 'failed')
 " 2>&1)
 if [[ "$OPEN_MAP_RESULT" == *"success"* ]]; then
@@ -395,21 +360,6 @@ if [[ -f "${PLUGIN_REPO}/misc/scripts/stop-xvfb-freeplane-env.sh" ]]; then
     bash "${PLUGIN_REPO}/misc/scripts/stop-xvfb-freeplane-env.sh"
 else
     log_warn "Stop script not found, skipping Xvfb cleanup"
-fi
-
-# Revert plugin integration changes in Freeplane source tree
-if [[ "$PLUGIN_INTEGRATED" == "true" ]]; then
-    log_info "Reverting plugin integration changes in Freeplane source tree..."
-    if [[ -d "$FREEPLANE_SRC/freeplane_plugin_grpc" ]]; then
-        rm -rf "$FREEPLANE_SRC/freeplane_plugin_grpc"
-        log_info "Removed copied plugin directory"
-    fi
-    SETTINGS_FILE="$FREEPLANE_SRC/settings.gradle"
-    if [[ -f "$SETTINGS_FILE" ]]; then
-        # Remove the standalone include line we added
-        sed -i "/^include 'freeplane_plugin_grpc'$/d" "$SETTINGS_FILE"
-        log_info "Reverted settings.gradle"
-    fi
 fi
 
 # --- Final result ---

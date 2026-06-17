@@ -596,46 +596,39 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
     @Override
     public void openMap(final OpenMapRequest req, final StreamObserver<OpenMapResponse> responseObserver) {
         LOG.info("GRPC Freeplane::openMap(mapFilePath: " + req.getFilePath() + ")");
-
-        final Controller controller = Controller.getCurrentController();
-        final ModeController modeController = controller.getModeController(MModeController.MODENAME);
-        final MapController mapController = Controller.getCurrentModeController().getMapController();
-        final MFileManager fileManager = MFileManager.getController(modeController);
         final String mapFilePath = req.getFilePath();
 
-        // MapController.openMap(), newMap(), FileManager.save() must execute on the EDT.
-        final boolean[] successHolder = {false};
-        final String[] errorMessageHolder = {null};
+        // Use invokeLater() to avoid blocking the gRPC thread when the EDT is busy.
+        // All controller lookups happen inside the lambda on the EDT to ensure
+        // Freeplane is fully initialized and to avoid null-pointer issues.
+        SwingUtilities.invokeLater(() -> {
+            final boolean[] successHolder = {false};
+            final String[] errorMessageHolder = {null};
 
-        try {
-            if (EventQueue.isDispatchThread()) {
+            try {
+                final Controller controller = Controller.getCurrentController();
+                if (controller == null) {
+                    throw new IllegalStateException("Freeplane Controller is not initialized");
+                }
+                final ModeController modeController = controller.getModeController(MModeController.MODENAME);
+                if (modeController == null) {
+                    throw new IllegalStateException("MindMap mode controller is not available");
+                }
+                final MapController mapController = Controller.getCurrentModeController().getMapController();
+                final MFileManager fileManager = MFileManager.getController(modeController);
+
                 doOpenMap(mapFilePath, mapController, fileManager, successHolder, errorMessageHolder);
-            } else {
-                SwingUtilities.invokeAndWait(() -> {
-                    try {
-                        doOpenMap(mapFilePath, mapController, fileManager, successHolder, errorMessageHolder);
-                    } catch (final Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+            } catch (final Exception e) {
+                LOG.warning("GRPC Freeplane::openMap failed: " + e.getMessage());
+                errorMessageHolder[0] = e.getMessage();
             }
-        } catch (final InterruptedException e) {
-            Thread.currentThread().interrupt();
-            LOG.warning("GRPC Freeplane::openMap interrupted: " + e.getMessage());
-            final OpenMapResponse reply = OpenMapResponse.newBuilder().setSuccess(false).build();
-            responseObserver.onNext(reply);
-            responseObserver.onCompleted();
-            return;
-        } catch (final java.lang.reflect.InvocationTargetException e) {
-            LOG.warning("GRPC Freeplane::openMap failed: " + e.getCause().getMessage());
-            final OpenMapResponse reply = OpenMapResponse.newBuilder().setSuccess(false).build();
-            responseObserver.onNext(reply);
-            responseObserver.onCompleted();
-            return;
-        }
 
-        responseObserver.onNext(OpenMapResponse.newBuilder().setSuccess(successHolder[0]).build());
-        responseObserver.onCompleted();
+            final OpenMapResponse reply = OpenMapResponse.newBuilder()
+                .setSuccess(successHolder[0])
+                .build();
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+        });
     }
 
     /**
@@ -679,7 +672,7 @@ class FreeplaneGrpcService extends FreeplaneGrpc.FreeplaneImplBase {
                 rootNode.setText(mapFilePath);
                 fileManager.save(newMapModel);
                 successHolder[0] = true;
-            } catch (final IOException e2) {
+            } catch (final Exception e2) {
                 LOG.warning("Failed to create new map: " + e2.getMessage());
                 errorMessageHolder[0] = e2.getMessage();
                 successHolder[0] = false;
