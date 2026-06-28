@@ -262,6 +262,7 @@ jobs:
           workspaces: grpc/rust
 
       - name: Run Rust integration tests
+        timeout-minutes: 20
         run: |
           cd grpc/rust
           FREEPLANE_HOST=127.0.0.1 FREEPLANE_PORT=50051 cargo test --test integration_test -- --ignored --test-threads=1

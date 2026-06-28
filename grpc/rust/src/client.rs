@@ -6,8 +6,13 @@
 
 use async_trait::async_trait;
 use std::future::Future;
+use std::time::Duration;
 use thiserror::Error;
 use tonic::transport::Channel;
+
+/// Default timeout for individual gRPC calls.
+/// Prevents any single RPC from blocking indefinitely.
+const GRPC_CALL_TIMEOUT: Duration = Duration::from_secs(30);
 
 use crate::error::{
     is_connection_error, status_to_connection_error, status_to_error, FreeplaneConnectionError,
@@ -285,6 +290,7 @@ where
 
     /// Call a gRPC method and convert failures to domain errors.
     ///
+    /// Wraps the call in a 30-second timeout to prevent indefinite blocking.
     /// Connection-level errors (UNAVAILABLE, DEADLINE_EXCEEDED, RESOURCE_EXHAUSTED)
     /// are mapped to `FreeplaneConnectionError`. Other errors and server-reported
     /// failures are mapped to `FreeplaneOperationError`.
@@ -293,13 +299,29 @@ where
         F: Future<Output = Result<R, tonic::Status>>,
         R: HasSuccess,
     {
-        let response = method.await.map_err(|status| {
-            if is_connection_error(&status) {
-                ClientError::Connection(status_to_connection_error(&status))
-            } else {
-                ClientError::Operation(status_to_error(&status))
+        let status_result = tokio::time::timeout(GRPC_CALL_TIMEOUT, method)
+            .await
+            .map_err(|_| {
+                tonic::Status::deadline_exceeded("gRPC call timed out after 30s")
+            });
+
+        let response = match status_result {
+            Ok(Ok(resp)) => resp,
+            Ok(Err(status)) => {
+                if is_connection_error(&status) {
+                    return Err(ClientError::Connection(status_to_connection_error(&status)));
+                } else {
+                    return Err(ClientError::Operation(status_to_error(&status)));
+                }
             }
-        })?;
+            Err(_) => {
+                // This branch is technically unreachable since we map Elapsed above,
+                // but included for completeness.
+                return Err(ClientError::Connection(status_to_connection_error(
+                    &tonic::Status::deadline_exceeded("gRPC call timed out after 30s"),
+                )));
+            }
+        };
 
         if !response.has_success() {
             let error_msg = response.error_message().unwrap_or("Operation failed");
