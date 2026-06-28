@@ -288,7 +288,7 @@ jobs:
       - name: Run Rust integration tests
         run: |
           cd grpc/rust
-          FREEPLANE_HOST=127.0.0.1 FREEPLANE_PORT=50051 cargo test --test integration -- --ignored --test-threads=1
+          FREEPLANE_HOST=127.0.0.1 FREEPLANE_PORT=50051 cargo test --test integration_test -- --ignored --test-threads=1
 
       - name: Upload Freeplane log on failure
         if: failure() || cancelled()
