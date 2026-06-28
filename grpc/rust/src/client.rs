@@ -78,112 +78,112 @@ pub trait FreeplaneStub: Send + Sync {
 #[async_trait]
 impl FreeplaneStub for TonicClient<Channel> {
     async fn create_child(&self, req: CreateChildRequest) -> Result<CreateChildResponse, tonic::Status> {
-        let client = self.clone();
-        client.create_child(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::create_child(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn delete_child(&self, req: DeleteChildRequest) -> Result<DeleteChildResponse, tonic::Status> {
-        let client = self.clone();
-        client.delete_child(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::delete_child(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn node_attribute_add(&self, req: NodeAttributeAddRequest) -> Result<NodeAttributeAddResponse, tonic::Status> {
-        let client = self.clone();
-        client.node_attribute_add(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::node_attribute_add(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn node_link_set(&self, req: NodeLinkSetRequest) -> Result<NodeLinkSetResponse, tonic::Status> {
-        let client = self.clone();
-        client.node_link_set(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::node_link_set(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn node_details_set(&self, req: NodeDetailsSetRequest) -> Result<NodeDetailsSetResponse, tonic::Status> {
-        let client = self.clone();
-        client.node_details_set(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::node_details_set(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn node_note_set(&self, req: NodeNoteSetRequest) -> Result<NodeNoteSetResponse, tonic::Status> {
-        let client = self.clone();
-        client.node_note_set(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::node_note_set(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn node_tag_set(&self, req: NodeTagSetRequest) -> Result<NodeTagSetResponse, tonic::Status> {
-        let client = self.clone();
-        client.node_tag_set(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::node_tag_set(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn node_tag_add(&self, req: NodeTagAddRequest) -> Result<NodeTagAddResponse, tonic::Status> {
-        let client = self.clone();
-        client.node_tag_add(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::node_tag_add(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn node_connect(&self, req: NodeConnectRequest) -> Result<NodeConnectResponse, tonic::Status> {
-        let client = self.clone();
-        client.node_connect(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::node_connect(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn node_add_icon(&self, req: NodeAddIconRequest) -> Result<NodeAddIconResponse, tonic::Status> {
-        let client = self.clone();
-        client.node_add_icon(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::node_add_icon(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn groovy(&self, req: GroovyRequest) -> Result<GroovyResponse, tonic::Status> {
-        let client = self.clone();
-        client.groovy(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::groovy(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn node_color_set(&self, req: NodeColorSetRequest) -> Result<NodeColorSetResponse, tonic::Status> {
-        let client = self.clone();
-        client.node_color_set(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::node_color_set(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn node_background_color_set(&self, req: NodeBackgroundColorSetRequest) -> Result<NodeBackgroundColorSetResponse, tonic::Status> {
-        let client = self.clone();
-        client.node_background_color_set(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::node_background_color_set(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn status_info_set(&self, req: StatusInfoSetRequest) -> Result<StatusInfoSetResponse, tonic::Status> {
-        let client = self.clone();
-        client.status_info_set(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::status_info_set(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn text_fsm(&self, req: TextFsmRequest) -> Result<TextFsmResponse, tonic::Status> {
-        let client = self.clone();
-        client.text_fsm(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::text_fsm(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn mind_map_from_json(&self, req: MindMapFromJsonRequest) -> Result<MindMapFromJsonResponse, tonic::Status> {
-        let client = self.clone();
-        client.mind_map_from_json(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::mind_map_from_json(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn mind_map_to_json(&self, req: MindMapToJsonRequest) -> Result<MindMapToJsonResponse, tonic::Status> {
-        let client = self.clone();
-        client.mind_map_to_json(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::mind_map_to_json(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn get_current_node(&self, req: GetCurrentNodeRequest) -> Result<GetCurrentNodeResponse, tonic::Status> {
-        let client = self.clone();
-        client.get_current_node(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::get_current_node(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn open_map(&self, req: OpenMapRequest) -> Result<OpenMapResponse, tonic::Status> {
-        let client = self.clone();
-        client.open_map(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::open_map(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn focus_node(&self, req: FocusNodeRequest) -> Result<FocusNodeResponse, tonic::Status> {
-        let client = self.clone();
-        client.focus_node(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::focus_node(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn get_node_text(&self, req: GetNodeTextRequest) -> Result<GetNodeTextResponse, tonic::Status> {
-        let client = self.clone();
-        client.get_node_text(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::get_node_text(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn get_parent_node(&self, req: GetParentNodeRequest) -> Result<GetParentNodeResponse, tonic::Status> {
-        let client = self.clone();
-        client.get_parent_node(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::get_parent_node(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn list_child_nodes(&self, req: ListChildNodesRequest) -> Result<ListChildNodesResponse, tonic::Status> {
-        let client = self.clone();
-        client.list_child_nodes(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::list_child_nodes(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn get_node_note(&self, req: GetNodeNoteRequest) -> Result<GetNodeNoteResponse, tonic::Status> {
-        let client = self.clone();
-        client.get_node_note(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::get_node_note(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn get_node_link(&self, req: GetNodeLinkRequest) -> Result<GetNodeLinkResponse, tonic::Status> {
-        let client = self.clone();
-        client.get_node_link(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::get_node_link(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn set_node_text(&self, req: SetNodeTextRequest) -> Result<SetNodeTextResponse, tonic::Status> {
-        let client = self.clone();
-        client.set_node_text(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::set_node_text(&mut client, req).await.map(|r| r.into_inner())
     }
     async fn move_node(&self, req: MoveNodeRequest) -> Result<MoveNodeResponse, tonic::Status> {
-        let client = self.clone();
-        client.move_node(req).await
+        let mut client = self.clone();
+        <TonicClient<Channel>>::move_node(&mut client, req).await.map(|r| r.into_inner())
     }
 }
 

@@ -151,7 +151,7 @@ async fn test_node_add_child() {
     mock_stub
         .expect_groovy()
         .times(1)
-        .returning(|req| {
+        .returning(|_req| {
             Ok(GroovyResponse {
                 success: true,
                 result: "ID_child123".to_string(),

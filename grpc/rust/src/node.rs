@@ -552,6 +552,6 @@ where
 
     /// Create a child node under an existing node.
     pub async fn create_child(&self, parent: &Node<S>, text: &str, style: &str) -> Result<Node<S>, ClientError> {
-        self.create_node(text, &parent.node_id(), style).await
+        self.create_node(text, parent.node_id(), style).await
     }
 }
