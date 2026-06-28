@@ -285,6 +285,11 @@ jobs:
           python3 grpc/python/examples/modify_mindmap_example.py
           python3 grpc/python/examples/test_json_roundtrip.py
 
+      - name: Run Rust integration tests
+        run: |
+          cd grpc/rust
+          FREEPLANE_HOST=127.0.0.1 FREEPLANE_PORT=50051 cargo test --test integration_test -- --ignored --test-threads=1
+
       - name: Upload Freeplane log on failure
         if: failure() || cancelled()
         uses: actions/upload-artifact@v4
