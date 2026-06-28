@@ -4,9 +4,9 @@
 
 3. [Examples](#examples)
 
-    3.1 [Ruby](#example_python)
+    3.1 [Ruby](#example_ruby)
 
-    3.2 [Python](#example_ruby)
+    3.2 [Python](#example_python)
 
     3.3 [Shell (grpcurl)](#example_shell)
 
@@ -18,7 +18,7 @@
 
     5.2 [Build plugin](#build_plugin)
 
-    5.2 [Add new gRPC function](#add_new_grpc_function)
+    5.3 [Add new gRPC function](#add_new_grpc_function)
 
 6. [Limitations of the current implementation](#limitation)
 
@@ -31,7 +31,7 @@
   The Freeplane plugin for gRPC allows you to start a gRPC server within a running instance of Freeplane. By default, the gRPC server listens on port 50051 and waits for gRPC calls from clients. You can change this behavior by specifying the `GRPC_LISTEN_ADDR` and `GRPC_LISTEN_PORT` environment variables.
 
 
-  [Protobuf file](https://github.com/metacoma/freeplane_plugin_grpc/blob/ca8f667a0f373506c579762c92ffd954ca1827c7/src/main/proto/freeplane.proto)
+  [Protobuf file](https://github.com/metacoma/freeplane_plugin_grpc/blob/main/src/main/proto/freeplane.proto)
 
   The Protocol Buffer file describes the protocol for interaction between gRPC clients and servers.
 
@@ -39,7 +39,11 @@
 
   The pre-built libraries for Python and Ruby, based on the Protocol Buffer file, make it easy to get started with these programming languages.
 
-  Examples for [python](https://github.com/metacoma/freeplane_plugin_grpc/blob/main/grpc/python/freeplane_ec2.py), [ruby](https://github.com/metacoma/freeplane_plugin_grpc/blob/ca8f667a0f373506c579762c92ffd954ca1827c7/grpc/ruby/pomodoro.rb) and [shell](https://github.com/metacoma/freeplane_plugin_grpc/blob/ca8f667a0f373506c579762c92ffd954ca1827c7/grpc/shell/grpcurl_test.sh)
+  Examples for [Node.js](https://github.com/metacoma/freeplane_plugin_grpc/tree/main/grpc/nodejs) and [Rust](https://github.com/metacoma/freeplane_plugin_grpc/tree/main/grpc/rust)
+
+  Object-oriented client libraries (Client, MindMap, Node) are available for Python, Ruby, Node.js, and Rust.
+
+  Examples for [python](https://github.com/metacoma/freeplane_plugin_grpc/blob/main/grpc/python/freeplane_ec2.py), [ruby](https://github.com/metacoma/freeplane_plugin_grpc/blob/main/grpc/ruby/pomodoro.rb) and [shell](https://github.com/metacoma/freeplane_plugin_grpc/blob/main/grpc/shell/grpcurl_test.sh)
 
   The repository also includes simple examples of gRPC clients written in Shell, Python, and Ruby.
 
@@ -75,7 +79,7 @@ With freeplane_grpc_plugin you can use your preferred programming language to en
 
   *  [Ruby](https://grpc.io/docs/languages/ruby/)
 
-**<a id="exampels">3. Examples</a>**
+**<a id="examples">3. Examples</a>**
 
   You can find ruby,python and shell examples in [grpc](https://github.com/metacoma/freeplane_plugin_grpc/tree/main/grpc) directory.
 
@@ -188,17 +192,42 @@ $ bash ./grpcurl_test.sh
 
   ![image](https://github.com/metacoma/freeplane_plugin_grpc/blob/main/misc/grpc_plugin.png?raw=true)
 
-  At this moment, Freeplane plugin gRPC provides following API (this is part of protobuf definition, the full protobuf file you can find  [here](https://github.com/metacoma/freeplane_plugin_grpc/blob/ca8f667a0f373506c579762c92ffd954ca1827c7/src/main/proto/freeplane.proto)
+  At this moment, Freeplane plugin gRPC provides the following 27 RPC methods (full protobuf definition [here](https://github.com/metacoma/freeplane_plugin_grpc/blob/main/src/main/proto/freeplane.proto)):
+
 ```
 service Freeplane {
+  // Core operations
   rpc CreateChild (CreateChildRequest) returns (CreateChildResponse) {};
   rpc DeleteChild (DeleteChildRequest) returns (DeleteChildResponse) {};
   rpc NodeAttributeAdd (NodeAttributeAddRequest) returns (NodeAttributeAddResponse) {};
   rpc NodeLinkSet (NodeLinkSetRequest) returns (NodeLinkSetResponse) {};
   rpc NodeDetailsSet (NodeDetailsSetRequest) returns (NodeDetailsSetResponse) {};
-  rpc Groovy (GroovyRequest) returns (GroovyResponse) {}; // not ready
+  rpc NodeNoteSet (NodeNoteSetRequest) returns (NodeNoteSetResponse) {};
+  rpc NodeTagSet (NodeTagSetRequest) returns (NodeTagSetResponse) {};
+  rpc NodeTagAdd (NodeTagAddRequest) returns (NodeTagAddResponse) {};
+  rpc NodeConnect (NodeConnectRequest) returns (NodeConnectResponse) {};
+  rpc NodeAddIcon (NodeAddIconRequest) returns (NodeAddIconResponse) {};
+  rpc Groovy (GroovyRequest) returns (GroovyResponse) {};
   rpc NodeColorSet (NodeColorSetRequest) returns (NodeColorSetResponse) {};
   rpc NodeBackgroundColorSet (NodeBackgroundColorSetRequest) returns (NodeBackgroundColorSetResponse) {};
+  rpc StatusInfoSet (StatusInfoSetRequest) returns (StatusInfoSetResponse) {};
+  rpc TextFSM (TextFSMRequest) returns (TextFSMResponse) {};
+  rpc MindMapFromJSON (MindMapFromJSONRequest) returns (MindMapFromJSONResponse) {};
+  rpc MindMapToJSON (MindMapToJSONRequest) returns (MindMapToJSONResponse) {};
+  rpc GetCurrentNode (GetCurrentNodeRequest) returns (GetCurrentNodeResponse) {};
+  rpc OpenMap (OpenMapRequest) returns (OpenMapResponse) {};
+  rpc FocusNode (FocusNodeRequest) returns (FocusNodeResponse) {};
+
+  // Group A: Node Inspection
+  rpc GetNodeText (GetNodeTextRequest) returns (GetNodeTextResponse) {};
+  rpc GetParentNode (GetParentNodeRequest) returns (GetParentNodeResponse) {};
+  rpc ListChildNodes (ListChildNodesRequest) returns (ListChildNodesResponse) {};
+  rpc GetNodeNote (GetNodeNoteRequest) returns (GetNodeNoteResponse) {};
+  rpc GetNodeLink (GetNodeLinkRequest) returns (GetNodeLinkResponse) {};
+
+  // Group B: Node Manipulation
+  rpc SetNodeText (SetNodeTextRequest) returns (SetNodeTextResponse) {};
+  rpc MoveNode (MoveNodeRequest) returns (MoveNodeResponse) {};
 }
 ```
 
@@ -213,7 +242,7 @@ service Freeplane {
 
 **<a id="quick_start">5. Quick start</a>**
 
-**<a id="install_plugin>">5.1 Install plugin</a>**
+**<a id="install_plugin">5.1 Install plugin</a>**
 
   Install pre-built plugin from [Release](https://github.com/metacoma/freeplane_plugin_grpc/releases) GitHub page.
 
@@ -257,7 +286,7 @@ Freeplane grpc plugin loaded and listen 50051 port
 
  1. Define a new gRPC service in the protobuf file.
 
- Open [main/src/main/proto/freeplane.proto](https://github.com/metacoma/freeplane_plugin_grpc/blob/main/src/main/proto/freeplane.proto) file in your favorite text editor and add the new StatusInfoSet function definition in the service section.
+ Open [src/main/proto/freeplane.proto](https://github.com/metacoma/freeplane_plugin_grpc/blob/main/src/main/proto/freeplane.proto) file in your favorite text editor and add the new StatusInfoSet function definition in the service section.
 
 ```
 service Freeplane {
@@ -280,7 +309,7 @@ message StatusInfoSetResponse {
 //Add this import in the import section in the head of the
 import org.freeplane.features.ui.ViewController;
 //.......
-// Add statusInfoSet public java method inside class FreeplaneImpl definition
+// Add statusInfoSet public java method inside class FreeplaneGrpcService definition
                 @Override
                 public void statusInfoSet(StatusInfoSetRequest req, StreamObserver<StatusInfoSetResponse> responseObserver) {
                         boolean success = false;
@@ -353,10 +382,8 @@ stub.status_info_set(Freeplane::StatusInfoSetRequest.new(statusInfo: "hello from
 
   * This plugin is under active development, and the gRPC API may change.
 
-  * gRPC TCP server port 50051 is hardcoded https://github.com/metacoma/freeplane_plugin_grpc/blob/ca8f667a0f373506c579762c92ffd954ca1827c7/src/main/java/org/freeplane/plugin/grpc/GrpcRegistration.java#L59-L65
+  * The gRPC server listens on port 50051 by default, but this can be configured via the `GRPC_LISTEN_PORT` environment variable (and `GRPC_LISTEN_ADDR` for the bind address). See [GrpcRegistration.java](https://github.com/metacoma/freeplane_plugin_grpc/blob/main/src/main/java/org/freeplane/plugin/grpc/GrpcRegistration.java).
 
   * Sometimes Freeplane throws a [Java exception](https://github.com/metacoma/freeplane_plugin_grpc/issues/1), possibly due to race conditions or other factors.
-
-  * gRPC groovy function have a stub and not implemented yet https://github.com/metacoma/freeplane_plugin_grpc/blob/ca8f667a0f373506c579762c92ffd954ca1827c7/src/main/java/org/freeplane/plugin/grpc/GrpcRegistration.java#L183-L196
 
   * This plugin I have tested only on the Linux. However, I don't anticipate any issues with it working on other operating systems.
