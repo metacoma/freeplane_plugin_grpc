@@ -4,6 +4,7 @@ option java_multiple_files = true;
 option java_package = "org.freeplane.plugin.grpc";
 option java_outer_classname = "freeplane";
 option objc_class_prefix = "FP";
+option go_package = "github.com/metacoma/freeplane_plugin_grpc/grpc/golang/pb";
 
 package freeplane;
 

@@ -39,6 +39,12 @@ run_suite "Node.js Tests" bash -c 'cd grpc/nodejs && npm test'
 # Rust unit tests (all mocked — no server required)
 run_suite "Rust Tests" bash -c 'cd grpc/rust && cargo test'
 
+# PHP unit tests (all mocked — no server required)
+run_suite "PHP Tests" bash -c 'cd grpc/php && ./vendor/bin/phpunit tests/'
+
+# Go unit tests (all mocked — no server required)
+run_suite "Go Tests" bash -c 'cd grpc/golang && bash generate.sh && go test ./...'
+
 echo "========================================"
 echo "=== Summary ==="
 echo "========================================"

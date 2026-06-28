@@ -8,7 +8,9 @@
 
     3.2 [Python](#example_python)
 
-    3.3 [Shell (grpcurl)](#example_shell)
+    3.3 [Go](#example_go)
+
+    3.4 [Shell (grpcurl)](#example_shell)
 
 4. [How it works?](#how_it_works)
 
@@ -41,7 +43,7 @@
 
   Examples for [Node.js](https://github.com/metacoma/freeplane_plugin_grpc/tree/main/grpc/nodejs) and [Rust](https://github.com/metacoma/freeplane_plugin_grpc/tree/main/grpc/rust)
 
-  Object-oriented client libraries (Client, MindMap, Node) are available for Python, Ruby, Node.js, and Rust.
+  Object-oriented client libraries (Client, MindMap, Node) are available for Python, Ruby, Node.js, Rust, PHP, and Go.
 
   Examples for [python](https://github.com/metacoma/freeplane_plugin_grpc/blob/main/grpc/python/freeplane_ec2.py), [ruby](https://github.com/metacoma/freeplane_plugin_grpc/blob/main/grpc/ruby/pomodoro.rb) and [shell](https://github.com/metacoma/freeplane_plugin_grpc/blob/main/grpc/shell/grpcurl_test.sh)
 
@@ -159,9 +161,50 @@ $ cat ec2_list_instances.json | python3 ./freeplane_ec2.py
 
 ![python_example](https://user-images.githubusercontent.com/5146707/215350404-bef09103-90c8-4b91-9fb4-da76fb4fe24f.gif)
 
+**<a id="example_go">3.3 Go example</a>**
 
+```bash
+# install Go 1.25+
+$ cd grpc/golang
+# generate proto stubs
+$ bash generate.sh
+# run tests
+$ go test ./...
+```
 
-**<a id="example_shell">3.3 Shell example</a>**
+Usage:
+
+```go
+import "github.com/metacoma/freeplane_plugin_grpc/grpc/golang"
+
+client := freeplane.NewFreeplaneClient("127.0.0.1", 50051)
+defer client.Close()
+
+if err := client.Connect(ctx); err != nil {
+    log.Fatal(err)
+}
+
+mindmap, err := client.CurrentMap(ctx)
+if err != nil {
+    log.Fatal(err)
+}
+
+root, err := mindmap.Root(ctx)
+if err != nil {
+    log.Fatal(err)
+}
+
+text, err := root.GetText(ctx)
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Println("Root:", text)
+```
+
+See [grpc/golang/README.md](grpc/golang/README.md) for the full API reference.
+
+**<a id="example_shell">3.4 Shell example</a>**
 
    This example demonstrates how you can interact with a running Freeplane instance from a terminal bash session using the [grpcurl]( https://github.com/fullstorydev/grpcurl) CLI tool
    The shell example will retrieve the current temperature using the sensors utility, parse the output, and update the mind map every 0.1 seconds in infinite loop.
