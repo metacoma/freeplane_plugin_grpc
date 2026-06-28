@@ -41,5 +41,16 @@ jobs:
         working-directory: grpc/nodejs
         run: npm ci
 
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install protoc
+        run: sudo apt-get update -qq && sudo apt-get install -y protobuf-compiler
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: grpc/rust
+
       - name: Run tests
         run: bash scripts/run-tests.sh

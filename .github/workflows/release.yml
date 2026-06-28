@@ -1,0 +1,124 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set Freeplane version
+        run: |
+          echo "FREEPLANE_VERSION=1.13.2" >> "$GITHUB_ENV"
+          echo "PLUGIN_VERSION=${{ github.ref_name }}" >> "$GITHUB_ENV"
+
+      - name: Cache Freeplane binary
+        id: cache-freeplane
+        uses: actions/cache@v5
+        with:
+          path: ~/.freeplane-cache
+          key: freeplane-bin-${{ env.FREEPLANE_VERSION }}
+          restore-keys: |
+            freeplane-bin-
+
+      - name: Download and extract Freeplane binary
+        run: |
+          FREEPLANE_DIR="$HOME/.freeplane-cache/freeplane-${FREEPLANE_VERSION}"
+          if [ ! -d "$FREEPLANE_DIR" ]; then
+            echo "Downloading Freeplane ${FREEPLANE_VERSION} binary..."
+            curl -sL "https://github.com/freeplane/freeplane/releases/download/release-${FREEPLANE_VERSION}/freeplane_bin-${FREEPLANE_VERSION}.zip" -o /tmp/freeplane.zip
+            mkdir -p "$HOME/.freeplane-cache"
+            unzip -q /tmp/freeplane.zip -d "$HOME/.freeplane-cache"
+            rm /tmp/freeplane.zip
+          fi
+          echo "FREEPLANE_DIR=$FREEPLANE_DIR" >> "$GITHUB_ENV"
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/build.gradle', '**/settings.gradle') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Clone Freeplane 1.13.x source
+        run: |
+          FREEPLANE_SRC="$HOME/.freeplane-cache/freeplane-src-1.13.x"
+          if [ ! -d "$FREEPLANE_SRC/.git" ]; then
+            git clone --depth 1 --branch 1.13.x https://github.com/freeplane/freeplane.git "$FREEPLANE_SRC"
+          fi
+          echo "FREEPLANE_SRC=$FREEPLANE_SRC" >> "$GITHUB_ENV"
+
+      - name: Add gRPC plugin as Freeplane subproject
+        run: |
+          echo "include 'freeplane_plugin_grpc'" >> "$FREEPLANE_SRC/settings.gradle"
+          cp -r . "$FREEPLANE_SRC/freeplane_plugin_grpc"
+
+      - name: Build gRPC plugin against Freeplane 1.13.x
+        run: |
+          cd "$FREEPLANE_SRC/freeplane_plugin_grpc"
+          gradle :freeplane_plugin_grpc:build --no-daemon
+
+      - name: Install built plugin into Freeplane binary
+        run: |
+          OSGI_PLUGIN_DIR="$FREEPLANE_SRC/BIN/plugins/org.freeplane.plugin.grpc"
+          PLUGIN_DIR="$FREEPLANE_DIR/plugins/org.freeplane.plugin.grpc"
+
+          rm -rf "$PLUGIN_DIR"
+          cp -r "$OSGI_PLUGIN_DIR" "$PLUGIN_DIR"
+
+      - name: Package plugin as tar.gz
+        run: |
+          tar czf org.freplane.plugin.grpc.tar.gz \
+            -C "$FREEPLANE_DIR/plugins/" org.freeplane.plugin.grpc/
+          echo "--- Verifying tar.gz artifact ---"
+          tar tzf org.freplane.plugin.grpc.tar.gz | head -20
+          ls -lh org.freplane.plugin.grpc.tar.gz
+
+      - name: Package plugin as zip
+        run: |
+          zip -r org.freplane.plugin.grpc.zip \
+            -C "$FREEPLANE_DIR/plugins/" org.freeplane.plugin.grpc/
+          echo "--- Verifying zip artifact ---"
+          unzip -l org.freplane.plugin.grpc.zip | head -20
+          ls -lh org.freplane.plugin.grpc.zip
+
+      - name: Find previous tag
+        id: prev_tag
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          echo "previous_tag=$PREV_TAG" >> "$GITHUB_OUTPUT"
+          echo "Found previous tag: $PREV_TAG"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          previous_tag: ${{ steps.prev_tag.outputs.previous_tag }}
+          files: |
+            org.freplane.plugin.grpc.tar.gz
+            org.freplane.plugin.grpc.zip
+          draft: false
+          prerelease: false

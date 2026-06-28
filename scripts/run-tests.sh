@@ -36,6 +36,9 @@ run_suite "Ruby Tests" bash -c 'cd grpc/ruby && bundle exec rake spec'
 # Node.js unit tests (all mocked — no server required)
 run_suite "Node.js Tests" bash -c 'cd grpc/nodejs && npm test'
 
+# Rust unit tests (all mocked — no server required)
+run_suite "Rust Tests" bash -c 'cd grpc/rust && cargo test'
+
 echo "========================================"
 echo "=== Summary ==="
 echo "========================================"
