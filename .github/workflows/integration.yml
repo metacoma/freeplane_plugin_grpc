@@ -250,6 +250,23 @@ jobs:
           cd grpc/nodejs
           FREEPLANE_HOST=127.0.0.1 FREEPLANE_PORT=50051 npx jest --testPathPattern=test/integration --verbose --runInBand
 
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install protobuf-compiler
+        run: sudo apt-get update -qq && sudo apt-get install -y protobuf-compiler
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: grpc/rust
+
+      - name: Run Rust integration tests
+        timeout-minutes: 20
+        run: |
+          cd grpc/rust
+          FREEPLANE_HOST=127.0.0.1 FREEPLANE_PORT=50051 cargo test --test integration_test -- --ignored --test-threads=1
+
       - name: Re-open blank map for Python tests
         run: |
           python3 -c "
