@@ -1,7 +1,6 @@
 - [Installation](#installation)
   - [From GitHub Releases](#installation_from_github_releases)
   - [Building from Source](#building_from_source)
-  - [Verification (Smoke Tests)](#verification)
 - [Introduction](#introduction)
 - [gRPC](#grpc)
 - [Examples](#examples)
@@ -28,7 +27,13 @@
 
   Download the plugin from the [latest release](https://github.com/metacoma/freeplane_plugin_grpc/releases/tag/0.1.0).
 
-  > **Note:** The release artifact filename was previously misspelled as `org.freplane.plugin.grpc` (missing "p" in "freeplane"). This has been corrected to `org.freeplane.plugin.grpc` starting with the next release. URLs below use the corrected filename.
+  After downloading, place the plugin zip file (`org.freeplane.plugin.grpc.zip`) into the Freeplane plugins directory for your operating system:
+
+  | OS | Plugins directory |
+  |----|-------------------|
+  | Linux | `~/.config/freeplane/plugins/` |
+  | macOS | `~/.config/freeplane/plugins/` |
+  | Windows | `%APPDATA%\Freeplane\plugins\` |
 
 ---
 
@@ -67,47 +72,6 @@ cd ..
 ```
 
 ---
-
-**<a id="verification">0.3 Verification (Smoke Tests)</a>**
-
-  After installation (from release or from source), verify the plugin works:
-
-  1. **Start Freeplane** with the plugin installed.
-  2. **Check gRPC port**:
-
-```bash
-nc -z 127.0.0.1 50051 && echo "gRPC server is listening"
-```
-
-  3. **Run Python smoke test**:
-
-```bash
-python3 grpc/python/examples/modify_mindmap_example.py
-```
-
-  4. **Run Node.js smoke test**:
-
-```bash
-cd grpc/nodejs && npm ci && npx jest --testPathPattern=test/integration
-```
-
-  5. **Run Ruby smoke test**:
-
-```bash
-cd grpc/ruby && bundle exec rspec spec/integration/
-```
-
-  6. **Run unit tests** (no Freeplane required):
-
-```bash
-bash scripts/run-tests.sh
-```
-
-  For a fully automated end-to-end smoke test:
-
-```bash
-bash misc/scripts/run-freeplane-python-smoke-test.sh
-```
 
 **<a id="introduction">1. Introduction</a>**
 
