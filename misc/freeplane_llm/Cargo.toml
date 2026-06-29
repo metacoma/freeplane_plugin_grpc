@@ -1,0 +1,26 @@
+[package]
+name = "freeplane-llm"
+version = "0.1.0"
+edition = "2021"
+description = "CLI tool that converts text to Freeplane mind maps using LLMs"
+license = "MIT"
+
+[[bin]]
+name = "freeplane_llm"
+path = "src/main.rs"
+
+[dependencies]
+freeplane-grpc = { path = "../../grpc/rust" }
+async-openai = { version = "0.34", features = ["byot", "chat-completion"] }
+clap = { version = "4", features = ["derive", "env"] }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+schemars = "0.8"
+thiserror = "2"
+
+[dev-dependencies]
+axum = { version = "0.7", features = ["http2"] }
+tokio = { version = "1", features = ["full"] }
+futures = "0.3"
+tonic = "0.12"

@@ -23,3 +23,6 @@ node_modules/
 # OS
 .DS_Store
 Thumbs.db
+
+# Rust build artifacts
+misc/freeplane_llm/target/
