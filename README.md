@@ -90,9 +90,9 @@ cd ..
 
   The pre-built libraries for Python and Ruby, based on the Protocol Buffer file, make it easy to get started with these programming languages.
 
-  Examples for [Node.js](https://github.com/metacoma/freeplane_plugin_grpc/tree/main/grpc/nodejs) and [Rust](https://github.com/metacoma/freeplane_plugin_grpc/tree/main/grpc/rust)
+  Examples for [Node.js](https://github.com/metacoma/freeplane_plugin_grpc/tree/main/grpc/nodejs), [Rust](https://github.com/metacoma/freeplane_plugin_grpc/tree/main/grpc/rust), and [C++](https://github.com/metacoma/freeplane_plugin_grpc/tree/main/grpc/cpp)
 
-  Object-oriented client libraries (Client, MindMap, Node) are available for Python, Ruby, Node.js, and Rust.
+  Object-oriented client libraries (Client, MindMap, Node) are available for Python, Ruby, Node.js, Rust, and C++.
 
   Examples for [python](https://github.com/metacoma/freeplane_plugin_grpc/blob/main/grpc/python/freeplane_ec2.py), [ruby](https://github.com/metacoma/freeplane_plugin_grpc/blob/main/grpc/ruby/pomodoro.rb) and [shell](https://github.com/metacoma/freeplane_plugin_grpc/blob/main/grpc/shell/grpcurl_test.sh)
 
