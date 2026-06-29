@@ -1,48 +1,26 @@
 0. [Installation](#installation)
-
     0.1 [From GitHub Releases](#installation_from_github_releases)
-
         0.1.1 [Linux (binary zip)](#linux_binary_zip)
-
         0.1.2 [macOS (binary zip)](#macos_binary_zip)
-
         0.1.3 [macOS (DMG .app)](#macos_dmg)
-
         0.1.4 [Windows (binary zip, PowerShell)](#windows_binary_zip)
-
         0.1.5 [Windows (installer)](#windows_installer)
-
         0.1.6 [Linux (deb package)](#linux_deb)
-
     0.2 [Building from Source](#building_from_source)
-
     0.3 [Verification (Smoke Tests)](#verification)
-
 1. [Introduction](#introduction)
-
 2. [gRPC](#grpc)
-
 3. [Examples](#examples)
-
     3.1 [Ruby](#example_ruby)
-
     3.2 [Python](#example_python)
-
     3.3 [Shell (grpcurl)](#example_shell)
-
     3.4 [Go](#example_go)
-
 4. [How it works?](#how_it_works)
-
 5. [Quick start](#quick_start)
-
     5.1 [Install plugin](#install_plugin)
-
     5.2 [Build plugin](#build_plugin)
-
     5.3 [Add new gRPC function](#add_new_grpc_function)
-
-6. [Limitations of the current implementation](#limitation)
+6. [Limitations of the current implementation](#limitations)
 
 **<a id="installation">0. Installation</a>**
 
