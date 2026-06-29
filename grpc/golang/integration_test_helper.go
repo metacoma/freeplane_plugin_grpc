@@ -50,6 +50,8 @@ func createTestNode(t *testing.T, client *FreeplaneClient, prefix string) *Node 
 		t.Logf("no map available: %v", err)
 		return nil
 	}
+	// Propagate context into MindMap (CurrentMap does not set ctx field)
+	mm = mm.WithContext(ctx)
 
 	root, err := mm.Root()
 	if err != nil {
