@@ -17,6 +17,8 @@ func TestMindMapRoot(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CurrentMap() error: %v", err)
 	}
+	// Propagate context into MindMap (CurrentMap does not set ctx field)
+	mm = mm.WithContext(ctx)
 
 	root, err := mm.Root()
 	if err != nil {
@@ -40,6 +42,8 @@ func TestMindMapSelectedNode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CurrentMap() error: %v", err)
 	}
+	// Propagate context into MindMap (CurrentMap does not set ctx field)
+	mm = mm.WithContext(ctx)
 
 	selected, err := mm.SelectedNode()
 	if err != nil {
@@ -63,6 +67,8 @@ func TestMindMapFindNodes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CurrentMap() error: %v", err)
 	}
+	// Propagate context into MindMap (CurrentMap does not set ctx field)
+	mm = mm.WithContext(ctx)
 
 	// FindNodes may return nil or empty list depending on implementation
 	// Just verify it doesn't panic
@@ -100,6 +106,8 @@ func TestMindMapCreateNode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CurrentMap() error: %v", err)
 	}
+	// Propagate context into MindMap (CurrentMap does not set ctx field)
+	mm = mm.WithContext(ctx)
 
 	root, err := mm.Root()
 	if err != nil {
@@ -134,6 +142,8 @@ func TestMindMapCreateChild(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CurrentMap() error: %v", err)
 	}
+	// Propagate context into MindMap (CurrentMap does not set ctx field)
+	mm = mm.WithContext(ctx)
 
 	root, err := mm.Root()
 	if err != nil {
@@ -177,8 +187,6 @@ func TestMindMapConnectionError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error when connecting to wrong port")
 	}
-	if !strings.Contains(err.Error(), "connection") && !strings.Contains(err.Error(), "Connection") {
-		t.Logf("error type check: got %T: %v", err, err)
-		// Not a hard failure since connection errors may vary
-	}
+	// gRPC connection errors may vary by platform; just verify we got an error
+	_ = strings.Contains(err.Error(), "connection")
 }

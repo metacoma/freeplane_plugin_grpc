@@ -20,6 +20,9 @@ func TestClientConnectivity(t *testing.T) {
 	if mm == nil {
 		t.Fatal("CurrentMap() returned nil")
 	}
+	// Propagate context into MindMap (CurrentMap does not set ctx field)
+	mm = mm.WithContext(ctx)
+	_ = mm
 }
 
 func TestClientCreateChild(t *testing.T) {
@@ -233,8 +236,6 @@ func TestClientConnectionError(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error when connecting to wrong port")
 	}
-	if !strings.Contains(err.Error(), "connection") && !strings.Contains(err.Error(), "Connection") {
-		t.Logf("error type check: got %T: %v", err, err)
-		// Not a hard failure since connection errors may vary
-	}
+	// gRPC connection errors may vary by platform; just verify we got an error
+	_ = strings.Contains(err.Error(), "connection")
 }
