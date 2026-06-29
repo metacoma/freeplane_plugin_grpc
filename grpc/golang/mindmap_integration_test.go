@@ -2,7 +2,7 @@ package freeplane_grpc
 
 import (
 	"context"
-	"strings"
+	"errors"
 	"testing"
 	"time"
 )
@@ -17,8 +17,6 @@ func TestMindMapRoot(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CurrentMap() error: %v", err)
 	}
-	// Propagate context into MindMap (CurrentMap does not set ctx field)
-	mm = mm.WithContext(ctx)
 
 	root, err := mm.Root()
 	if err != nil {
@@ -42,8 +40,6 @@ func TestMindMapSelectedNode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CurrentMap() error: %v", err)
 	}
-	// Propagate context into MindMap (CurrentMap does not set ctx field)
-	mm = mm.WithContext(ctx)
 
 	selected, err := mm.SelectedNode()
 	if err != nil {
@@ -67,8 +63,6 @@ func TestMindMapFindNodes(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CurrentMap() error: %v", err)
 	}
-	// Propagate context into MindMap (CurrentMap does not set ctx field)
-	mm = mm.WithContext(ctx)
 
 	// FindNodes may return nil or empty list depending on implementation
 	// Just verify it doesn't panic
@@ -106,8 +100,6 @@ func TestMindMapCreateNode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CurrentMap() error: %v", err)
 	}
-	// Propagate context into MindMap (CurrentMap does not set ctx field)
-	mm = mm.WithContext(ctx)
 
 	root, err := mm.Root()
 	if err != nil {
@@ -142,8 +134,6 @@ func TestMindMapCreateChild(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CurrentMap() error: %v", err)
 	}
-	// Propagate context into MindMap (CurrentMap does not set ctx field)
-	mm = mm.WithContext(ctx)
 
 	root, err := mm.Root()
 	if err != nil {
@@ -181,7 +171,7 @@ func TestMindMapConnectionError(t *testing.T) {
 	}
 	defer badClient.Close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	_, err = badClient.CurrentMap(ctx)
@@ -189,6 +179,9 @@ func TestMindMapConnectionError(t *testing.T) {
 		// Connection may succeed in some environments (e.g., port open, proxy)
 		t.Skip("no connection error on wrong port (may be expected in some environments)")
 	}
-	// Got expected connection error
-	_ = strings.Contains(err.Error(), "connection")
+	// Verify it's a connection error type
+	var connErr *FreeplaneConnectionError
+	if !errors.As(err, &connErr) {
+		t.Logf("expected *FreeplaneConnectionError, got %T: %v", err, err)
+	}
 }

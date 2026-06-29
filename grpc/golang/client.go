@@ -600,6 +600,7 @@ func (c *FreeplaneClient) MoveNode(ctx context.Context, nodeID, newParentNodeID 
 // ==================== High-Level Operations ====================
 
 // CurrentMap gets the currently open mind map.
+// The returned MindMap carries the provided context for all subsequent operations.
 func (c *FreeplaneClient) CurrentMap(ctx context.Context) (*MindMap, error) {
 	resp, err := c.GetCurrentNode(ctx)
 	if err != nil {
@@ -608,11 +609,12 @@ func (c *FreeplaneClient) CurrentMap(ctx context.Context) (*MindMap, error) {
 	if !resp.Success {
 		return nil, NewOperationError("no map currently open")
 	}
-	return &MindMap{
+	mm := &MindMap{
 		client: c,
 		mapID:  resp.MapId,
 		nodeID: resp.NodeId,
-	}, nil
+	}
+	return mm.WithContext(ctx), nil
 }
 
 // SelectedMap gets the current mind map rooted at the selected node.

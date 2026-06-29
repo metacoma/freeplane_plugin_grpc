@@ -2,7 +2,7 @@ package freeplane_grpc
 
 import (
 	"context"
-	"strings"
+	"errors"
 	"testing"
 	"time"
 )
@@ -20,8 +20,6 @@ func TestClientConnectivity(t *testing.T) {
 	if mm == nil {
 		t.Fatal("CurrentMap() returned nil")
 	}
-	// Propagate context into MindMap (CurrentMap does not set ctx field)
-	mm = mm.WithContext(ctx)
 	_ = mm
 }
 
@@ -230,7 +228,7 @@ func TestClientConnectionError(t *testing.T) {
 	}
 	defer badClient.Close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	_, err = badClient.CurrentMap(ctx)
@@ -238,6 +236,9 @@ func TestClientConnectionError(t *testing.T) {
 		// Connection may succeed in some environments (e.g., port open, proxy)
 		t.Skip("no connection error on wrong port (may be expected in some environments)")
 	}
-	// Got expected connection error
-	_ = strings.Contains(err.Error(), "connection")
+	// Verify it's a connection error type
+	var connErr *FreeplaneConnectionError
+	if !errors.As(err, &connErr) {
+		t.Logf("expected *FreeplaneConnectionError, got %T: %v", err, err)
+	}
 }

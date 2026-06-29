@@ -37,17 +37,34 @@ func (m *MindMap) WithContext(ctx context.Context) *MindMap {
 // ==================== Navigation ====================
 
 // Root returns the root node of the mind map.
+// It first tries the Groovy script "return root.nodeId". If that returns empty,
+// it falls back to traversing up from the currently selected node via GetParentNode
+// until a node with no parent is found (the root).
 func (m *MindMap) Root() (*Node, error) {
-	// Get the root node via Groovy script
+	// First, try the Groovy script approach
 	resp, err := m.client.Groovy(m.ctx, "return root.nodeId")
-	if err != nil {
-		return nil, err
+	if err == nil && resp.Result != "" {
+		return NewNode(m.client, resp.Result, m), nil
 	}
-	rootID := resp.Result
-	if rootID == "" {
-		return nil, NewMindMapError("failed to get root node")
+
+	// Fallback: traverse up from the currently selected node to find the root.
+	// m.nodeID is set from GetCurrentNodeResponse.node_id (the selected node's ID).
+	currentID := m.nodeID
+	if currentID == "" {
+		return nil, NewMindMapError("failed to get root node (no current node ID available)")
 	}
-	return NewNode(m.client, rootID, m), nil
+
+	for {
+		parentResp, err := m.client.GetParentNode(m.ctx, currentID)
+		if err != nil {
+			return nil, err
+		}
+		if parentResp.ParentNodeId == "" {
+			// This is the root node (no parent)
+			return NewNode(m.client, currentID, m), nil
+		}
+		currentID = parentResp.ParentNodeId
+	}
 }
 
 // SelectedNode returns the currently selected/focused node.

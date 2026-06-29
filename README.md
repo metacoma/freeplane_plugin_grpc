@@ -10,6 +10,8 @@
 
     3.3 [Shell (grpcurl)](#example_shell)
 
+    3.4 [Go](#example_go)
+
 4. [How it works?](#how_it_works)
 
 5. [Quick start](#quick_start)
@@ -179,6 +181,23 @@ $ bash ./grpcurl_test.sh
 ```
 
 ![shell_example](https://user-images.githubusercontent.com/5146707/215350434-89133f50-0688-4ab3-850f-8ca95edcee3d.gif)
+
+
+**<a id="example_go">3.4 Go gRPC client example</a>**
+
+A Go client library is available under `grpc/golang/`. It provides a high-level API with 27 RPC wrappers and 5 error types.
+
+```bash
+# Install Go 1.21+
+# Download Freeplane with gRPC plugin running
+$ cd grpc/golang
+# Run unit tests (no Freeplane required)
+$ go test ./...
+# Run integration tests (requires Freeplane with gRPC plugin on port 50051)
+$ FREEPLANE_HOST=127.0.0.1 FREEPLANE_PORT=50051 go test -v ./...
+```
+
+See [grpc/golang/README.md](grpc/golang/README.md) for the full API reference.
 
 
 **<a id="how_it_works">4 How it works?</a>**

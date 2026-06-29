@@ -34,7 +34,6 @@ import (
     "context"
     "fmt"
     "log"
-    "time"
 
     "github.com/metacoma/freeplane_plugin_grpc/grpc/golang"
 )
@@ -55,12 +54,14 @@ func main() {
     ctx := context.Background()
 
     // Get the current mind map
+    // CurrentMap(ctx) returns a MindMap that carries the provided context
     mindMap, err := client.CurrentMap(ctx)
     if err != nil {
         log.Fatal(err)
     }
 
     // Get the root node
+    // Root() falls back to mapID if the Groovy script returns empty
     root, err := mindMap.Root()
     if err != nil {
         log.Fatal(err)
