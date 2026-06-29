@@ -130,17 +130,17 @@ jobs:
       - name: Package plugin as tar.gz artifact
         run: |
           echo "--- Packaging plugin artifact ---"
-          tar czf org.freplane.plugin.grpc.tar.gz \
+          tar czf org.freeplane.plugin.grpc.tar.gz \
             -C "$FREEPLANE_DIR/plugins/" org.freeplane.plugin.grpc/
           echo "--- Verifying artifact ---"
-          tar tzf org.freplane.plugin.grpc.tar.gz
-          ls -lh org.freplane.plugin.grpc.tar.gz
+          tar tzf org.freeplane.plugin.grpc.tar.gz
+          ls -lh org.freeplane.plugin.grpc.tar.gz
 
       - name: Upload plugin artifact
         uses: actions/upload-artifact@v4
         with:
           name: plugin-asset
-          path: org.freplane.plugin.grpc.tar.gz
+          path: org.freeplane.plugin.grpc.tar.gz
           retention-days: 1
 
       - name: Start Xvfb and window manager

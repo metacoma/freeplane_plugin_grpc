@@ -1,25 +1,47 @@
 0. [Installation](#installation)
+
     0.1 [From GitHub Releases](#installation_from_github_releases)
+
         0.1.1 [Linux (binary zip)](#linux_binary_zip)
+
         0.1.2 [macOS (binary zip)](#macos_binary_zip)
+
         0.1.3 [macOS (DMG .app)](#macos_dmg)
+
         0.1.4 [Windows (binary zip, PowerShell)](#windows_binary_zip)
+
         0.1.5 [Windows (installer)](#windows_installer)
+
         0.1.6 [Linux (deb package)](#linux_deb)
+
     0.2 [Building from Source](#building_from_source)
+
     0.3 [Verification (Smoke Tests)](#verification)
+
 1. [Introduction](#introduction)
+
 2. [gRPC](#grpc)
+
 3. [Examples](#examples)
+
     3.1 [Ruby](#example_ruby)
+
     3.2 [Python](#example_python)
+
     3.3 [Shell (grpcurl)](#example_shell)
+
     3.4 [Go](#example_go)
+
 4. [How it works?](#how_it_works)
+
 5. [Quick start](#quick_start)
+
     5.1 [Install plugin](#install_plugin)
+
     5.2 [Build plugin](#build_plugin)
+
     5.3 [Add new gRPC function](#add_new_grpc_function)
+
 6. [Limitations of the current implementation](#limitations)
 
 **<a id="installation">0. Installation</a>**
@@ -34,7 +56,7 @@
 
   Download the plugin from the [latest release](https://github.com/metacoma/freeplane_plugin_grpc/releases/tag/0.1.0).
 
-  > **Note:** The release artifact filename contains a typo: `org.freplane.plugin.grpc` (missing "p" in "freeplane"). All URLs and commands below use the actual filename.
+  > **Note:** The release artifact filename was previously misspelled as `org.freplane.plugin.grpc` (missing "p" in "freeplane"). This has been corrected to `org.freeplane.plugin.grpc` starting with the next release. URLs below use the corrected filename.
 
 **<a id="linux_binary_zip">0.1.1 Linux (binary zip)</a>**
 
@@ -43,7 +65,7 @@
 FREEPLANE_VERSION=1.13.2 && PLUGIN_VERSION=0.1.0 && \
 curl -sL "https://github.com/freeplane/freeplane/releases/download/release-${FREEPLANE_VERSION}/freeplane_bin-${FREEPLANE_VERSION}.zip" -o /tmp/freeplane.zip && \
 mkdir -p /tmp/freeplane && unzip -q /tmp/freeplane.zip -d /tmp/freeplane && rm /tmp/freeplane.zip && \
-curl -sL "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PLUGIN_VERSION}/org.freplane.plugin.grpc.tar.gz" -o /tmp/plugin.tar.gz && \
+curl -sL "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PLUGIN_VERSION}/org.freeplane.plugin.grpc.tar.gz" -o /tmp/plugin.tar.gz && \
 tar xzf /tmp/plugin.tar.gz -C /tmp/freeplane/freeplane-${FREEPLANE_VERSION}/plugins/ && \
 echo "Plugin installed. Start Freeplane: /tmp/freeplane/freeplane-${FREEPLANE_VERSION}/freeplane.sh"
 ```
@@ -55,7 +77,7 @@ echo "Plugin installed. Start Freeplane: /tmp/freeplane/freeplane-${FREEPLANE_VE
 FREEPLANE_VERSION=1.13.2 && PLUGIN_VERSION=0.1.0 && \
 curl -sL "https://github.com/freeplane/freeplane/releases/download/release-${FREEPLANE_VERSION}/freeplane_bin-${FREEPLANE_VERSION}.zip" -o /tmp/freeplane.zip && \
 mkdir -p /tmp/freeplane && unzip -q /tmp/freeplane.zip -d /tmp/freeplane && rm /tmp/freeplane.zip && \
-curl -sL "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PLUGIN_VERSION}/org.freplane.plugin.grpc.tar.gz" -o /tmp/plugin.tar.gz && \
+curl -sL "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PLUGIN_VERSION}/org.freeplane.plugin.grpc.tar.gz" -o /tmp/plugin.tar.gz && \
 tar xzf /tmp/plugin.tar.gz -C /tmp/freeplane/freeplane-${FREEPLANE_VERSION}/plugins/ && \
 echo "Plugin installed. Start Freeplane: /tmp/freeplane/freeplane-${FREEPLANE_VERSION}/freeplane.sh"
 ```
@@ -67,7 +89,7 @@ echo "Plugin installed. Start Freeplane: /tmp/freeplane/freeplane-${FREEPLANE_VE
 
 ```bash
 PLUGIN_VERSION=0.1.0 && \
-curl -sL "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PLUGIN_VERSION}/org.freplane.plugin.grpc.tar.gz" -o /tmp/plugin.tar.gz && \
+curl -sL "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PLUGIN_VERSION}/org.freeplane.plugin.grpc.tar.gz" -o /tmp/plugin.tar.gz && \
 tar xzf /tmp/plugin.tar.gz -C /Applications/Freeplane.app/Contents/app/plugins/
 ```
 
@@ -80,7 +102,7 @@ tar xzf /tmp/plugin.tar.gz -C /Applications/Freeplane.app/Contents/app/plugins/
 $FreeplaneVersion = "1.13.2"; $PluginVersion = "0.1.0";
 Invoke-WebRequest -Uri "https://github.com/freeplane/freeplane/releases/download/release-${FreeplaneVersion}/freeplane_bin-${FreeplaneVersion}.zip" -OutFile "$env:TEMP\freeplane.zip";
 Expand-Archive -Path "$env:TEMP\freeplane.zip" -DestinationPath "$env:TEMP\freeplane" -Force; Remove-Item "$env:TEMP\freeplane.zip";
-Invoke-WebRequest -Uri "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PluginVersion}/org.freplane.plugin.grpc.tar.gz" -OutFile "$env:TEMP\plugin.tar.gz";
+Invoke-WebRequest -Uri "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PluginVersion}/org.freeplane.plugin.grpc.tar.gz" -OutFile "$env:TEMP\plugin.tar.gz";
 tar xzf "$env:TEMP\plugin.tar.gz" -C "$env:TEMP\freeplane\freeplane-${FreeplaneVersion}\plugins\";
 Write-Host "Plugin installed. Start Freeplane: $env:TEMP\freeplane\freeplane-${FreeplaneVersion}\freeplane.bat"
 ```
@@ -92,7 +114,7 @@ Write-Host "Plugin installed. Start Freeplane: $env:TEMP\freeplane\freeplane-${F
 
 ```powershell
 $PluginVersion = "0.1.0";
-Invoke-WebRequest -Uri "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PluginVersion}/org.freplane.plugin.grpc.tar.gz" -OutFile "$env:TEMP\plugin.tar.gz";
+Invoke-WebRequest -Uri "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PluginVersion}/org.freeplane.plugin.grpc.tar.gz" -OutFile "$env:TEMP\plugin.tar.gz";
 tar xzf "$env:TEMP\plugin.tar.gz" -C "C:\Program Files\Freeplane\plugins\";
 ```
 
@@ -111,7 +133,7 @@ sudo dpkg -i /tmp/freeplane.deb
 
 ```bash
 PLUGIN_VERSION=0.1.0 && \
-curl -sL "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PLUGIN_VERSION}/org.freplane.plugin.grpc.tar.gz" -o /tmp/plugin.tar.gz && \
+curl -sL "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PLUGIN_VERSION}/org.freeplane.plugin.grpc.tar.gz" -o /tmp/plugin.tar.gz && \
 sudo tar xzf /tmp/plugin.tar.gz -C /usr/share/freeplane/plugins/
 ```
 

@@ -115,10 +115,10 @@ else
 fi
 
 # Install gRPC plugin
-PLUGIN_TAR="/tmp/org.freplane.plugin.grpc.tar.gz"
+PLUGIN_TAR="/tmp/org.freeplane.plugin.grpc.tar.gz"
 if [[ ! -f "$PLUGIN_TAR" ]]; then
     log_info "Downloading gRPC plugin ${PLUGIN_VERSION}..."
-    curl -sL "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PLUGIN_VERSION}/org.freplane.plugin.grpc.tar.gz" -o "$PLUGIN_TAR"
+    curl -sL "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PLUGIN_VERSION}/org.freeplane.plugin.grpc.tar.gz" -o "$PLUGIN_TAR"
 fi
 
 log_info "Installing plugin into Freeplane..."
