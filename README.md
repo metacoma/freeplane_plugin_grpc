@@ -1,48 +1,19 @@
-0. [Installation](#installation)
-
-    0.1 [From GitHub Releases](#installation_from_github_releases)
-
-        0.1.1 [Linux (binary zip)](#linux_binary_zip)
-
-        0.1.2 [macOS (binary zip)](#macos_binary_zip)
-
-        0.1.3 [macOS (DMG .app)](#macos_dmg)
-
-        0.1.4 [Windows (binary zip, PowerShell)](#windows_binary_zip)
-
-        0.1.5 [Windows (installer)](#windows_installer)
-
-        0.1.6 [Linux (deb package)](#linux_deb)
-
-    0.2 [Building from Source](#building_from_source)
-
-    0.3 [Verification (Smoke Tests)](#verification)
-
-1. [Introduction](#introduction)
-
-2. [gRPC](#grpc)
-
-3. [Examples](#examples)
-
-    3.1 [Ruby](#example_ruby)
-
-    3.2 [Python](#example_python)
-
-    3.3 [Shell (grpcurl)](#example_shell)
-
-    3.4 [Go](#example_go)
-
-4. [How it works?](#how_it_works)
-
-5. [Quick start](#quick_start)
-
-    5.1 [Install plugin](#install_plugin)
-
-    5.2 [Build plugin](#build_plugin)
-
-    5.3 [Add new gRPC function](#add_new_grpc_function)
-
-6. [Limitations of the current implementation](#limitation)
+- [Installation](#installation)
+  - [From GitHub Releases](#installation_from_github_releases)
+  - [Building from Source](#building_from_source)
+- [Introduction](#introduction)
+- [gRPC](#grpc)
+- [Examples](#examples)
+  - [Ruby](#example_ruby)
+  - [Python](#example_python)
+  - [Shell (grpcurl)](#example_shell)
+  - [Go](#example_go)
+- [How it works?](#how_it_works)
+- [Quick start](#quick_start)
+  - [Install plugin](#install_plugin)
+  - [Build plugin](#build_plugin)
+  - [Add new gRPC function](#add_new_grpc_function)
+- [Limitations of the current implementation](#limitations)
 
 **<a id="installation">0. Installation</a>**
 
@@ -56,86 +27,13 @@
 
   Download the plugin from the [latest release](https://github.com/metacoma/freeplane_plugin_grpc/releases/tag/0.1.0).
 
-  > **Note:** The release artifact filename contains a typo: `org.freplane.plugin.grpc` (missing "p" in "freeplane"). All URLs and commands below use the actual filename.
+  After downloading, place the plugin zip file (`org.freeplane.plugin.grpc.zip`) into the Freeplane plugins directory for your operating system:
 
-**<a id="linux_binary_zip">0.1.1 Linux (binary zip)</a>**
-
-```bash
-# Download Freeplane and plugin, extract, install, and verify
-FREEPLANE_VERSION=1.13.2 && PLUGIN_VERSION=0.1.0 && \
-curl -sL "https://github.com/freeplane/freeplane/releases/download/release-${FREEPLANE_VERSION}/freeplane_bin-${FREEPLANE_VERSION}.zip" -o /tmp/freeplane.zip && \
-mkdir -p /tmp/freeplane && unzip -q /tmp/freeplane.zip -d /tmp/freeplane && rm /tmp/freeplane.zip && \
-curl -sL "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PLUGIN_VERSION}/org.freplane.plugin.grpc.tar.gz" -o /tmp/plugin.tar.gz && \
-tar xzf /tmp/plugin.tar.gz -C /tmp/freeplane/freeplane-${FREEPLANE_VERSION}/plugins/ && \
-echo "Plugin installed. Start Freeplane: /tmp/freeplane/freeplane-${FREEPLANE_VERSION}/freeplane.sh"
-```
-
-**<a id="macos_binary_zip">0.1.2 macOS (binary zip)</a>**
-
-```bash
-# Download Freeplane and plugin, extract, install, and verify
-FREEPLANE_VERSION=1.13.2 && PLUGIN_VERSION=0.1.0 && \
-curl -sL "https://github.com/freeplane/freeplane/releases/download/release-${FREEPLANE_VERSION}/freeplane_bin-${FREEPLANE_VERSION}.zip" -o /tmp/freeplane.zip && \
-mkdir -p /tmp/freeplane && unzip -q /tmp/freeplane.zip -d /tmp/freeplane && rm /tmp/freeplane.zip && \
-curl -sL "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PLUGIN_VERSION}/org.freplane.plugin.grpc.tar.gz" -o /tmp/plugin.tar.gz && \
-tar xzf /tmp/plugin.tar.gz -C /tmp/freeplane/freeplane-${FREEPLANE_VERSION}/plugins/ && \
-echo "Plugin installed. Start Freeplane: /tmp/freeplane/freeplane-${FREEPLANE_VERSION}/freeplane.sh"
-```
-
-**<a id="macos_dmg">0.1.3 macOS (DMG .app)</a>**
-
-  1. Install Freeplane via DMG (double-click the `.dmg` file and drag to `/Applications/`).
-  2. Download the plugin:
-
-```bash
-PLUGIN_VERSION=0.1.0 && \
-curl -sL "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PLUGIN_VERSION}/org.freplane.plugin.grpc.tar.gz" -o /tmp/plugin.tar.gz && \
-tar xzf /tmp/plugin.tar.gz -C /Applications/Freeplane.app/Contents/app/plugins/
-```
-
-  > **Note:** You may need `sudo` to write to `/Applications/`. Alternatively, copy `.app` to `~/Applications/` first to avoid permission issues.
-
-**<a id="windows_binary_zip">0.1.4 Windows (binary zip, PowerShell)</a>**
-
-```powershell
-# Download Freeplane and plugin, extract, install, and verify
-$FreeplaneVersion = "1.13.2"; $PluginVersion = "0.1.0";
-Invoke-WebRequest -Uri "https://github.com/freeplane/freeplane/releases/download/release-${FreeplaneVersion}/freeplane_bin-${FreeplaneVersion}.zip" -OutFile "$env:TEMP\freeplane.zip";
-Expand-Archive -Path "$env:TEMP\freeplane.zip" -DestinationPath "$env:TEMP\freeplane" -Force; Remove-Item "$env:TEMP\freeplane.zip";
-Invoke-WebRequest -Uri "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PluginVersion}/org.freplane.plugin.grpc.tar.gz" -OutFile "$env:TEMP\plugin.tar.gz";
-tar xzf "$env:TEMP\plugin.tar.gz" -C "$env:TEMP\freeplane\freeplane-${FreeplaneVersion}\plugins\";
-Write-Host "Plugin installed. Start Freeplane: $env:TEMP\freeplane\freeplane-${FreeplaneVersion}\freeplane.bat"
-```
-
-**<a id="windows_installer">0.1.5 Windows (installer)</a>**
-
-  1. Run the Freeplane installer (`Freeplane-Setup-1.13.2.exe`).
-  2. Download the plugin and extract to the plugins directory:
-
-```powershell
-$PluginVersion = "0.1.0";
-Invoke-WebRequest -Uri "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PluginVersion}/org.freplane.plugin.grpc.tar.gz" -OutFile "$env:TEMP\plugin.tar.gz";
-tar xzf "$env:TEMP\plugin.tar.gz" -C "C:\Program Files\Freeplane\plugins\";
-```
-
-  > **Note:** Admin privileges may be required to write to `C:\Program Files\Freeplane\`. The binary zip approach (above) does not require admin rights.
-
-**<a id="linux_deb">0.1.6 Linux (deb package)</a>**
-
-  1. Install the deb package:
-
-```bash
-wget "https://github.com/freeplane/freeplane/releases/download/release-1.13.2/freeplane_1.13.2.upstream-1_all.deb" -O /tmp/freeplane.deb
-sudo dpkg -i /tmp/freeplane.deb
-```
-
-  2. Download and install the plugin:
-
-```bash
-PLUGIN_VERSION=0.1.0 && \
-curl -sL "https://github.com/metacoma/freeplane_plugin_grpc/releases/download/${PLUGIN_VERSION}/org.freplane.plugin.grpc.tar.gz" -o /tmp/plugin.tar.gz && \
-sudo tar xzf /tmp/plugin.tar.gz -C /usr/share/freeplane/plugins/
-```
+  | OS | Plugins directory |
+  |----|-------------------|
+  | Linux | `~/.config/freeplane/plugins/` |
+  | macOS | `~/.config/freeplane/plugins/` |
+  | Windows | `%APPDATA%\Freeplane\plugins\` |
 
 ---
 
@@ -174,47 +72,6 @@ cd ..
 ```
 
 ---
-
-**<a id="verification">0.3 Verification (Smoke Tests)</a>**
-
-  After installation (from release or from source), verify the plugin works:
-
-  1. **Start Freeplane** with the plugin installed.
-  2. **Check gRPC port**:
-
-```bash
-nc -z 127.0.0.1 50051 && echo "gRPC server is listening"
-```
-
-  3. **Run Python smoke test**:
-
-```bash
-python3 grpc/python/examples/modify_mindmap_example.py
-```
-
-  4. **Run Node.js smoke test**:
-
-```bash
-cd grpc/nodejs && npm ci && npx jest --testPathPattern=test/integration
-```
-
-  5. **Run Ruby smoke test**:
-
-```bash
-cd grpc/ruby && bundle exec rspec spec/integration/
-```
-
-  6. **Run unit tests** (no Freeplane required):
-
-```bash
-bash scripts/run-tests.sh
-```
-
-  For a fully automated end-to-end smoke test:
-
-```bash
-bash misc/scripts/run-freeplane-python-smoke-test.sh
-```
 
 **<a id="introduction">1. Introduction</a>**
 

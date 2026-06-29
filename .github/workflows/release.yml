@@ -89,19 +89,19 @@ jobs:
 
       - name: Package plugin as tar.gz
         run: |
-          tar czf org.freplane.plugin.grpc.tar.gz \
+          tar czf org.freeplane.plugin.grpc.tar.gz \
             -C "$FREEPLANE_DIR/plugins/" org.freeplane.plugin.grpc/
           echo "--- Verifying tar.gz artifact ---"
-          tar tzf org.freplane.plugin.grpc.tar.gz | head -20
-          ls -lh org.freplane.plugin.grpc.tar.gz
+          tar tzf org.freeplane.plugin.grpc.tar.gz | head -20
+          ls -lh org.freeplane.plugin.grpc.tar.gz
 
       - name: Package plugin as zip
         run: |
-          zip -r org.freplane.plugin.grpc.zip \
+          zip -r org.freeplane.plugin.grpc.zip \
             -C "$FREEPLANE_DIR/plugins/" org.freeplane.plugin.grpc/
           echo "--- Verifying zip artifact ---"
-          unzip -l org.freplane.plugin.grpc.zip | head -20
-          ls -lh org.freplane.plugin.grpc.zip
+          unzip -l org.freeplane.plugin.grpc.zip | head -20
+          ls -lh org.freeplane.plugin.grpc.zip
 
       - name: Find previous tag
         id: prev_tag
@@ -118,7 +118,7 @@ jobs:
           generate_release_notes: true
           previous_tag: ${{ steps.prev_tag.outputs.previous_tag }}
           files: |
-            org.freplane.plugin.grpc.tar.gz
-            org.freplane.plugin.grpc.zip
+            org.freeplane.plugin.grpc.tar.gz
+            org.freeplane.plugin.grpc.zip
           draft: false
           prerelease: false
