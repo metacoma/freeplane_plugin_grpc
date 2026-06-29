@@ -177,11 +177,25 @@ go run examples/basic_usage.go
 
 ## Running Tests
 
+### Unit Tests
+
 ```bash
 go test ./...
 ```
 
-All tests are mocked and do not require a running Freeplane server.
+Unit tests are mocked and do not require a running Freeplane server.
+
+### Integration Tests
+
+Integration tests require a running Freeplane server with the gRPC plugin.
+
+```bash
+FREEPLANE_HOST=127.0.0.1 FREEPLANE_PORT=50051 go test -v ./...
+```
+
+If `FREEPLANE_HOST` is not set, integration tests are automatically skipped.
+
+Integration tests are run automatically in CI via `.github/workflows/integration.yml`.
 
 ## Environment Variables
 

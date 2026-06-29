@@ -250,6 +250,29 @@ jobs:
           cd grpc/nodejs
           FREEPLANE_HOST=127.0.0.1 FREEPLANE_PORT=50051 npx jest --testPathPattern=test/integration --verbose --runInBand
 
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+
+      - name: Re-open blank map for Go tests
+        run: |
+          python3 -c "
+          import sys; sys.path.insert(0, 'grpc/python')
+          from freeplane_pb2 import OpenMapRequest
+          import freeplane_pb2_grpc, grpc
+          stub = freeplane_pb2_grpc.FreeplaneStub(grpc.insecure_channel('127.0.0.1:50051'))
+          resp = stub.OpenMap(OpenMapRequest(file_path='/tmp/freeplane-xvfb/smoke_test_map.mm'), timeout=10)
+          assert resp.success, 'OpenMap failed'
+          print('OpenMap OK')
+          "
+
+      - name: Run Go integration tests
+        timeout-minutes: 15
+        run: |
+          cd grpc/golang
+          FREEPLANE_HOST=127.0.0.1 FREEPLANE_PORT=50051 go test -v ./...
+
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
 
