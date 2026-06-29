@@ -42,6 +42,11 @@ jobs:
         working-directory: grpc/nodejs
         run: npm ci
 
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
 
