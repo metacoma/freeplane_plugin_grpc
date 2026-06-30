@@ -45,6 +45,9 @@ run_suite "Go Tests" bash -c 'cd grpc/golang && go test ./...'
 # C++ unit tests (all mocked — no server required)
 run_suite "C++ Tests" bash -c 'cd grpc/cpp && mkdir -p build && cd build && cmake .. -DBUILD_TESTS=ON && make -j$(nproc) && ctest --output-on-failure'
 
+# Kotlin unit tests (all mocked — no server required)
+run_suite "Kotlin Tests" bash -c 'cd grpc/kotlin && ./gradlew test'
+
 echo "========================================"
 echo "=== Summary ==="
 echo "========================================"

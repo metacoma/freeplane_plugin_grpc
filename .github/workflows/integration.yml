@@ -338,6 +338,24 @@ jobs:
           cd grpc/cpp/build
           FREEPLANE_HOST=127.0.0.1 FREEPLANE_PORT=50051 ctest -R integration --output-on-failure
 
+      - name: Re-open blank map for Kotlin tests
+        run: |
+          python3 -c "
+          import sys; sys.path.insert(0, 'grpc/python')
+          from freeplane_pb2 import OpenMapRequest
+          import freeplane_pb2_grpc, grpc
+          stub = freeplane_pb2_grpc.FreeplaneStub(grpc.insecure_channel('127.0.0.1:50051'))
+          resp = stub.OpenMap(OpenMapRequest(file_path='/tmp/freeplane-xvfb/smoke_test_map.mm'), timeout=10)
+          assert resp.success, 'OpenMap failed'
+          print('OpenMap OK')
+          "
+
+      - name: Run Kotlin integration tests
+        timeout-minutes: 15
+        run: |
+          cd grpc/kotlin
+          FREEPLANE_HOST=127.0.0.1 FREEPLANE_PORT=50051 ./gradlew test --tests '*IntegrationTest*'
+
       - name: Upload Freeplane log on failure
         if: failure() || cancelled()
         uses: actions/upload-artifact@v4
