@@ -2,6 +2,7 @@
 #include "mindmap.h"
 
 #include <sstream>
+#include <chrono>
 
 namespace freeplane {
 namespace grpc {
@@ -67,6 +68,19 @@ std::shared_ptr<freeplane::Freeplane::Stub> FreeplaneClient::getStub() {
             "Not connected. Call connect() or use as a scoped connection.");
     }
     return stub_;
+}
+
+// =====================================================================
+// Helper: create a ClientContext with a default deadline
+// =====================================================================
+
+/// Create a heap-allocated ::grpc::ClientContext with a 30-second deadline
+/// to prevent hanging on unresponsive servers.
+static std::unique_ptr<::grpc::ClientContext> makeContextWithDeadline() {
+    auto context = std::make_unique<::grpc::ClientContext>();
+    context->set_deadline(
+        std::chrono::system_clock::now() + std::chrono::seconds(30));
+    return context;
 }
 
 // =====================================================================
@@ -149,8 +163,8 @@ std::shared_ptr<freeplane::CreateChildResponse> FreeplaneClient::createChild(
     freeplane::CreateChildResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->CreateChild(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->CreateChild(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -171,8 +185,8 @@ std::shared_ptr<freeplane::DeleteChildResponse> FreeplaneClient::deleteChild(
     freeplane::DeleteChildResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->DeleteChild(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->DeleteChild(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -196,8 +210,8 @@ std::shared_ptr<freeplane::NodeAttributeAddResponse> FreeplaneClient::nodeAttrib
     freeplane::NodeAttributeAddResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->NodeAttributeAdd(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->NodeAttributeAdd(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -219,8 +233,8 @@ std::shared_ptr<freeplane::NodeLinkSetResponse> FreeplaneClient::nodeLinkSet(
     freeplane::NodeLinkSetResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->NodeLinkSet(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->NodeLinkSet(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -242,8 +256,8 @@ std::shared_ptr<freeplane::NodeDetailsSetResponse> FreeplaneClient::nodeDetailsS
     freeplane::NodeDetailsSetResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->NodeDetailsSet(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->NodeDetailsSet(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -265,8 +279,8 @@ std::shared_ptr<freeplane::NodeNoteSetResponse> FreeplaneClient::nodeNoteSet(
     freeplane::NodeNoteSetResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->NodeNoteSet(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->NodeNoteSet(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -290,8 +304,8 @@ std::shared_ptr<freeplane::NodeTagSetResponse> FreeplaneClient::nodeTagSet(
     freeplane::NodeTagSetResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->NodeTagSet(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->NodeTagSet(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -315,8 +329,8 @@ std::shared_ptr<freeplane::NodeTagAddResponse> FreeplaneClient::nodeTagAdd(
     freeplane::NodeTagAddResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->NodeTagAdd(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->NodeTagAdd(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -340,8 +354,8 @@ std::shared_ptr<freeplane::NodeConnectResponse> FreeplaneClient::nodeConnect(
     freeplane::NodeConnectResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->NodeConnect(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->NodeConnect(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -363,8 +377,8 @@ std::shared_ptr<freeplane::NodeAddIconResponse> FreeplaneClient::nodeAddIcon(
     freeplane::NodeAddIconResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->NodeAddIcon(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->NodeAddIcon(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -385,8 +399,8 @@ std::shared_ptr<freeplane::GroovyResponse> FreeplaneClient::groovyRpc(
     freeplane::GroovyResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->Groovy(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->Groovy(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -412,8 +426,8 @@ std::shared_ptr<freeplane::NodeColorSetResponse> FreeplaneClient::nodeColorSet(
     freeplane::NodeColorSetResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->NodeColorSet(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->NodeColorSet(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -439,8 +453,8 @@ std::shared_ptr<freeplane::NodeBackgroundColorSetResponse> FreeplaneClient::node
     freeplane::NodeBackgroundColorSetResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->NodeBackgroundColorSet(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->NodeBackgroundColorSet(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -461,8 +475,8 @@ std::shared_ptr<freeplane::StatusInfoSetResponse> FreeplaneClient::statusInfoSet
     freeplane::StatusInfoSetResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->StatusInfoSet(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->StatusInfoSet(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -482,8 +496,8 @@ std::shared_ptr<freeplane::TextFSMResponse> FreeplaneClient::textFSM(const std::
     freeplane::TextFSMResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->TextFSM(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->TextFSM(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -504,8 +518,8 @@ std::shared_ptr<freeplane::MindMapFromJSONResponse> FreeplaneClient::mindMapFrom
     freeplane::MindMapFromJSONResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->MindMapFromJSON(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->MindMapFromJSON(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -524,8 +538,8 @@ std::shared_ptr<freeplane::MindMapToJSONResponse> FreeplaneClient::mindMapToJson
     freeplane::MindMapToJSONResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->MindMapToJSON(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->MindMapToJSON(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -544,8 +558,8 @@ std::shared_ptr<freeplane::GetCurrentNodeResponse> FreeplaneClient::getCurrentNo
     freeplane::GetCurrentNodeResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->GetCurrentNode(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->GetCurrentNode(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -566,8 +580,8 @@ std::shared_ptr<freeplane::OpenMapResponse> FreeplaneClient::openMapRpc(
     freeplane::OpenMapResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->OpenMap(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->OpenMap(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -588,8 +602,8 @@ std::shared_ptr<freeplane::FocusNodeResponse> FreeplaneClient::focusNodeRpc(
     freeplane::FocusNodeResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->FocusNode(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->FocusNode(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -610,8 +624,8 @@ std::shared_ptr<freeplane::GetNodeTextResponse> FreeplaneClient::getNodeText(
     freeplane::GetNodeTextResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->GetNodeText(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->GetNodeText(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -632,8 +646,8 @@ std::shared_ptr<freeplane::GetParentNodeResponse> FreeplaneClient::getParentNode
     freeplane::GetParentNodeResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->GetParentNode(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->GetParentNode(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -654,8 +668,8 @@ std::shared_ptr<freeplane::ListChildNodesResponse> FreeplaneClient::listChildNod
     freeplane::ListChildNodesResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->ListChildNodes(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->ListChildNodes(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -676,8 +690,8 @@ std::shared_ptr<freeplane::GetNodeNoteResponse> FreeplaneClient::getNodeNote(
     freeplane::GetNodeNoteResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->GetNodeNote(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->GetNodeNote(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -698,8 +712,8 @@ std::shared_ptr<freeplane::GetNodeLinkResponse> FreeplaneClient::getNodeLink(
     freeplane::GetNodeLinkResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->GetNodeLink(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->GetNodeLink(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -721,8 +735,8 @@ std::shared_ptr<freeplane::SetNodeTextResponse> FreeplaneClient::setNodeText(
     freeplane::SetNodeTextResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->SetNodeText(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->SetNodeText(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(
@@ -744,8 +758,8 @@ std::shared_ptr<freeplane::MoveNodeResponse> FreeplaneClient::moveNode(
     freeplane::MoveNodeResponse response;
     auto stub = getStub();
     
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->MoveNode(&context, request, &response);
+    auto context = makeContextWithDeadline();
+    ::grpc::Status status = stub->MoveNode(context.get(), request, &response);
     
     if (!status.ok()) {
         throw FreeplaneConnectionError(

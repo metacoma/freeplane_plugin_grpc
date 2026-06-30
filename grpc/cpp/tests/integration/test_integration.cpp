@@ -6,9 +6,9 @@
 //! ```bash
 //! cd grpc/cpp
 //! mkdir -p build && cd build
-//! cmake .. -DBUILD_TESTS=ON
+//! cmake .. -DBUILD_TESTS=ON -DBUILD_INTEGRATION_TESTS=ON
 //! make -j$(nproc)
-//! FREEPLANE_HOST=127.0.0.1 FREEPLANE_PORT=50051 ctest -R Integration --output-on-failure
+//! FREEPLANE_HOST=127.0.0.1 FREEPLANE_PORT=50051 ctest -R integration --output-on-failure
 //! ```
 
 #include <gtest/gtest.h>
