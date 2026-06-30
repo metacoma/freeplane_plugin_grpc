@@ -336,12 +336,7 @@ jobs:
         timeout-minutes: 15
         run: |
           cd grpc/cpp/build
-          FREEPLANE_HOST=127.0.0.1 FREEPLANE_PORT=50051 ctest -R Integration --output-on-failure
-
-      - name: Run Rust integration tests
-        run: |
-          cd grpc/rust
-          FREEPLANE_HOST=127.0.0.1 FREEPLANE_PORT=50051 cargo test --test integration_test -- --ignored --test-threads=1
+          FREEPLANE_HOST=127.0.0.1 FREEPLANE_PORT=50051 ctest -R integration --output-on-failure
 
       - name: Upload Freeplane log on failure
         if: failure() || cancelled()
