@@ -101,6 +101,37 @@ if(BUILD_TESTS)
     gtest_discover_tests(test_freeplane_grpc)
 endif()
 
+# Integration tests (require a running Freeplane server)
+option(BUILD_INTEGRATION_TESTS "Build integration tests" ON)
+if(BUILD_INTEGRATION_TESTS)
+    enable_testing()
+    find_package(GTest REQUIRED)
+    
+    add_executable(test_integration
+        tests/integration/test_integration.cpp
+        src/client.cpp
+        src/node.cpp
+        src/mindmap.cpp
+        freeplane/freeplane.pb.cc
+        freeplane/freeplane.grpc.pb.cc
+    )
+    
+    target_include_directories(test_integration
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    
+    target_link_libraries(test_integration
+        GTest::gtest_main
+        GTest::gmock
+        gRPC::grpc
+        gRPC::grpc++
+        protobuf::libprotobuf
+    )
+    
+    gtest_discover_tests(test_integration)
+endif()
+
 # Install rules
 install(TARGETS freeplane_grpc
     LIBRARY DESTINATION lib

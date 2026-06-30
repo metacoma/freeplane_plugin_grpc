@@ -308,6 +308,36 @@ jobs:
           python3 grpc/python/examples/modify_mindmap_example.py
           python3 grpc/python/examples/test_json_roundtrip.py
 
+      - name: Set up C++
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y cmake protobuf-compiler protobuf-compiler-grpc libgrpc++-dev libprotobuf-dev libgtest-dev
+
+      - name: Re-open blank map for C++ tests
+        run: |
+          python3 -c "
+          import sys; sys.path.insert(0, 'grpc/python')
+          from freeplane_pb2 import OpenMapRequest
+          import freeplane_pb2_grpc, grpc
+          stub = freeplane_pb2_grpc.FreeplaneStub(grpc.insecure_channel('127.0.0.1:50051'))
+          resp = stub.OpenMap(OpenMapRequest(file_path='/tmp/freeplane-xvfb/smoke_test_map.mm'), timeout=10)
+          assert resp.success, 'OpenMap failed'
+          print('OpenMap OK')
+          "
+
+      - name: Build C++ integration tests
+        run: |
+          cd grpc/cpp
+          rm -rf build && mkdir build && cd build
+          cmake .. -DBUILD_TESTS=ON -DBUILD_INTEGRATION_TESTS=ON
+          make -j$(nproc)
+
+      - name: Run C++ integration tests
+        timeout-minutes: 15
+        run: |
+          cd grpc/cpp/build
+          FREEPLANE_HOST=127.0.0.1 FREEPLANE_PORT=50051 ctest -R Integration --output-on-failure
+
       - name: Run Rust integration tests
         run: |
           cd grpc/rust
