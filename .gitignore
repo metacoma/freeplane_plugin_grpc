@@ -26,3 +26,7 @@ Thumbs.db
 
 # Rust build artifacts
 misc/freeplane_llm/target/
+
+# Kotlin/Gradle build artifacts
+grpc/kotlin/.gradle/
+grpc/kotlin/build/

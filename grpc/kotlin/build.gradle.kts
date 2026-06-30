@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "1.9.20"
     id("com.google.protobuf") version "0.9.6"
+    application
 }
 
 group = "org.freeplane.grpc"
@@ -24,6 +25,18 @@ dependencies {
     testImplementation("io.grpc:grpc-testing:1.52.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
     testImplementation("org.mockito:mockito-core:5.5.0")
+}
+
+application {
+    mainClass.set("org.freeplane.grpc.examples.BasicUsageKt")
+}
+
+sourceSets {
+    main {
+        kotlin {
+            srcDirs("src/main/kotlin", "examples")
+        }
+    }
 }
 
 protobuf {
