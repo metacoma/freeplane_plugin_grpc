@@ -97,8 +97,7 @@ jobs:
 
       - name: Package plugin as zip
         run: |
-          zip -r org.freeplane.plugin.grpc.zip \
-            -C "$FREEPLANE_DIR/plugins/" org.freeplane.plugin.grpc/
+          ( cd "$FREEPLANE_DIR/plugins/" && zip -r ../org.freeplane.plugin.grpc.zip org.freeplane.plugin.grpc/ )
           echo "--- Verifying zip artifact ---"
           unzip -l org.freeplane.plugin.grpc.zip | head -20
           ls -lh org.freeplane.plugin.grpc.zip
