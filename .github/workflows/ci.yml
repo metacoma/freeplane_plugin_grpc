@@ -53,6 +53,11 @@ jobs:
       - name: Install protoc
         run: sudo apt-get update -qq && sudo apt-get install -y protobuf-compiler
 
+      - name: Install C++ build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y cmake protobuf-compiler-grpc libgrpc++-dev libprotobuf-dev
+
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
         with:
