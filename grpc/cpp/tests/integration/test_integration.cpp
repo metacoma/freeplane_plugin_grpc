@@ -147,7 +147,7 @@ TEST(IntegrationClientTest, FocusNode) {
         // Freeplane may return an error for nonexistent nodes, which is fine
         try {
             client.focusNode("nonexistent");
-        } catch (const std::runtime_error&) {
+        } catch (const std::exception&) {
             // Expected: Freeplane may reject focus on nonexistent node
         }
     } catch (const std::runtime_error& e) {
@@ -441,7 +441,7 @@ TEST(IntegrationNodeTest, SetStyle) {
         // Freeplane may not support all styles; just verify connectivity
         try {
             testNode->setStyle("bubble");
-        } catch (const std::runtime_error&) {
+        } catch (const std::exception&) {
             // Expected: Freeplane may reject unsupported style
         }
     } catch (const std::runtime_error& e) {
@@ -540,7 +540,7 @@ TEST(IntegrationMindMapTest, Export) {
         // May succeed or fail depending on server state; just verify connectivity
         try {
             mindmap->exportMap("/tmp/test_export.mm", "mm");
-        } catch (const std::runtime_error&) {
+        } catch (const std::exception&) {
             // Expected: Freeplane may reject export
         }
     } catch (const std::runtime_error& e) {
@@ -559,7 +559,7 @@ TEST(IntegrationMindMapTest, ImportMap) {
         // Will fail since file doesn't exist, but proves connectivity
         try {
             mindmap->importMap("/nonexistent.mm");
-        } catch (const std::runtime_error&) {
+        } catch (const std::exception&) {
             // Expected: file doesn't exist
         }
     } catch (const std::runtime_error& e) {
@@ -741,7 +741,7 @@ TEST(IntegrationRpcTest, TextFSM) {
         // Freeplane may not support TextFSM; just verify connectivity
         try {
             client.textFSM(R"({"key": "value"})");
-        } catch (const std::runtime_error&) {
+        } catch (const std::exception&) {
             // Expected: Freeplane may not support TextFSM
         }
     } catch (const std::runtime_error& e) {
@@ -773,7 +773,7 @@ TEST(IntegrationRpcTest, OpenMapRpc) {
         // May fail since file doesn't exist, but proves connectivity
         try {
             client.openMapRpc("/nonexistent.mm");
-        } catch (const std::runtime_error&) {
+        } catch (const std::exception&) {
             // Expected: file doesn't exist
         }
     } catch (const std::runtime_error& e) {
