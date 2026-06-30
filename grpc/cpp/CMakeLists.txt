@@ -25,7 +25,7 @@ if(NOT EXISTS "${GENERATED_DIR}/freeplane.pb.h")
         COMMAND protoc
             -I${PROTO_DIR}
             --cpp_out ${GENERATED_DIR}
-            --grpc_out ${GENERATED_DIR}
+            --grpc_out=plugins=grpc:${GENERATED_DIR}
             ${PROTO_FILE}
         RESULT_VARIABLE PROTO_RESULT
     )
@@ -69,11 +69,23 @@ target_link_libraries(freeplane_grpc
         protobuf::libprotobuf
 )
 
+# Use FetchContent for GTest to avoid Ubuntu libgtest-dev source-only issue
+include(FetchContent)
+FetchContent_Declare(
+    GTest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG v1.14.0
+    GIT_SHALLOW TRUE
+)
+set(GTEST_FORCE_SHARED_CRT ON CACHE BOOL "" FORCE)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+set(BUILD_GMOCK ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(GTest)
+
 # Unit tests
 option(BUILD_TESTS "Build unit tests" ON)
 if(BUILD_TESTS)
     enable_testing()
-    find_package(GTest REQUIRED)
     
     add_executable(test_freeplane_grpc
         tests/test_client.cpp
@@ -89,6 +101,8 @@ if(BUILD_TESTS)
     target_include_directories(test_freeplane_grpc
         PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}
+            ${gtest_SOURCE_DIR}/googlemock/include
+            ${gtest_SOURCE_DIR}/googletest/include
     )
     
     target_link_libraries(test_freeplane_grpc
@@ -98,14 +112,14 @@ if(BUILD_TESTS)
         protobuf::libprotobuf
     )
     
-    gtest_discover_tests(test_freeplane_grpc)
+    # Manual test discovery (replaces gtest_discover_tests which is unavailable with FetchContent)
+    add_test(NAME test_freeplane_grpc COMMAND test_freeplane_grpc)
 endif()
 
 # Integration tests (require a running Freeplane server)
 option(BUILD_INTEGRATION_TESTS "Build integration tests" ON)
 if(BUILD_INTEGRATION_TESTS)
     enable_testing()
-    find_package(GTest REQUIRED)
     
     add_executable(test_integration
         tests/integration/test_integration.cpp
@@ -119,6 +133,8 @@ if(BUILD_INTEGRATION_TESTS)
     target_include_directories(test_integration
         PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}
+            ${gtest_SOURCE_DIR}/googlemock/include
+            ${gtest_SOURCE_DIR}/googletest/include
     )
     
     target_link_libraries(test_integration
@@ -129,7 +145,8 @@ if(BUILD_INTEGRATION_TESTS)
         protobuf::libprotobuf
     )
     
-    gtest_discover_tests(test_integration)
+    # Manual test discovery (replaces gtest_discover_tests which is unavailable with FetchContent)
+    add_test(NAME test_integration COMMAND test_integration)
 endif()
 
 # Install rules

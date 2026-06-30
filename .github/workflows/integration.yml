@@ -311,7 +311,7 @@ jobs:
       - name: Set up C++
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y cmake protobuf-compiler protobuf-compiler-grpc libgrpc++-dev libprotobuf-dev libgtest-dev
+          sudo apt-get install -y cmake protobuf-compiler protobuf-compiler-grpc libgrpc++-dev libprotobuf-dev
 
       - name: Re-open blank map for C++ tests
         run: |
